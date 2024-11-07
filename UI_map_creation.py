@@ -1,6 +1,7 @@
 import threading
 from time import sleep
 from map_generation import createmap
+import random
 def openUIMap(size, map):
     import tkinter as tk
     global main
@@ -17,27 +18,30 @@ def openUIMap(size, map):
 
     xcord = int(size)
     ycord = int(size)
-
+    "Create grids"
+    
     grids = {}
     grid_width = windowsize / ycord
     grid_height = windowsize / xcord
-
+    
     for row in range(1, xcord + 1):
         for col in range(1, ycord + 1):
             key = f"{row:02d}{col:02d}"
-            grids[key] = tk.Frame(main, bg="white", width=grid_width, height=grid_height)
+            grids[key] = tk.Frame(main, bg="gray", width=grid_width, height=grid_height)
             grids[key].place(x=(col - 1) * grid_width, y=(row - 1) * grid_height)
 
+    "Create Walls"
     walls = {}
     wall_thickness = 5
 
     for row in range(1, xcord + 1):
         for col in range(1, ycord + 1):
-            frame_key = f"{row:02d}{col:02d}"
-            if col < ycord:
-                walls[f"{frame_key}x"] = tk.Frame(grids[frame_key], bg="white", width=wall_thickness, height=grid_height)
-            if row < xcord:
-                walls[f"{frame_key}y"] = tk.Frame(grids[frame_key], bg="white", width=grid_width, height=wall_thickness)
+            if random.randint(1,4) < 2 and row+col != len(map):
+                frame_key = f"{row:02d}{col:02d}"
+                if col < ycord:
+                    walls[f"{frame_key}x"] = tk.Frame(grids[frame_key], bg="white", width=wall_thickness, height=grid_height)
+                if row < xcord:
+                    walls[f"{frame_key}y"] = tk.Frame(grids[frame_key], bg="white", width=grid_width, height=wall_thickness)
 
     for key, wall in walls.items():
         if 'x' in key:
@@ -56,20 +60,21 @@ def update(map):
         for y in range(len(map)):
             key = f"{x+1:02d}{y+1:02d}"
             print(map[x][y])
-            if map[x][y] % 2 != 0:
+            if map[x][y].discovered == True:
                 print("Even")
                 grids[key].configure(bg="gray")
             else:
                 print("Odd")
-                if map[x][y] == 10:
+                print(map[x][y].type)
+                if map[x][y].type == "Empty":
                     grids[key].configure(bg="gray")
-                elif map[x][y] == 20:
+                elif map[x][y].type == "Monster":
                     grids[key].configure(bg="red")
-                elif map[x][y] == 30:
+                elif map[x][y].type == "Chest":
                     grids[key].configure(bg="yellow")
-                elif map[x][y] == 40:
+                elif map[x][y].type == "Trap":
                     grids[key].configure(bg="black")
-                elif map[x][y] == 50:
+                elif map[x][y].type == "Shop":
                     grids[key].configure(bg="blue")
 
 

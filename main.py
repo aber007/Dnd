@@ -49,6 +49,7 @@ class Map:
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
     """Returns a list of strings containing the different actions the player can currently take"""
+    
 
     current_room : Map.Room = map.get_room(player.position)
     get_door_options_func = lambda current_room: [f"Open door facing {door_direction}" for door_direction in current_room.doors()]
@@ -81,7 +82,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 
 
-def check_user_input_error(action_idx : str[int], action_options : list[str]) -> tuple[bool, str]:
+def check_user_input_error(action_idx : str, action_options : list[str]) -> tuple[bool, str]:
     """Checks if the user's input is valid. If not: return (True, "error message"), otherwise: return (False, "")"""
 
     if not action_idx.isdigit():
