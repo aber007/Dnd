@@ -1,9 +1,11 @@
 
+
 from random import choices
 from UI_map_creation import create_UI_Map
 
 CONSTANTS = {
     "map_base_size": 7,
+
     "player_inventory_size": 3,
     "player_base_hp": 5
 }
@@ -28,10 +30,11 @@ class Player:
 
 class Map:
     class Room:
-            def __init__(self, type, discovered, doors) -> None:
-                self.type = type
-                self.discovered = discovered
-                self.doors = doors
+
+        def __init__(self, type, discovered, doors) -> None:
+            self.type = type
+            self.discovered = discovered
+            self.doors = doors
 
     def __init__(self, size : int) -> None:
         """Generates the playable map"""
@@ -68,9 +71,9 @@ class Map:
 
 
 
-
 def get_player_action_options(player : Player, map : Map) -> list[str]:
     """Returns a list of strings containing the different actions the player can currently take"""
+
     
 
     current_room : Map.Room = map.get_room(player.position)
@@ -79,6 +82,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     match current_room.type:
         case "empty":
+
             player_action_options = [
                 *get_door_options_func(current_room),
                 "Open inventory"
@@ -97,6 +101,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 *get_door_options_func(current_room),
                 "Open inventory"
             ]
+
         case "trap":
             player_action_options = [
                 "Open inventory",
@@ -108,6 +113,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 "Buy from shop",
                 *get_door_options_func(current_room)
             ]
+
     
     return player_action_options
     
@@ -115,7 +121,9 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 
 
+
 def check_user_input_error(action_idx : str, action_options : list[str]) -> tuple[bool, str]:
+
     """Checks if the user's input is valid. If not: return (True, "error message"), otherwise: return (False, "")"""
 
     if not action_idx.isdigit():
@@ -129,7 +137,9 @@ def check_user_input_error(action_idx : str, action_options : list[str]) -> tupl
 def run_game():
     map : Map = Map(CONSTANTS["map_base_size"])
     player = Player(CONSTANTS["player_base_hp"], map.starting_position)
+
     Map.open_window(map)
+
 
     while True:
         action_options : list[str] = get_player_action_options(player, map)
