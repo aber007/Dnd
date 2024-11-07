@@ -7,16 +7,16 @@ Shop = 4, 0.1
 """
 def createmap(size):
     if size % 2 == 0:
-        raise ValueError ("Size måste vara ojämn")
+        raise ValueError ("Size must not be even")
     typer = [0,1,2,3,4]
     sannolikhet = [0.2,0.4,0.2,0.1,0.1]
     from random import choices
 
 
-
+    "2D map"
     map = [[0 for x in range(size)] for y in range(size)]
 
-    map[0][1] = 1
+    "Assign random values to each location with set probabilites"
     for x in range(size):
         for y in range(size):
             if x == int(size/2+1)-1 and y == int(size/2+1)-1:
