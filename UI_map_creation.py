@@ -1,7 +1,6 @@
 import threading
 from time import sleep
 from map_generation import createmap
-import random
 def openUIMap(size, map):
     import tkinter as tk
     global main
@@ -33,15 +32,17 @@ def openUIMap(size, map):
     "Create Walls"
     walls = {}
     wall_thickness = 5
+    existing_walls = []
 
     for row in range(1, xcord + 1):
         for col in range(1, ycord + 1):
-            if random.randint(1,4) < 2 and row+col != len(map):
                 frame_key = f"{row:02d}{col:02d}"
                 if col < ycord:
-                    walls[f"{frame_key}x"] = tk.Frame(grids[frame_key], bg="white", width=wall_thickness, height=grid_height)
+                    walls[f"{frame_key}x"] = tk.Frame(grids[frame_key], bg="black", width=wall_thickness, height=grid_height)
                 if row < xcord:
-                    walls[f"{frame_key}y"] = tk.Frame(grids[frame_key], bg="white", width=grid_width, height=wall_thickness)
+                    walls[f"{frame_key}y"] = tk.Frame(grids[frame_key], bg="black", width=grid_width, height=wall_thickness)
+
+                
 
     for key, wall in walls.items():
         if 'x' in key:
@@ -51,6 +52,9 @@ def openUIMap(size, map):
         def destroy():
             main.destroy()
             return None
+        
+
+
     main.bind("<Escape>", lambda e: destroy())
     main.mainloop()
 
@@ -59,30 +63,29 @@ def update(map):
     for x in range(len(map)):
         for y in range(len(map)):
             key = f"{x+1:02d}{y+1:02d}"
-            print(map[x][y])
             if map[x][y].discovered == True:
-                print("Even")
                 grids[key].configure(bg="gray")
             else:
-                print("Odd")
-                print(map[x][y].type)
-                if map[x][y].type == "Empty":
+                if map[x][y].type == "empty":
                     grids[key].configure(bg="gray")
-                elif map[x][y].type == "Monster":
+                elif map[x][y].type == "enemy":
                     grids[key].configure(bg="red")
-                elif map[x][y].type == "Chest":
+                elif map[x][y].type == "chest":
                     grids[key].configure(bg="yellow")
-                elif map[x][y].type == "Trap":
-                    grids[key].configure(bg="black")
-                elif map[x][y].type == "Shop":
+                elif map[x][y].type == "trap":
+                    grids[key].configure(bg="brown")
+                elif map[x][y].type == "shop":
                     grids[key].configure(bg="blue")
 
 
 
-if __name__ == "__main__":
-    size = 5
-    map = createmap(size)
+def create_UI_Map(size, map) -> None:
     threading.Thread(target=openUIMap, args=(size, map)).start()
     sleep(0.2)
     update(map)
+
+if __name__ == "__main__":
+    size = 5
+    map = createmap(size)
+    create_UI_Map(size, map)
     

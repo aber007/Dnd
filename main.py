@@ -1,5 +1,9 @@
+
+from random import choices
+from UI_map_creation import create_UI_Map
+
 CONSTANTS = {
-    "map_base_size": (8,8),
+    "map_base_size": 7,
     "player_inventory_size": 3,
     "player_base_hp": 5
 }
@@ -24,25 +28,43 @@ class Player:
 
 class Map:
     class Room:
-        def __init__(self) -> None:
-            pass
-            self.content = ""
-            self.doors = []
-            #eg. self.content = "monster" / "chest" / "mimic" / None
-            #eg. self.doors = ["north", "south", "west"]
-            #given the above situation the player would be able to move north, south or west
+            def __init__(self, type, discovered, doors) -> None:
+                self.type = type
+                self.discovered = discovered
+                self.doors = doors
 
-    def __init__(self, size : tuple[int,int]) -> None:
+    def __init__(self, size : int) -> None:
         """Generates the playable map"""
-        self.starting_position = (0,0)
+        
+        if size % 2 == 0:
+            size += 1
+        self.starting_position = (int(size/2), int(size/2))
+        room_types = ["empty","enemy","chest","trap","shop"]
+        probabilities = [0.25,0.5,0.2,0.1,0.05]
+        "Initialize 2D array"
+        rooms = [[0 for x in range(size)] for y in range(size)]
+        
 
-    def open_window():
+        "Assign random values to each location with set probabilites"
+        for x in range(size):
+            for y in range(size):
+                if x == int(size/2) and y == int(size/2):
+                    rooms[x][y] = Map.Room(type="empty", discovered=True, doors=["N", "S", "E", "W"])
+                else:
+                    roomtype = str(choices(room_types, probabilities)).removeprefix("['").removesuffix("']")
+                    rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "S", "E", "W"])
+        self.rooms = rooms
+    def open_window(self) -> None:
         """Opens the playable map in a separate window"""
-        pass
 
-    def get_room(x : int, y : int) -> Room:
+        "Press the map and then escape to close the window"
+        create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
+
+    def get_room(self, position : tuple) -> Room:
         """Using an x and a y value, return a room at that position or None"""
-        pass
+        return self.rooms[position[0]][position[1]]
+
+
 
 
 
@@ -52,11 +74,11 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
     
 
     current_room : Map.Room = map.get_room(player.position)
-    get_door_options_func = lambda current_room: [f"Open door facing {door_direction}" for door_direction in current_room.doors()]
+    get_door_options_func = lambda current_room: [f"Open door facing {door_direction}" for door_direction in current_room.doors]
 
 
-    match current_room.content:
-        case None:
+    match current_room.type:
+        case "empty":
             player_action_options = [
                 *get_door_options_func(current_room),
                 "Open inventory"
@@ -74,6 +96,17 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 "Open chest",
                 *get_door_options_func(current_room),
                 "Open inventory"
+            ]
+        case "trap":
+            player_action_options = [
+                "Open inventory",
+                *get_door_options_func(current_room)
+            ]
+        case "shop":
+            player_action_options = [
+                "Open inventory",
+                "Buy from shop",
+                *get_door_options_func(current_room)
             ]
     
     return player_action_options
@@ -96,6 +129,7 @@ def check_user_input_error(action_idx : str, action_options : list[str]) -> tupl
 def run_game():
     map : Map = Map(CONSTANTS["map_base_size"])
     player = Player(CONSTANTS["player_base_hp"], map.starting_position)
+    Map.open_window(map)
 
     while True:
         action_options : list[str] = get_player_action_options(player, map)
