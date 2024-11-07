@@ -1,11 +1,8 @@
-
-
 from random import choices
 from UI_map_creation import create_UI_Map
 
 CONSTANTS = {
-    "map_base_size": 7,
-
+    "map_base_size": 9,
     "player_inventory_size": 3,
     "player_base_hp": 5
 }
@@ -165,6 +162,9 @@ def run_game():
             case "Open chest":
                 pass
             
+            case "Buy from shop":
+                pass
+
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # gets all text before the last space

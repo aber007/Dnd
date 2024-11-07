@@ -62,7 +62,7 @@ def update(map):
     global grids
     for x in range(len(map)):
         for y in range(len(map)):
-            key = f"{x+1:02d}{y+1:02d}"
+            key = f"{(x+1):02d}{(y+1):02d}"
             if map[x][y].discovered == True:
                 grids[key].configure(bg="gray")
             else:
