@@ -1,6 +1,6 @@
 import threading
 from time import sleep
-from kartgenerering import createmap
+from map_generation import createmap
 def openUIMap(size, map):
     import tkinter as tk
     global main
@@ -44,7 +44,10 @@ def openUIMap(size, map):
             wall.place(relx=1.0, y=0, anchor='ne')
         elif 'y' in key:
             wall.place(x=0, rely=1.0, anchor='sw')
-    main.bind("<Escape>", lambda e: main.destroy())
+        def destroy():
+            main.destroy()
+            return None
+    main.bind("<Escape>", lambda e: destroy())
     main.mainloop()
 
 def update(map):
