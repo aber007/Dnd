@@ -6,23 +6,19 @@ class Item:
 
         # get the attributes of the given item_id and make them properties of this object
         [setattr(self, k, v) for k,v in main.items_data_dict[item_id].items()]
+    
+    def use(self, player : main.Player):
+        match self.type:
+            case "weapon":
+                player.current_enemy.take_damage(self.dmg)
+        
+            case "potion":
+                if self.affects == "dice":
+                    player.active_dice_effects.append(self.effect)
             
+            case "spell":
+                pass #custom code for each spell
 
-class Weapon(Item):
-    def use(used_item : Item, player : main.Player, room : main.Map.Room):
-        """Once a weapon is used deal it's damage to the current enemy"""
-        player.current_enemy.take_damage(used_item.dmg)
-
-class Potion(Item):
-    def use(used_item : Item, player : main.Player, room : main.Map.Room):
-        """Once a potion is used check what it affects, then add the stat changes of the potion"""
-
-        if used_item.affects == "dice":
-            player.active_dice_effects.append(used_item.effect)
-
-class Spell(Item):
-    def use(used_item : Item, player : main.Player, room : main.Map.Room):
-        pass # custom code for each spell
 
 
 class Inventory:
