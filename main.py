@@ -1,5 +1,6 @@
 import json
 from random import choices
+from random import choice
 from UI_map_creation import create_UI_Map
 
 
@@ -186,6 +187,10 @@ def run_game():
                 pass
             
             case "Open chest":
+                def get_random_item():
+                    f = open("items.json", "r")
+                    items = json.load(f)
+                    item = choice(items)
                 pass # print to console f"You found {item.display_name}\n{item.description}"
             
             case "Buy from shop":

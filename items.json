@@ -1,6 +1,7 @@
 {
     "twig": {
         "type": "weapon",
+        "probability": 0.3,
         "dmg": 1,
         "durability": -1,
         "display_name": "a twig",
@@ -8,6 +9,7 @@
     },
     "knife": {
         "type": "weapon",
+        "probability": 0.2,
         "dmg": 3,
         "durability": 5,
         "display_name": "a simple knife",
@@ -15,6 +17,7 @@
     },
     "sword": {
         "type": "weapon",
+        "probability": 0.1,
         "dmg": 5,
         "durability": 15,
         "display_name": "a steel sword",
@@ -22,6 +25,7 @@
     },
     "good_luck_potion": {
         "type": "potion",
+        "probability": 0.05,
         "durability": 1,
         "affects": "dice",
         "effect": 5,
@@ -31,6 +35,7 @@
     "the_eye_of_horus":
     {
         "type": "spell",
+        "probability": 0.05,
         "durability": 1,
         "display_name": "the eye of horus",
         "description": "Use it to see through doors"
@@ -38,6 +43,7 @@
     "breath_of_life":
     {
         "type": "spell",
+        "probability": 0.2,
         "durability": 3,
         "display_name": "breath of life",
         "description": "Use it to heal yourself"
@@ -45,6 +51,7 @@
     "breath_of_fire":
     {
         "type": "spell",
+        "probability": 0.1,
         "durability": 3,
         "display_name": "breath of fire",
         "description": "Use it to burn your enemies"
