@@ -34,5 +34,19 @@
         "durability": 1,
         "display_name": "the eye of horus",
         "description": "Use it to see through doors"
+    },
+    "breath_of_life":
+    {
+        "type": "spell",
+        "durability": 3,
+        "display_name": "breath of life",
+        "description": "Use it to heal yourself"
+    },
+    "breath_of_fire":
+    {
+        "type": "spell",
+        "durability": 3,
+        "display_name": "breath of fire",
+        "description": "Use it to burn your enemies"
     }
 }
