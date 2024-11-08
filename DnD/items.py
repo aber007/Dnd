@@ -1,13 +1,22 @@
-import main
+import json
+from os import path
+from . import CONSTANTS
+
+with open(path.join(path.dirname(__file__), CONSTANTS["items_config_file"]), "r") as f:
+    file_contents = f.read()
+items_data_dict = json.loads(file_contents)
+
 
 class Item:
-    def __init__(self, item_id) -> None:
+    def __init__(self, item_id : str) -> None:
+        """Item(item_id, items_data_dict[item_id])"""
+
         self.id = item_id
 
         # get the attributes of the given item_id and make them properties of this object
-        [setattr(self, k, v) for k,v in main.items_data_dict[item_id].items()]
+        [setattr(self, k, v) for k,v in items_data_dict[item_id].items()]
     
-    def use(self, player : main.Player):
+    def use(self, player):
         match self.type:
             case "weapon":
                 player.current_enemy.take_damage(self.dmg)
