@@ -5,7 +5,7 @@ class Item:
         self.id = item_id
 
         # get the attributes of the given item_id and make them properties of this object
-        [setattr(self, k, v) for k,v in main.items_data_dict[item_id].items()]
+        # [setattr(self, k, v) for k,v in main.items_data_dict[item_id].items()]
     
     def use(self, player : main.Player):
         match self.type:
