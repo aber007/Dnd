@@ -1,28 +1,41 @@
+import json
 from random import choices
 from UI_map_creation import create_UI_Map
+from items import (
+    Weapon,
+    Potion,
+    Spell,
+    Inventory
+)
 
 CONSTANTS = {
     "map_base_size": 9,
-    "player_inventory_size": 3,
-    "player_base_hp": 5
+    "player_base_inventory_size": 3,
+    "player_base_hp": 6,
+    "enemy_base_hp": 4,
+    "enemy_base_dmg": 2,
+    "items_config_file": "items.json"
 }
 
-class Item:
-    pass
 
-class Inventory:
-    def __init__(self, size : int) -> None:
-        self.size = size
-        self.slots : dict[int, Item | None] = {slot_idx : None for slot_idx in range(size)}
+class Entity:
+    def take_damage(self, dmg : int):
+        self.hp -= dmg
 
-class Player:
-    def __init__(self, base_hp : int, position : tuple[int,int]) -> None:
+class Player(Entity):
+    def __init__(self, position : tuple[int,int]) -> None:
         self.position = position
-
-        self.base_hp = base_hp
-        self.hp = base_hp
+        self.hp = CONSTANTS["player_base_hp"]
+        self.active_dice_effects : list[int] = []
         
-        self.inventory = Inventory(CONSTANTS["player_inventory_size"])
+        self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
+
+        self.current_enemy : Enemy | None = None
+
+class Enemy(Entity):
+    def __init__(self) -> None:
+        self.hp = CONSTANTS["enemy_base_hp"]
+        self.dmg = CONSTANTS["enemy_base_dmg"]
 
 
 class Map:
@@ -54,14 +67,15 @@ class Map:
                     roomtype = str(choices(room_types, probabilities)).removeprefix("['").removesuffix("']")
                     rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "S", "E", "W"])
         self.rooms = rooms
+    
     def open_window(self) -> None:
         """Opens the playable map in a separate window"""
 
         "Press the map and then escape to close the window"
         create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
 
-    def get_room(self, position : tuple) -> Room:
-        """Using an x and a y value, return a room at that position or None"""
+    def get_room(self, position : tuple[int,int]) -> Room:
+        """Using an x and a y value, return a room at that position"""
         return self.rooms[position[0]][position[1]]
 
 
@@ -69,9 +83,8 @@ class Map:
 
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
-    """Returns a list of strings containing the different actions the player can currently take"""
-
     
+    """Returns a list of strings containing the different actions the player can currently take"""    
 
     current_room : Map.Room = map.get_room(player.position)
     get_door_options_func = lambda current_room: [f"Open door facing {door_direction}" for door_direction in current_room.doors]
@@ -79,7 +92,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     match current_room.type:
         case "empty":
-
             player_action_options = [
                 *get_door_options_func(current_room),
                 "Open inventory"
@@ -101,13 +113,14 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
         case "trap":
             player_action_options = [
-                "Open inventory",
-                *get_door_options_func(current_room)
+                *get_door_options_func(current_room),
+                "Open inventory"
             ]
+        
         case "shop":
             player_action_options = [
-                "Open inventory",
                 "Buy from shop",
+                "Open inventory",
                 *get_door_options_func(current_room)
             ]
 
@@ -116,7 +129,12 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
     
 
 
-
+def load_item_data_from_file() -> dict:
+    with open(CONSTANTS["items_config_file"], "r") as f:
+        file_contents = f.read()
+    
+    global items_data_dict
+    items_data_dict = json.loads(file_contents)
 
 
 def check_user_input_error(action_idx : str, action_options : list[str]) -> tuple[bool, str]:
@@ -126,7 +144,7 @@ def check_user_input_error(action_idx : str, action_options : list[str]) -> tupl
     if not action_idx.isdigit():
         return (True, f"'{action_idx}' isn't a valid option")
     
-    if not action_idx < len(action_options):
+    if not int(action_idx) < len(action_options):
         return (True, f"'{action_idx}' is out of range")
     
     return (False, "")
@@ -134,21 +152,24 @@ def check_user_input_error(action_idx : str, action_options : list[str]) -> tupl
 def run_game():
     map : Map = Map(CONSTANTS["map_base_size"])
     player = Player(CONSTANTS["player_base_hp"], map.starting_position)
+    load_item_data_from_file()
 
     Map.open_window(map)
 
 
     while True:
+        # Get a list of the players currently available options and print them to console
         action_options : list[str] = get_player_action_options(player, map)
         print("\n".join(f"{idx}) {action}" for idx,action in enumerate(action_options)))
 
+        # Ask the player to choose an action and handle possible errors
         action_idx : str[int] = input("Choose action: ")
         err, err_message = check_user_input_error(action_idx, action_options)
         if err:
             print(err_message)
             continue
 
-        
+        # Decide what to do based on the players choice
         match action_options[int(action_idx)]:
             case "Attack":
                 pass
@@ -160,14 +181,14 @@ def run_game():
                 pass
             
             case "Open chest":
-                pass
+                pass # print to console f"You found {item.display_name}\n{item.description}"
             
             case "Buy from shop":
                 pass
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
-                door_to_open = _other.rsplit(" ", 1)[-1] # gets all text before the last space
+                door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
                 
             
 
