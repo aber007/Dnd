@@ -1,6 +1,6 @@
 import threading
 from time import sleep
-from map_generation import createmap
+from .map_generation import createmap
 import os
 try:
     import tkinter as tk
