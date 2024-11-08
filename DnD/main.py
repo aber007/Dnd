@@ -298,11 +298,11 @@ def run_game():
             print(err_message, end="\n\n")
             continue
 
-        # Decide what to do based on the players choice
-        current_room = map.get_room(player.position)
+        # Decide what to do based on the player's choice
         match action_options[int(action_nr)-1]:
             case "Attack" | "Open chest" | "Buy from shop":
-                current_room.interact(player)
+                # interact with the current room
+                map.get_room(player.position).interact(player)
 
             case "Open inventory":
                 pass
