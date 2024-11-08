@@ -77,11 +77,22 @@ class Map:
         """Opens the playable map in a separate window"""
 
         "Press the map and then escape to close the window"
-        create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
+        #create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
 
     def get_room(self, position : tuple[int,int]) -> Room:
         """Using an x and a y value, return a room at that position"""
         return self.rooms[position[0]][position[1]]
+    def move_player(self, direction : str) -> None:
+        """Move the player in the given direction"""
+        match direction:
+            case "N":
+                pass
+            case "S":
+                pass
+            case "E":
+                pass
+            case "W":
+                pass
 
 
 
@@ -194,7 +205,7 @@ def run_game():
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
-                
+                Map.move_player(door_to_open, door_to_open)
             
 
 
