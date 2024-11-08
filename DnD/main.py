@@ -42,22 +42,23 @@ class Map:
             self.discovered = discovered
             self.doors = doors
 
-    def __init__(self, size : int) -> None:
+    def __init__(self, size : int = CONSTANTS["map_base_size"]) -> None:
         """Generates the playable map"""
+        self.size = size
         
-        if size % 2 == 0:
-            size += 1
-        self.starting_position = [int(size/2), int(size/2)]
+        if self.size % 2 == 0:
+            self.size += 1
+        self.starting_position = [int(self.size/2), int(self.size/2)]
         room_types = ["empty","enemy","chest","trap","shop"]
         probabilities = [0.25,0.5,0.2,0.1,0.05]
         "Initialize 2D array"
-        rooms = [[0 for x in range(size)] for y in range(size)]
+        rooms = [[0 for x in range(self.size)] for y in range(self.size)]
         
 
         "Assign random values to each location with set probabilites"
-        for x in range(size):
-            for y in range(size):
-                if x == int(size/2) and y == int(size/2):
+        for x in range(self.size):
+            for y in range(self.size):
+                if x == int(self.size/2) and y == int(self.size/2):
                     rooms[x][y] = Map.Room(type="empty", discovered=True, doors=["N", "S", "E", "W"])
                 else:
                     roomtype = str(choices(room_types, probabilities)).removeprefix("['").removesuffix("']")
@@ -68,7 +69,7 @@ class Map:
         """Opens the playable map in a separate window"""
 
         "Press the map and then escape to close the window"
-        create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
+        create_UI_Map(self.size, self.rooms)
 
     def get_room(self, position : list[int,int]) -> Room:
         """Using an x and a y value, return a room at that position"""
@@ -159,10 +160,10 @@ def check_user_input_error(action_idx : str, action_options : list[str]) -> tupl
     return (False, "")
 
 def run_game():
-    map : Map = Map(CONSTANTS["map_base_size"])
+    map = Map()
     player = Player(map.starting_position)
 
-    Map.open_window(map)
+    map.open_window()
 
 
     while True:
@@ -197,7 +198,7 @@ def run_game():
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
-                Map.move_player(self=map, direction=door_to_open, player=player)
+                map.move_player(direction=door_to_open, player=player)
 
             
 
