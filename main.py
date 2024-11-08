@@ -77,7 +77,7 @@ class Map:
         """Opens the playable map in a separate window"""
 
         "Press the map and then escape to close the window"
-        #create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
+        create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
 
     def get_room(self, position : list[int,int]) -> Room:
         """Using an x and a y value, return a room at that position"""
@@ -85,15 +85,25 @@ class Map:
     
     def move_player(self, direction : str, player : Player) -> None:
         """Move the player in the given direction"""
+        x, y = player.position
+    
         match direction:
             case "N":
-                player.position[1] -= 1         
+                if y > 0:  # Ensure not moving out of bounds
+                    y -= 1         
             case "S":
-                player.position[1] += 1
+                if y < len(self.rooms) - 1:  # Ensure not moving out of bounds
+                    y += 1
             case "E":
-                player.position[0] += 1
+                if x < len(self.rooms[0]) - 1:  # Ensure not moving out of bounds
+                    x += 1
             case "W":
-                player.position[0] -= 1
+                if x > 0:  # Ensure not moving out of bounds
+                    x -= 1
+
+        player.position = [x, y]
+        self.rooms[x][y].discovered = True
+        update(self.rooms)
         
 
 
@@ -208,7 +218,7 @@ def run_game():
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
-                Map.move_player(door_to_open, door_to_open, player)
+                Map.move_player(direction=door_to_open, player=player)
             
 
 
