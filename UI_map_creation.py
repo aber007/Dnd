@@ -73,13 +73,13 @@ def update(map):
                 grids[key].configure(bg="gray")
             else:
                 if map[x][y].type == "empty":
-                    grids[key].configure(bg="gray")
+                    grids[key].configure(bg="brown")
                 elif map[x][y].type == "enemy":
                     grids[key].configure(bg="red")
                 elif map[x][y].type == "chest":
                     grids[key].configure(bg="yellow")
                 elif map[x][y].type == "trap":
-                    grids[key].configure(bg="brown")
+                    grids[key].configure(bg="dark green")
                 elif map[x][y].type == "shop":
                     grids[key].configure(bg="blue")
 

@@ -218,7 +218,7 @@ def run_game():
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
-                Map.move_player(direction=door_to_open, player=player)
+                Map.move_player(self=map, direction=door_to_open, player=player)
             
 
 
