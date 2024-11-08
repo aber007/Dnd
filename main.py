@@ -1,12 +1,7 @@
 import json
 from random import choices
 from UI_map_creation import create_UI_Map
-from items import (
-    Weapon,
-    Potion,
-    Spell,
-    Inventory
-)
+
 
 CONSTANTS = {
     "map_base_size": 9,
@@ -20,7 +15,7 @@ CONSTANTS = {
 
 class Entity:
     def take_damage(self, dmg : int):
-        self.hp -= dmg
+        self.hp = max(0, self.hp - dmg)
 
 class Player(Entity):
     def __init__(self, position : tuple[int,int]) -> None:
@@ -31,11 +26,21 @@ class Player(Entity):
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
 
         self.current_enemy : Enemy | None = None
+    
+    def get_dice_modifier(self) -> int:
+        return sum(self.active_dice_effects)
+    
+    def attack(self):
+        self.inventory.equipped_weapon.use()
 
 class Enemy(Entity):
-    def __init__(self) -> None:
+    def __init__(self, player : Player) -> None:
         self.hp = CONSTANTS["enemy_base_hp"]
         self.dmg = CONSTANTS["enemy_base_dmg"]
+        self.target = player
+    
+    def attack(self):
+        self.player.take_damage(self.dmg)
 
 
 class Map:
@@ -151,7 +156,7 @@ def check_user_input_error(action_idx : str, action_options : list[str]) -> tupl
 
 def run_game():
     map : Map = Map(CONSTANTS["map_base_size"])
-    player = Player(CONSTANTS["player_base_hp"], map.starting_position)
+    player = Player(map.starting_position)
     load_item_data_from_file()
 
     Map.open_window(map)
@@ -195,6 +200,7 @@ def run_game():
 
 
 if __name__ == "__main__":
+    from items import Item, Inventory
     run_game()
 
 

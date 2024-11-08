@@ -1,8 +1,14 @@
 import threading
 from time import sleep
 from map_generation import createmap
-def openUIMap(size, map):
+import os
+try:
     import tkinter as tk
+except ImportError:
+    os.system("pip install tkinter")
+    import tkinter as tk
+def openUIMap(size, map):
+    
     global main
     global grids
     
@@ -81,7 +87,7 @@ def update(map):
 
 def create_UI_Map(size, map) -> None:
     threading.Thread(target=openUIMap, args=(size, map)).start()
-    sleep(0.2)
+    sleep(0.5)
     update(map)
 
 if __name__ == "__main__":
