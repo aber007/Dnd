@@ -1,6 +1,5 @@
 import json
 from random import choices
-from random import choice
 from UI_map_creation import create_UI_Map
 
 
@@ -23,14 +22,14 @@ class Player(Entity):
         self.position = position
         self.hp = CONSTANTS["player_base_hp"]
         self.active_dice_effects : list[int] = []
-        
+
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
 
         self.current_enemy : Enemy | None = None
-    
+
     def get_dice_modifier(self) -> int:
         return sum(self.active_dice_effects)
-    
+
     def attack(self):
         self.inventory.equipped_weapon.use()
 
@@ -39,7 +38,7 @@ class Enemy(Entity):
         self.hp = CONSTANTS["enemy_base_hp"]
         self.dmg = CONSTANTS["enemy_base_dmg"]
         self.target = player
-    
+
     def attack(self):
         self.player.take_damage(self.dmg)
 
@@ -54,7 +53,7 @@ class Map:
 
     def __init__(self, size : int) -> None:
         """Generates the playable map"""
-        
+
         if size % 2 == 0:
             size += 1
         self.starting_position = (int(size/2), int(size/2))
@@ -62,7 +61,7 @@ class Map:
         probabilities = [0.25,0.5,0.2,0.1,0.05]
         "Initialize 2D array"
         rooms = [[0 for x in range(size)] for y in range(size)]
-        
+
 
         "Assign random values to each location with set probabilites"
         for x in range(size):
@@ -73,7 +72,7 @@ class Map:
                     roomtype = str(choices(room_types, probabilities)).removeprefix("['").removesuffix("']")
                     rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "S", "E", "W"])
         self.rooms = rooms
-    
+
     def open_window(self) -> None:
         """Opens the playable map in a separate window"""
 
@@ -89,8 +88,8 @@ class Map:
 
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
-    
-    """Returns a list of strings containing the different actions the player can currently take"""    
+
+    """Returns a list of strings containing the different actions the player can currently take"""
 
     current_room : Map.Room = map.get_room(player.position)
     get_door_options_func = lambda current_room: [f"Open door facing {door_direction}" for door_direction in current_room.doors]
@@ -109,7 +108,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 "Open inventory",
                 "Attempt to flee"
             ]
-        
+
         case "chest":
             player_action_options = [
                 "Open chest",
@@ -122,7 +121,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 *get_door_options_func(current_room),
                 "Open inventory"
             ]
-        
+
         case "shop":
             player_action_options = [
                 "Buy from shop",
@@ -130,15 +129,15 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 *get_door_options_func(current_room)
             ]
 
-    
+
     return player_action_options
-    
+
 
 
 def load_item_data_from_file() -> dict:
     with open(CONSTANTS["items_config_file"], "r") as f:
         file_contents = f.read()
-    
+
     global items_data_dict
     items_data_dict = json.loads(file_contents)
 
@@ -149,10 +148,10 @@ def check_user_input_error(action_idx : str, action_options : list[str]) -> tupl
 
     if not action_idx.isdigit():
         return (True, f"'{action_idx}' isn't a valid option")
-    
+
     if not int(action_idx) < len(action_options):
         return (True, f"'{action_idx}' is out of range")
-    
+
     return (False, "")
 
 def run_game():
@@ -182,25 +181,21 @@ def run_game():
 
             case "Open inventory":
                 pass
-            
+
             case "Attempt to flee":
                 pass
-            
+
             case "Open chest":
-                def get_random_item():
-                    f = open("items.json", "r")
-                    items = json.load(f)
-                    item = choice(items)
                 pass # print to console f"You found {item.display_name}\n{item.description}"
-            
+
             case "Buy from shop":
                 pass
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
-                
-            
+
+
 
 
 
