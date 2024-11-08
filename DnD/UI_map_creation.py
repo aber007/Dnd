@@ -1,6 +1,12 @@
 import threading
 from time import sleep
-from map_generation import createmap
+from .map_generation import createmap
+import os
+try:
+    import tkinter as tk
+except ImportError:
+    os.system("pip install tkinter")
+    import tkinter as tk
 def openUIMap(size, map):
     import tkinter as tk
     global main
