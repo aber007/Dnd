@@ -8,7 +8,7 @@ except ImportError:
     os.system("pip install tkinter")
     import tkinter as tk
 def openUIMap(size, map):
-    import tkinter as tk
+    
     global main
     global grids
     
@@ -68,18 +68,18 @@ def update(map):
     global grids
     for x in range(len(map)):
         for y in range(len(map)):
-            key = f"{(x+1):02d}{(y+1):02d}"
-            if map[x][y].discovered == True:
+            key = f"{(y+1):02d}{(x+1):02d}"
+            if map[x][y].discovered != True:
                 grids[key].configure(bg="gray")
             else:
                 if map[x][y].type == "empty":
-                    grids[key].configure(bg="gray")
+                    grids[key].configure(bg="light gray")
                 elif map[x][y].type == "enemy":
                     grids[key].configure(bg="red")
                 elif map[x][y].type == "chest":
                     grids[key].configure(bg="yellow")
                 elif map[x][y].type == "trap":
-                    grids[key].configure(bg="brown")
+                    grids[key].configure(bg="dark green")
                 elif map[x][y].type == "shop":
                     grids[key].configure(bg="blue")
 
@@ -87,7 +87,7 @@ def update(map):
 
 def create_UI_Map(size, map) -> None:
     threading.Thread(target=openUIMap, args=(size, map)).start()
-    sleep(0.2)
+    sleep(0.5)
     update(map)
 
 if __name__ == "__main__":

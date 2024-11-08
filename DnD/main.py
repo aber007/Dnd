@@ -1,6 +1,6 @@
 from random import choices
 from . import CONSTANTS, Item, Inventory
-from .UI_map_creation import create_UI_Map
+from .UI_map_creation import create_UI_Map, update
 
 
 
@@ -9,7 +9,7 @@ class Entity:
         self.hp = max(0, self.hp - dmg)
 
 class Player(Entity):
-    def __init__(self, position : tuple[int,int]) -> None:
+    def __init__(self, position : list[int,int]) -> None:
         self.position = position
         self.hp = CONSTANTS["player_base_hp"]
         self.active_dice_effects : list[int] = []
@@ -47,7 +47,7 @@ class Map:
         
         if size % 2 == 0:
             size += 1
-        self.starting_position = (int(size/2), int(size/2))
+        self.starting_position = [int(size/2), int(size/2)]
         room_types = ["empty","enemy","chest","trap","shop"]
         probabilities = [0.25,0.5,0.2,0.1,0.05]
         "Initialize 2D array"
@@ -70,9 +70,31 @@ class Map:
         "Press the map and then escape to close the window"
         create_UI_Map(CONSTANTS["map_base_size"], self.rooms)
 
-    def get_room(self, position : tuple[int,int]) -> Room:
+    def get_room(self, position : list[int,int]) -> Room:
         """Using an x and a y value, return a room at that position"""
         return self.rooms[position[0]][position[1]]
+    
+    def move_player(self, direction : str, player : Player) -> None:
+        """Move the player in the given direction"""
+        x, y = player.position
+    
+        match direction:
+            case "N":
+                if y > 0:  # Ensure not moving out of bounds
+                    y -= 1         
+            case "S":
+                if y < len(self.rooms) - 1:  # Ensure not moving out of bounds
+                    y += 1
+            case "E":
+                if x < len(self.rooms[0]) - 1:  # Ensure not moving out of bounds
+                    x += 1
+            case "W":
+                if x > 0:  # Ensure not moving out of bounds
+                    x -= 1
+
+        player.position = [x, y]
+        self.rooms[x][y].discovered = True
+        update(self.rooms)
 
 
 
@@ -175,7 +197,8 @@ def run_game():
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
-                
+                Map.move_player(self=map, direction=door_to_open, player=player)
+
             
 
 
