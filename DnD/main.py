@@ -195,7 +195,7 @@ class Map:
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
-    input("[Press ENTER to roll dice}")
+    input("[Press ENTER to roll dice]")
 
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
