@@ -1,6 +1,7 @@
 {
     "Goblin": {
         "name": "Goblin",
+        "name_in_sentence": "a Goblin",
         "hp": 10,
         "dmg": 2,
         "special": "trap",
@@ -15,6 +16,7 @@
     },
     "Skeleton Warrior": {
         "name": "Skeleton Warrior",
+        "name_in_sentence": "a Skeleton Warrior",
         "hp": 10,
         "dmg": 2,
         "special": "none",
@@ -28,6 +30,7 @@
     },
     "Orc": {
         "name": "Orc",
+        "name_in_sentence": "an Orc",
         "hp": 40,
         "dmg": 1,
         "special": "berserk",
@@ -41,6 +44,7 @@
     },
     "Giant Spider":{    
         "name": "Giant Spider",
+        "name_in_sentence": "a Giant Spider",
         "hp": 20,
         "dmg": 4,
         "special": "poison",
@@ -54,6 +58,7 @@
     },
     "Dragon": {
         "name": "Dragon",
+        "name_in_sentence": "a Dragon",
         "hp": 100,
         "dmg": 5,
         "special": "fire breath",
@@ -67,6 +72,7 @@
     },
     "Gargoyle": {
         "name": "Gargoyle",
+        "name_in_sentence": "a Gargoyle",
         "hp": 30,
         "dmg": 3,
         "special": "stone skin",

@@ -93,7 +93,7 @@ class Map:
             match (self.type, first_time_entering_room):
                 case ("enemy", True):
                     player.current_combat = Combat(player, map)
-                    print(f"\nAn enemy appeared! It's a {player.current_combat.enemy.name}!")
+                    print(f"\nAn enemy appeared! It's {player.current_combat.enemy.name_in_sentence}!")
 
                 case ("chest", True):
                     pass # decide chest item
