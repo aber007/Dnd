@@ -1,7 +1,4 @@
 from random import randint, choices
-from time import sleep
-from os import path
-import json
 from . import CONSTANTS, Item, Inventory, ENEMY_DATA
 from .UI_map_creation import create_UI_Map, update
 
