@@ -78,8 +78,6 @@ def update(map):
                     grids[key].configure(bg="red")
                 elif map[x][y].type == "chest":
                     grids[key].configure(bg="yellow")
-                # elif map[x][y].type == "trap" | "mimic_trap":
-                #     grids[key].configure(bg="dark green")
                 elif map[x][y].type == "trap":
                     grids[key].configure(bg="dark green")
                 elif map[x][y].type == "mimic_trap":
