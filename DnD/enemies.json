@@ -83,6 +83,20 @@
         "exp": 25,
         "gold": 25,
         "probability": 0
+    },
+    "Mimic": {
+        "name": "Mimic",
+        "name_in_sentence": "a Mimic",
+        "hp": 6,
+        "dmg": 1,
+        "special": "none",
+        "special_info": "none",
+        "defence_melee": 1,
+        "defence_ranged": 1,
+        "defence_magic": 0,
+        "exp": 5,
+        "gold": 5,
+        "probability": -1
     }
 
 }

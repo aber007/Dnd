@@ -25,7 +25,6 @@ class Player(Entity):
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
 
         # self.current_enemy : Enemy | None = None
-        self.current_combat : Combat | None = None
     
     def get_dice_modifier(self) -> int:
         return sum(self.active_dice_effects)
@@ -80,20 +79,18 @@ class Map:
             self.doors = doors
 
             self.chest_item : Item | None = None
-            self.is_mimic : bool | None = None
-            self.enemy : Enemy | None = None
+            self.is_enemy_defeated : bool | None = None
 
             
         
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
-            """Called right when the player enters the room. Eg. starts the non-mimic trap interaction or decides a chest's item etc"""
+            """Called right when the player enters the room. Eg. starts the trap interaction or decides a chest's item etc"""
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
                 case ("enemy", True):
-                    player.current_combat = Combat(player, map)
-                    print(f"\nAn enemy appeared! It's {player.current_combat.enemy.name_in_sentence}!")
+                    Combat(player, map).start()
 
                 case ("chest", True):
                     pass # decide chest item
@@ -102,39 +99,30 @@ class Map:
                     pass # decide shop's wares/prices?
 
                 case ("trap", _):
-                    if not self.is_mimic:
-                        print(f"You stepped in a trap! Roll at least {CONSTANTS['normal_trap_base_min_roll_to_escape']} to save yourself")
-                        prompt_dice_roll()
-                        success, dice_result = player.roll_dice(success=lambda dice_result : CONSTANTS["normal_trap_base_min_roll_to_escape"] <= dice_result)
+                    print(f"\nYou stepped in a trap! Roll at least {CONSTANTS['normal_trap_base_min_roll_to_escape']} to save yourself")
+                    prompt_dice_roll()
+                    success, dice_result = player.roll_dice(success=lambda dice_result : CONSTANTS["normal_trap_base_min_roll_to_escape"] <= dice_result)
 
-                        if success:
-                            print(f"You rolled {dice_result} and managed to escape unharmed")
-                        else:
-                            print(f"You rolled {dice_result} and was harmed by the trap while trying to escape")
-                            player.take_damage(CONSTANTS["trap_base_dmg"])
+                    if success:
+                        print(f"You rolled {dice_result} and managed to escape unharmed")
+                    else:
+                        print(f"You rolled {dice_result} and was harmed by the trap while escaping")
+                        player.take_damage(CONSTANTS["normal_trap_base_dmg"])
         
-        def interact(self, player : Player) -> None:
-            """Called when the player chooses to interact with a room. Eg. opening a chest or attacking an enemy etc\n
+        def interact(self, player : Player, map) -> None:
+            """Called when the player chooses to interact with a room. Eg. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
             match self.type:
-                case "enemy": 
-                    Combat(player=player, enemy=self.enemy, map=self.gamemap).start()
-
                 case "chest":
                     pass # give player the chest_item, print to console f"You found {item.display_name}\n{item.description}"
 
-                case "trap":
-                    assert self.is_mimic # if not mimic we shouldnt be here
-
-                    # if player.current_enemy is None then the mimic-trap hasn't triggered yet
-                    if player.current_enemy == None:
-                        print("Oh no! As you opened the chest you got ambushed by a mimic!")
-                        player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"])
-                        player.current_enemy = Enemy(target=player)
-                    else:
-                        player.attack()
-
+                case "mimic_trap":
+                    print("\nOh no! As you opened the chest you got ambushed by a Mimic!")
+                    player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"])
+                    print()
+                    Combat(player, map, force_enemy_type = "Mimic").start()
+                
                 case "shop":
                     pass # shop dialog
 
@@ -146,13 +134,13 @@ class Map:
         if self.size % 2 == 0:
             self.size += 1
         self.starting_position = [int(self.size/2), int(self.size/2)]
-        room_types = ["empty","enemy","chest","trap","shop"]
-        probabilities = [0.25,0.5,0.2,0.1,0.05]
-        "Initialize 2D array"
+        room_types = list(CONSTANTS["room_probabilities"].keys())
+        probabilities = list(CONSTANTS["room_probabilities"].values())
+        # Initialize 2D array
         rooms = [[0 for x in range(self.size)] for y in range(self.size)]
         
 
-        "Assign random values to each location with set probabilites"
+        # Assign random values to each location with set probabilites
         for x in range(self.size):
             for y in range(self.size):
                 if x == int(self.size/2) and y == int(self.size/2):
@@ -165,7 +153,7 @@ class Map:
     def open_window(self) -> None:
         """Opens the playable map in a separate window"""
 
-        "Press the map and then escape to close the window"
+        # Press the map and then escape to close the window
         create_UI_Map(self.size, self.rooms)
 
     def get_room(self, position : list[int,int]) -> Room:
@@ -200,18 +188,29 @@ class Map:
 
 
 class Combat:
-    def __init__(self, player : Player, map : Map) -> None:
+    def __init__(self, player : Player, map : Map, force_enemy_type : str | None = None) -> None:
         self.player = player
-        self.enemy = self.create_enemy(map)
+        self.map = map
+        self.enemy = self.create_enemy(force_enemy_type)
         self.turn = 0
 
-    def create_enemy(self, map : Map) -> None:
+    def create_enemy(self, force_enemy_type : str | None) -> None:
         """Decide enemy type to spawn, then return enemy object with the attributes of said enemy type"""
 
+        # needed for mimic traps
+        if force_enemy_type:
+            return Enemy(enemy_type = force_enemy_type, target = self.player)
+
+
         enemy_types = list(ENEMY_DATA.keys())
-        spawn_probabilities : dict[str, float | int] = {enemy_type : ENEMY_DATA[enemy_type]["probability"] for enemy_type in enemy_types}
+
+        spawn_probabilities : dict[str, float | int] = {}
+        for enemy_type in enemy_types:
+            # if an enemy's probability is -1 it should only be spawned using force_enemy_type
+            if (enemy_probability := ENEMY_DATA[enemy_type]["probability"]) != -1:
+                spawn_probabilities[enemy_type] = enemy_probability
         
-        distace_from_spawn = ((abs(map.starting_position[0] - self.player.position[0])**2) + (abs(map.starting_position[1] - self.player.position[1])**2))**0.5
+        distace_from_spawn = ((abs(self.map.starting_position[0] - self.player.position[0])**2) + (abs(self.map.starting_position[1] - self.player.position[1])**2))**0.5
         """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
         for enemy_type in enemy_types:
             if ENEMY_DATA[enemy_type]["probability"] == 0:
@@ -226,6 +225,7 @@ class Combat:
     def start(self):
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
         print(f"{'='*15} Combat {'='*15}")
+        print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         
         while self.player.hp > 0 or self.enemy.hp > 0:
             self.turn += 1
@@ -237,15 +237,16 @@ class Combat:
             
             
             input("Press enter to continue")
+            break # TEMP
 
+        self.map.get_room(self.player.position).is_enemy_defeated = True
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
     input("[Press ENTER to roll dice]")
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
-    
-    """Returns a list of strings containing the different actions the player can currently take"""    
+    """Returns a list of strings containing the different actions the player can currently take"""
 
     current_room : Map.Room = map.get_room(player.position)
     door_options = [f"Open door facing {door_direction}" for door_direction in current_room.doors]
@@ -271,25 +272,25 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                     *door_options,
                     "Open inventory"
                 ]
-            
             else:
                 player_action_options = default_action_options
 
         case "trap":
-            # when the player moves, if the new room contains a non-mimic trap, the damage dialog is ran right away
-            # at this point the non-mimic trap has been dealt with
-            # if the new room contains a mimic trap, give the player the same options as if the room contained a chest
-            if not current_room.is_mimic:
+            # when the player moves, if the new room contains a trap, the damage dialog is prompted right away
+            # at this point the trap has been dealt with
+            player_action_options = default_action_options
+        
+        case "mimic_trap":
+            # if the mimic hasnt been triggered yet the room should look like a chest room
+            if not current_room.is_enemy_defeated:
                 player_action_options = [
+                    "Open chest",
                     *door_options,
                     "Open inventory"
                 ]
+            # if the mimic has been defeated
             else:
-                player_action_options = [
-                    "Open chest TEMP mimic",
-                    *door_options,
-                    "Open inventory"
-                ]
+                player_action_options = default_action_options
         
         case "shop":
             player_action_options = [
@@ -340,9 +341,9 @@ def run_game():
 
         # Decide what to do based on the player's choice
         match action_options[int(action_nr)-1]:
-            case "Attack" | "Open chest" | "Buy from shop":
+            case "Open chest" | "Buy from shop":
                 # interact with the current room
-                map.get_room(player.position).interact(player)
+                map.get_room(player.position).interact(player, map)
 
             case "Open inventory":
                 pass
