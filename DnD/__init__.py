@@ -1,6 +1,14 @@
 CONSTANTS = {
     "map_base_size": 9,
-    "trap_base_dmg": 3,
+    "room_probabilities": {
+        "empty": 0.25,
+        "enemy": 0.5,
+        "chest": 0.2,
+        "trap": 0.05,
+        "mimic_trap": 0.05,
+        "shop": 0.05
+    },
+    "normal_trap_base_dmg": 3,
 
     "player_base_inventory_size": 3,
     "player_base_hp": 10,

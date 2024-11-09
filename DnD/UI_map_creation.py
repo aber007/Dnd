@@ -69,7 +69,7 @@ def update(map):
     for x in range(len(map)):
         for y in range(len(map)):
             key = f"{(y+1):02d}{(x+1):02d}"
-            if map[x][y].discovered == True:
+            if map[x][y].discovered == True and map[x][y].type != "mimic_trap":
                 grids[key].configure(bg="gray")
             else:
                 if map[x][y].type == "empty":
@@ -80,6 +80,8 @@ def update(map):
                     grids[key].configure(bg="yellow")
                 elif map[x][y].type == "trap":
                     grids[key].configure(bg="dark green")
+                elif map[x][y].type == "mimic_trap":
+                    grids[key].configure(bg="light green")
                 elif map[x][y].type == "shop":
                     grids[key].configure(bg="blue")
 
