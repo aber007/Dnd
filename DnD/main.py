@@ -1,8 +1,9 @@
 from random import randint, choices
 from time import sleep
+from os import path
+import json
 from . import CONSTANTS, Item, Inventory
 from .UI_map_creation import create_UI_Map, update
-from .combat import Combat
 
 
 
@@ -52,6 +53,7 @@ class Player(Entity):
 
 class Enemy(Entity):
     def __init__(self, target : Player) -> None:
+        self.name = "Enemy"
         self.hp = CONSTANTS["enemy_base_hp"]
         self.dmg = CONSTANTS["enemy_base_dmg"]
         self.special = CONSTANTS["enemy_special"]
@@ -61,6 +63,7 @@ class Enemy(Entity):
         self.defence_magic = CONSTANTS["enemy_defence_magic"]
         self.exp = CONSTANTS["enemy_exp"]
         self.gold = CONSTANTS["enemy_gold"]
+        self.probability = 1
         self.target = target
     
     def attack(self) -> None:
@@ -72,7 +75,6 @@ class Enemy(Entity):
     def on_death(self, dmg : int) -> None:
         print(f"The enemy was hit for {dmg} damage and died")
         self.target.current_enemy = None
-
 
 
 class Map:
@@ -120,7 +122,10 @@ class Map:
 
             match self.type:
                 case "enemy":
-                    player.attack()
+                    enemy : Enemy = Enemy(target=player)
+                    testmap = Map()
+                    Combat(player=player, enemy=enemy, map=testmap).create_enemy()
+                    Combat(player=player, enemy=enemy, map=testmap).start()
 
                 case "chest":
                     pass # give player the chest_item, print to console f"You found {item.display_name}\n{item.description}"
@@ -198,7 +203,6 @@ class Map:
         update(self.rooms)
 
         self.rooms[x][y].on_enter(player = player, first_time_entering_room = first_time_entering_room)
-
 
 
 def prompt_dice_roll():
@@ -284,6 +288,51 @@ def check_user_input_error(action_nr : str, action_options : list[str]) -> tuple
     
     return (False, "")
 
+class Combat:
+    def __init__(self, player : Player, enemy : Enemy, map : Map) -> None:
+        with open(path.join(path.dirname(__file__), CONSTANTS["enemies_config_file"]), "r") as f:
+            file_contents = f.read()
+        self.map = map
+        self.enemy_data = json.loads(file_contents)
+        self.player = player
+        self.enemy = enemy
+        self.turn = 0
+
+    def create_enemy(self) -> None:
+        keys = list(self.enemy_data.keys())
+        
+        distace_from_spawn = ((abs(self.map.starting_position[0] - self.player.position[0])**2) + (abs(self.map.starting_position[1] - self.player.position[1])**2))**0.5
+        """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
+        for key in keys:
+            if self.enemy_data[key]["probability"] == 0:
+                new_probability = distace_from_spawn * (self.enemy_data[key]["exp"]/500)
+                self.enemy_data[key]["probability"] += new_probability
+        spawn_probabilities = [self.enemy_data[key]["probability"] for key in keys]
+        self.enemy.name = str(choices(keys, spawn_probabilities)).removeprefix("['").removesuffix("']")
+        self.enemy.hp = self.enemy_data[self.enemy.name]["health"]
+        self.enemy.dmg = self.enemy_data[self.enemy.name]["damage"]
+        self.enemy.special = self.enemy_data[self.enemy.name]["special"]
+        self.enemy.special_info = self.enemy_data[self.enemy.name]["special_info"]
+        self.enemy.defence_melee = self.enemy_data[self.enemy.name]["defence_melee"]
+        self.enemy.defence_ranged = self.enemy_data[self.enemy.name]["defence_ranged"]
+        self.enemy.defence_magic = self.enemy_data[self.enemy.name]["defence_magic"]
+        self.enemy.exp = self.enemy_data[self.enemy.name]["exp"]
+        self.enemy.gold = self.enemy_data[self.enemy.name]["gold"]
+        
+
+    
+    def start(self):
+        while self.player.hp > 0 or self.enemy.hp > 0:
+            self.turn += 1
+            print(f"\n) Turn {self.turn} (")
+            print("Choose item from inventory to use")
+            
+            
+            input("Press enter to continue")
+
+
+
+
 def run_game():
     map = Map()
     player = Player(map.starting_position)
@@ -325,7 +374,7 @@ def run_game():
         
         print()
 
-            
+           
 
 
 

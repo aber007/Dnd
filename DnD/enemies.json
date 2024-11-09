@@ -1,74 +1,82 @@
 {
-    "goblin": {
+    "Goblin": {
         "name": "Goblin",
         "health": 10,
-        "attack": 2,
+        "damage": 2,
         "special": "trap",
-        "special_info": "The goblin has a 40% chance to set a trap that deals 1 damage to the player before attacking, pierces armor",
-        "defense_melee": 1,
-        "defense_ranged": 0,
-        "defece_magic": -1,
+        "special_info": "The goblin has a 40% chance to set a trap that deals 1 damage to the player before damageing, pierces armor",
+        "defence_melee": 1,
+        "defence_ranged": 0,
+        "defence_magic": -1,
         "exp": 5,
-        "gold": 5
+        "gold": 5,
+        "probability": 0.4
+
     },
     "Skeleton Warrior": {
         "name": "Skeleton Warrior",
         "health": 10,
-        "attack": 2,
+        "damage": 2,
         "special": "none",
         "special_info": "none",
-        "defense_melee": 2,
-        "defense_ranged": 4,
-        "defece_magic": 0,
+        "defence_melee": 2,
+        "defence_ranged": 4,
+        "defence_magic": 0,
         "exp": 10,
-        "gold": 10
+        "gold": 10,
+        "probability": 0.4
     },
     "Orc": {
         "name": "Orc",
         "health": 40,
-        "attack": 1,
+        "damage": 1,
         "special": "berserk",
-        "defense_melee": 3,
-        "defense_ranged": 2,
-        "defece_magic": 1,
+        "special_info": "The Orc has a 20% chance to go berserk, doubling its damage for 2 turns",
+        "defence_melee": 3,
+        "defence_ranged": 2,
+        "defence_magic": 1,
         "exp": 15,
-        "gold": 15
+        "gold": 15,
+        "probability": 0.2
     },
     "Giant Spider":{    
         "name": "Giant Spider",
         "health": 20,
-        "attack": 4,
+        "damage": 4,
         "special": "poison",
         "special_info": "The Giant Spider has a 20% chance to poison the player, dealing 2 damage per turn for 3 turns",
-        "defense_melee": 2,
-        "defense_ranged": 2,
-        "defece_magic": 2,
+        "defence_melee": 2,
+        "defence_ranged": 2,
+        "defence_magic": 2,
         "exp": 20,
-        "gold": 20
+        "gold": 20,
+        "probability": 0
     },
     "Dragon": {
         "name": "Dragon",
         "health": 100,
-        "attack": 5,
+        "damage": 5,
         "special": "fire breath",
         "special_info": "The Dragon has a 30% chance to use its fire breath, dealing 5 damage to the player",
-        "defense_melee": 5,
-        "defense_ranged": 5,
-        "defece_magic": 5,
+        "defence_melee": 5,
+        "defence_ranged": 5,
+        "defence_magic": 5,
         "exp": 50,
-        "gold": 50
+        "gold": 50,
+        "probability": 0
     },
     "Gargoyle": {
         "name": "Gargoyle",
         "health": 30,
-        "attack": 3,
+        "damage": 3,
         "special": "stone skin",
         "special_info": "The Gargoyle has a 20% chance to activate its stone skin, reducing all damage taken by 2 and heals for 10% of total health",
-        "defense_melee": 4,
-        "defense_ranged": 3,
-        "defece_magic": 2,
+        "defence_melee": 4,
+        "defence_ranged": 3,
+        "defence_magic": 2,
         "exp": 25,
-        "gold": 25
+        "gold": 25,
+        "probability": 0
     }
 
 }
