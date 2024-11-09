@@ -96,6 +96,8 @@ class Map:
             match (self.type, first_time_entering_room):
                 case ("enemy", True):
                     player.current_enemy = Enemy(target=player)
+                    gamemap = Map()
+                    Combat(player=player, enemy=enemy, map=gamemap).create_enemy()
                     print("An enemy appeared")
 
                 case ("chest", True):
@@ -123,9 +125,8 @@ class Map:
             match self.type:
                 case "enemy":
                     enemy : Enemy = Enemy(target=player)
-                    testmap = Map()
-                    Combat(player=player, enemy=enemy, map=testmap).create_enemy()
-                    Combat(player=player, enemy=enemy, map=testmap).start()
+                    gamemap = Map()
+                    Combat(player=player, enemy=enemy, map=gamemap).start()
 
                 case "chest":
                     pass # give player the chest_item, print to console f"You found {item.display_name}\n{item.description}"
@@ -305,26 +306,25 @@ class Combat:
         """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
         for key in keys:
             if self.enemy_data[key]["probability"] == 0:
-                new_probability = distace_from_spawn * (self.enemy_data[key]["exp"]/500)
+                new_probability = distace_from_spawn * ((100-self.enemy_data[key]["exp"])/1000)
                 self.enemy_data[key]["probability"] += new_probability
         spawn_probabilities = [self.enemy_data[key]["probability"] for key in keys]
         self.enemy.name = str(choices(keys, spawn_probabilities)).removeprefix("['").removesuffix("']")
-        self.enemy.hp = self.enemy_data[self.enemy.name]["health"]
-        self.enemy.dmg = self.enemy_data[self.enemy.name]["damage"]
-        self.enemy.special = self.enemy_data[self.enemy.name]["special"]
-        self.enemy.special_info = self.enemy_data[self.enemy.name]["special_info"]
-        self.enemy.defence_melee = self.enemy_data[self.enemy.name]["defence_melee"]
-        self.enemy.defence_ranged = self.enemy_data[self.enemy.name]["defence_ranged"]
-        self.enemy.defence_magic = self.enemy_data[self.enemy.name]["defence_magic"]
-        self.enemy.exp = self.enemy_data[self.enemy.name]["exp"]
-        self.enemy.gold = self.enemy_data[self.enemy.name]["gold"]
-        
+        attributes = ["hp", "dmg", "special", "special_info", "defence_melee", "defence_ranged", "defence_magic", "exp", "gold"]
+
+        for attr in attributes:
+            setattr(self.enemy, attr, self.enemy_data[self.enemy.name][attr])
 
     
     def start(self):
+        print(f"{'='*15} Combat {'='*15}")
+        print(f"An enemy appeared! It's a {self.enemy.name}!")
         while self.player.hp > 0 or self.enemy.hp > 0:
             self.turn += 1
             print(f"\n) Turn {self.turn} (")
+            print(f"Player hp: {self.player.hp}\nEnemy hp: {self.enemy.hp}")
+            print(f"{self.enemy.name} hp: {self.enemy.hp}")
+            
             print("Choose item from inventory to use")
             
             
