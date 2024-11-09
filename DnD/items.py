@@ -1,11 +1,4 @@
-import json
-from os import path
-from . import CONSTANTS
-
-with open(path.join(path.dirname(__file__), CONSTANTS["items_config_file"]), "r") as f:
-    file_contents = f.read()
-items_data_dict = json.loads(file_contents)
-
+from . import ITEM_DATA
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -14,7 +7,7 @@ class Item:
         self.id = item_id
 
         # get the attributes of the given item_id and make them properties of this object
-        [setattr(self, k, v) for k,v in items_data_dict[item_id].items()]
+        [setattr(self, k, v) for k,v in ITEM_DATA[item_id].items()]
     
     def use(self, player):
         match self.type:

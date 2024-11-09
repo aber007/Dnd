@@ -19,9 +19,10 @@ CONSTANTS = {
     'normal_trap_base_min_roll_to_escape': 10,
     "mimic_trap_base_ambush_dmg": 4,
     
-    "items_config_file": "./items.json",
-    "enemies_config_file": "./enemies.json"
+    "item_config_file": "./items.json",
+    "enemy_config_file": "./enemies.json"
 }
 
-from .items import Item, Inventory, items_data_dict
+from .load_config_files import ITEM_DATA, ENEMY_DATA
+from .items import Item, Inventory
 from .main import run_game
