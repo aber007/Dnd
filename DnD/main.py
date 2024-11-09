@@ -128,7 +128,7 @@ class Map:
                     Combat(player=player, enemy=enemy, map=testmap).start()
 
                 case "chest":
-                    pass # give player the chest_item, print to console f"You found {item.display_name}\n{item.description}"
+                    pass # give player the chest_item, print to console f"You found {item.name_in_sentence}\n{item.description}"
 
                 case "trap":
                     assert self.is_mimic # if not mimic we shouldnt be here

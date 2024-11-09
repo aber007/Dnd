@@ -1,52 +1,56 @@
 {
     "twig": {
+        "name": "Twig",
+        "name_in_sentence": "a twig",
         "type": "weapon",
         "dmg": 1,
         "durability": -1,
-        "display_name": "a twig",
         "description": "Your most reliable defense. Use it to defend yourself against monsters"
     },
     "knife": {
+        "name": "Simple knife",
+        "name_in_sentence": "a simple knife",
         "type": "weapon",
         "dmg": 3,
         "durability": 5,
-        "display_name": "a simple knife",
         "description": "Use it to defend yourself against monsters"
     },
     "sword": {
+        "name": "Steel sword",
+        "name_in_sentence": "a steel sword",
         "type": "weapon",
         "dmg": 5,
         "durability": 15,
-        "display_name": "a steel sword",
         "description": "Use it to defend yourself against monsters"
     },
     "good_luck_potion": {
+        "name": "Potion of Good Luck",
+        "name_in_sentence": "a Potion of Good Luck",
         "type": "potion",
         "durability": 1,
         "affects": "dice",
         "effect": 5,
-        "display_name": "a potion of good luck",
         "description": "Use it to have an easier time rolling high numbers"
     },
-    "the_eye_of_horus":
-    {
+    "the_eye_of_horus":{
+        "name": "the Eye of Horus",
+        "name_in_sentence": "the Eye of Horus",
         "type": "spell",
         "durability": 1,
-        "display_name": "the eye of horus",
         "description": "Use it to see through doors"
     },
-    "breath_of_life":
-    {
+    "breath_of_life":{
+        "name": "Breath of Life",
+        "name_in_sentence": "a Breath of Life",
         "type": "spell",
         "durability": 3,
-        "display_name": "breath of life",
         "description": "Use it to heal yourself"
     },
-    "breath_of_fire":
-    {
+    "breath_of_fire":{
+        "name": "Breath of Fire",
+        "name_in_sentence": "a Breath of Fire",
         "type": "spell",
         "durability": 3,
-        "display_name": "breath of fire",
         "description": "Use it to burn your enemies"
     }
 }
