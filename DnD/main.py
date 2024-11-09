@@ -2,6 +2,7 @@ from random import randint, choices
 from time import sleep
 from . import CONSTANTS, Item, Inventory
 from .UI_map_creation import create_UI_Map, update
+from .combat import Combat
 
 
 
@@ -53,6 +54,13 @@ class Enemy(Entity):
     def __init__(self, target : Player) -> None:
         self.hp = CONSTANTS["enemy_base_hp"]
         self.dmg = CONSTANTS["enemy_base_dmg"]
+        self.special = CONSTANTS["enemy_special"]
+        self.special_info = CONSTANTS["enemy_special_info"]
+        self.defence_melee = CONSTANTS["enemy_defence_melee"]
+        self.defence_ranged = CONSTANTS["enemy_defence_ranged"]
+        self.defence_magic = CONSTANTS["enemy_defence_magic"]
+        self.exp = CONSTANTS["enemy_exp"]
+        self.gold = CONSTANTS["enemy_gold"]
         self.target = target
     
     def attack(self) -> None:
