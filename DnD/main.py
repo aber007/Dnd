@@ -96,7 +96,7 @@ class Map:
 
                 case ("trap", _):
                     if not self.is_mimic:
-                        print(f"You stepped in a trap! Roll at least {CONSTANTS["normal_trap_base_min_roll_to_escape"]} to save yourself")
+                        print(f"You stepped in a trap! Roll at least {CONSTANTS['normal_trap_base_min_roll_to_escape']} to save yourself")
                         prompt_dice_roll()
                         success, dice_result = player.roll_dice(success=lambda dice_result : CONSTANTS["normal_trap_base_min_roll_to_escape"] <= dice_result)
 
