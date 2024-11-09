@@ -2,7 +2,7 @@ from random import randint, choices
 from time import sleep
 from os import path
 import json
-from . import CONSTANTS, Item, Inventory
+from . import CONSTANTS, Item, Inventory, ENEMY_DATA
 from .UI_map_creation import create_UI_Map, update
 
 
@@ -24,7 +24,8 @@ class Player(Entity):
         
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
 
-        self.current_enemy : Enemy | None = None
+        # self.current_enemy : Enemy | None = None
+        self.current_combat : Combat | None = None
     
     def get_dice_modifier(self) -> int:
         return sum(self.active_dice_effects)
@@ -52,18 +53,11 @@ class Player(Entity):
         quit() # make proper "Game Over" thingy
 
 class Enemy(Entity):
-    def __init__(self, target : Player) -> None:
-        self.name = "Enemy"
-        self.hp = CONSTANTS["enemy_base_hp"]
-        self.dmg = CONSTANTS["enemy_base_dmg"]
-        self.special = CONSTANTS["enemy_special"]
-        self.special_info = CONSTANTS["enemy_special_info"]
-        self.defence_melee = CONSTANTS["enemy_defence_melee"]
-        self.defence_ranged = CONSTANTS["enemy_defence_ranged"]
-        self.defence_magic = CONSTANTS["enemy_defence_magic"]
-        self.exp = CONSTANTS["enemy_exp"]
-        self.gold = CONSTANTS["enemy_gold"]
-        self.probability = 1
+    def __init__(self, enemy_type : str, target : Player) -> None:
+        # get the attributes of the given enemy_type and make them properties of this object
+        # since the probability value wont be useful its not added as an attribute
+        [setattr(self, k, v) for k,v in ENEMY_DATA[enemy_type].items() if k != "probability"]
+
         self.target = target
     
     def attack(self) -> None:
@@ -87,23 +81,19 @@ class Map:
 
             self.chest_item : Item | None = None
             self.is_mimic : bool | None = None
+            self.enemy : Enemy | None = None
 
             
         
-        def on_enter(self, player : Player, first_time_entering_room : bool) -> None:
+        def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. Eg. starts the non-mimic trap interaction or decides a chest's item etc"""
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
                 case ("enemy", True):
-                    player.current_enemy = Enemy(target=player)
-                    self.enemy : Enemy = Enemy(target=player)
-                    self.gamemap = Map()
-                    
-                    Combat(player=player, enemy=self.enemy, map=self.gamemap).create_enemy()
-                    print()
-                    print(f"An enemy appeared! It's a {self.enemy.name}!")
+                    player.current_combat = Combat(player, map)
+                    print(f"\nAn enemy appeared! It's a {player.current_combat.enemy.name}!")
 
                 case ("chest", True):
                     pass # decide chest item
@@ -206,13 +196,52 @@ class Map:
         self.rooms[x][y].discovered = True
         update(self.rooms)
 
-        self.rooms[x][y].on_enter(player = player, first_time_entering_room = first_time_entering_room)
+        self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
+
+
+class Combat:
+    def __init__(self, player : Player, map : Map) -> None:
+        self.player = player
+        self.enemy = self.create_enemy(map)
+        self.turn = 0
+
+    def create_enemy(self, map : Map) -> None:
+        """Decide enemy type to spawn, then return enemy object with the attributes of said enemy type"""
+
+        enemy_types = list(ENEMY_DATA.keys())
+        spawn_probabilities : dict[str, float | int] = {enemy_type : ENEMY_DATA[enemy_type]["probability"] for enemy_type in enemy_types}
+        
+        distace_from_spawn = ((abs(map.starting_position[0] - self.player.position[0])**2) + (abs(map.starting_position[1] - self.player.position[1])**2))**0.5
+        """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
+        for enemy_type in enemy_types:
+            if ENEMY_DATA[enemy_type]["probability"] == 0:
+                new_probability = distace_from_spawn * ((100-ENEMY_DATA[enemy_type]["exp"])/1000)
+                spawn_probabilities[enemy_type] += new_probability
+        
+        enemy_type_to_spawn = str(choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))).removeprefix("['").removesuffix("']")
+
+        return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
+
+    
+    def start(self):
+        # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
+        print(f"{'='*15} Combat {'='*15}")
+        
+        while self.player.hp > 0 or self.enemy.hp > 0:
+            self.turn += 1
+            print(f"\n) Turn {self.turn} (")
+            print(f"Player hp: {self.player.hp}")
+            print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
+            
+            print("Choose item from inventory to use")
+            
+            
+            input("Press enter to continue")
 
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
     input("[Press ENTER to roll dice]")
-
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
     
@@ -229,17 +258,9 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
             player_action_options = default_action_options
 
         case "enemy":
-            # when the player moves, if the new room contains an enemy, the player.current_enemy property gets set right away
-            # if player.current_enemy is None then the enemy has already been slain
-            if player.current_enemy != None:
-                player_action_options = [
-                    "Attack",
-                    "Open inventory",
-                    "Attempt to flee"
-                ]
-            
-            else:
-                player_action_options = default_action_options
+            # when the player moves, if the new room contains an enemy, a combat interaction is started right away, blocking main until finished
+            # if we are here the enemy has already been slain
+            player_action_options = default_action_options
         
         case "chest":
             # when the player moves, if the new room contains a chest, the room.chest_item property gets set right away
@@ -291,47 +312,6 @@ def check_user_input_error(action_nr : str, action_options : list[str]) -> tuple
         return (True, f"'{action_nr}' is out of range")
     
     return (False, "")
-
-class Combat:
-    def __init__(self, player : Player, enemy : Enemy, map : Map) -> None:
-        with open(path.join(path.dirname(__file__), CONSTANTS["enemies_config_file"]), "r") as f:
-            file_contents = f.read()
-        self.map = map
-        self.enemy_data = json.loads(file_contents)
-        self.player = player
-        self.enemy = enemy
-        self.turn = 0
-
-    def create_enemy(self) -> None:
-        keys = list(self.enemy_data.keys())
-        
-        distace_from_spawn = ((abs(self.map.starting_position[0] - self.player.position[0])**2) + (abs(self.map.starting_position[1] - self.player.position[1])**2))**0.5
-        """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
-        for key in keys:
-            if self.enemy_data[key]["probability"] == 0:
-                new_probability = distace_from_spawn * ((100-self.enemy_data[key]["exp"])/1000)
-                self.enemy_data[key]["probability"] += new_probability
-        spawn_probabilities = [self.enemy_data[key]["probability"] for key in keys]
-        self.enemy.name = str(choices(keys, spawn_probabilities)).removeprefix("['").removesuffix("']")
-        attributes = ["hp", "dmg", "special", "special_info", "defence_melee", "defence_ranged", "defence_magic", "exp", "gold"]
-
-        for attr in attributes:
-            setattr(self.enemy, attr, self.enemy_data[self.enemy.name][attr])
-
-    
-    def start(self):
-        print(f"{'='*15} Combat {'='*15}")
-        
-        while self.player.hp > 0 or self.enemy.hp > 0:
-            self.turn += 1
-            print(f"\n) Turn {self.turn} (")
-            print(f"Player hp: {self.player.hp}")
-            print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
-            
-            print("Choose item from inventory to use")
-            
-            
-            input("Press enter to continue")
 
 
 
