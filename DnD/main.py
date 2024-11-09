@@ -87,6 +87,8 @@ class Map:
 
             self.chest_item : Item | None = None
             self.is_mimic : bool | None = None
+
+            
         
         def on_enter(self, player : Player, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. Eg. starts the non-mimic trap interaction or decides a chest's item etc"""
@@ -96,9 +98,12 @@ class Map:
             match (self.type, first_time_entering_room):
                 case ("enemy", True):
                     player.current_enemy = Enemy(target=player)
-                    gamemap = Map()
-                    Combat(player=player, enemy=enemy, map=gamemap).create_enemy()
-                    print("An enemy appeared")
+                    self.enemy : Enemy = Enemy(target=player)
+                    self.gamemap = Map()
+                    
+                    Combat(player=player, enemy=self.enemy, map=self.gamemap).create_enemy()
+                    print()
+                    print(f"An enemy appeared! It's a {self.enemy.name}!")
 
                 case ("chest", True):
                     pass # decide chest item
@@ -123,10 +128,8 @@ class Map:
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
             match self.type:
-                case "enemy":
-                    enemy : Enemy = Enemy(target=player)
-                    gamemap = Map()
-                    Combat(player=player, enemy=enemy, map=gamemap).start()
+                case "enemy": 
+                    Combat(player=player, enemy=self.enemy, map=self.gamemap).start()
 
                 case "chest":
                     pass # give player the chest_item, print to console f"You found {item.display_name}\n{item.description}"
@@ -318,12 +321,12 @@ class Combat:
     
     def start(self):
         print(f"{'='*15} Combat {'='*15}")
-        print(f"An enemy appeared! It's a {self.enemy.name}!")
+        
         while self.player.hp > 0 or self.enemy.hp > 0:
             self.turn += 1
             print(f"\n) Turn {self.turn} (")
-            print(f"Player hp: {self.player.hp}\nEnemy hp: {self.enemy.hp}")
-            print(f"{self.enemy.name} hp: {self.enemy.hp}")
+            print(f"Player hp: {self.player.hp}")
+            print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
             
             print("Choose item from inventory to use")
             
