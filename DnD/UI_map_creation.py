@@ -73,17 +73,21 @@ def openUIMap(size, map):
 def create_UI_Map(size, map, close=False) -> None:
     global close_thread
 
-    close_thread = False  # Reset close_thread at the start
-    ui_thread = threading.Thread(target=openUIMap, args=(size, map))
-    ui_thread.start()
+    if not close:
+        ui_thread = threading.Thread(target=openUIMap, args=(size, map))
+        ui_thread.start()
 
     # Initial update and check for closure
     sleep(0.5)
     update(map)
     
-    if close:
-        close_thread = True  # Signal to close the UI
-        ui_thread.join()     # Wait for the thread to exit
+    try:
+        if close:
+            close_thread = True  
+            ui_thread.join()     # Wait for the thread to exit
+
+    except UnboundLocalError: # This is not a good way to close the program and needs to be changed later
+        exit()
 
 
 #Updating the map after movement. Needs to be ran after each move
