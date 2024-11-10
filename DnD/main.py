@@ -392,8 +392,6 @@ def run_game():
 
     map.open_window()
 
-    
-
 
     while True:
         if player.hp <= 0:
@@ -424,7 +422,8 @@ def run_game():
                 map.get_room(player.position).interact(player, map)
 
             case "Open inventory":
-                pass
+                print(player.inventory)
+                print("Choose item?")
             
             case "Attempt to flee":
                 pass
