@@ -1,6 +1,12 @@
 from random import randint, choices
-from . import CONSTANTS, Item, Inventory, ENEMY_DATA
 from .UI_map_creation import create_UI_Map, update
+from . import (
+    CONSTANTS,
+    ENEMY_DATA,
+    Item,
+    Inventory,
+    Vector2
+    )
 
 
 
@@ -14,7 +20,7 @@ class Entity:
             self.on_death(dmg)
 
 class Player(Entity):
-    def __init__(self, position : list[int,int]) -> None:
+    def __init__(self, position : Vector2) -> None:
         self.position = position
         self.hp = CONSTANTS["player_base_hp"]
         self.active_dice_effects : list[int] = []
@@ -130,7 +136,7 @@ class Map:
         
         if self.size % 2 == 0:
             self.size += 1
-        self.starting_position = [int(self.size/2), int(self.size/2)]
+        self.starting_position = Vector2(double=int(self.size/2))
         room_types = list(CONSTANTS["room_probabilities"].keys())
         probabilities = list(CONSTANTS["room_probabilities"].values())
         # Initialize 2D array
@@ -153,9 +159,9 @@ class Map:
         # Press the map and then escape to close the window
         create_UI_Map(self.size, self.rooms)
 
-    def get_room(self, position : list[int,int]) -> Room:
+    def get_room(self, position : Vector2) -> Room:
         """Using an x and a y value, return a room at that position"""
-        return self.rooms[position[0]][position[1]]
+        return self.rooms[position.x][position.y]
     
     def move_player(self, direction : str, player : Player) -> None:
         """Move the player in the given direction"""
@@ -175,7 +181,7 @@ class Map:
                 if x > 0:  # Ensure not moving out of bounds
                     x -= 1
 
-        player.position = [x, y]
+        player.position = Vector2(x, y)
 
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
@@ -207,7 +213,7 @@ class Combat:
             if (enemy_probability := ENEMY_DATA[enemy_type]["probability"]) != -1:
                 spawn_probabilities[enemy_type] = enemy_probability
         
-        distace_from_spawn = ((abs(self.map.starting_position[0] - self.player.position[0])**2) + (abs(self.map.starting_position[1] - self.player.position[1])**2))**0.5
+        distace_from_spawn = ((abs(self.map.starting_position.x - self.player.position.x)**2) + (abs(self.map.starting_position.y - self.player.position.y)**2))**0.5
         """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
         for enemy_type in enemy_types:
             if ENEMY_DATA[enemy_type]["probability"] == 0:
