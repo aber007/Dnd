@@ -1,3 +1,4 @@
+import json
 from random import choices
 from . import CONSTANTS, Item, Inventory
 from .UI_map_creation import create_UI_Map, update
@@ -189,6 +190,16 @@ def run_game():
                 pass
             
             case "Open chest":
+                def get_random_item():
+                    with open("DnD/items.json", "r") as f:
+                        items = json.load(f)
+                        item_names = list(items.keys())
+                        probabilities = [items[item]["probability"] for item in item_names]
+                        chosen_item_name = choices(item_names, probabilities)[0]
+                        chosen_item = items[chosen_item_name]
+                    return chosen_item
+                item = get_random_item()
+                print(f"You found {item['display_name']}\n{item['description']}")
                 pass # print to console f"You found {item.display_name}\n{item.description}"
             
             case "Buy from shop":
