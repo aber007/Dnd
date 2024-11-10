@@ -32,5 +32,6 @@ CONSTANTS = {
 }
 
 from .load_config_files import ITEM_DATA, ENEMY_DATA
+from .vector2 import Vector2
 from .items import Item, Inventory
 from .main import run_game
