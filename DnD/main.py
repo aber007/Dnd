@@ -1,4 +1,4 @@
-from random import randint, choices
+from random import randint, choices, choice
 from .UI_map_creation import create_UI_Map, update
 from . import (
     CONSTANTS,
@@ -197,7 +197,7 @@ class Combat:
         self.enemy = self.create_enemy(force_enemy_type)
         self.turn = 0
 
-    def create_enemy(self, force_enemy_type : str | None) -> None:
+    def create_enemy(self, force_enemy_type : str | None) -> Enemy:
         """Decide enemy type to spawn, then return enemy object with the attributes of said enemy type"""
 
         # needed for mimic traps
@@ -229,18 +229,48 @@ class Combat:
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
         print(f"{'='*15} Combat {'='*15}")
         print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
+        enemyturn = choice([True, False])
         
         while self.player.hp > 0 or self.enemy.hp > 0:
             self.turn += 1
+            
             print(f"\n) Turn {self.turn} (")
             print(f"Player hp: {self.player.hp}")
             print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
-            
-            print("Choose item from inventory to use")
-            
-            
-            input("Press enter to continue")
-            break # TEMP
+
+            if enemyturn == False:
+                
+                print("Choose action") #Actions will always be same, No need to be dynamic
+                print("1) Attack")
+                print("2) Open Inventory")
+                print("3) Flee")
+                actions = ["Attack", "Open Inventory", "Flee"]
+                combat_action : str[int] = input("Choose action: ")
+                err, err_message = check_user_input_error(combat_action, actions)
+                if err:
+                    print(err_message, end="\n\n")
+                    continue
+                match combat_action:
+                    case "1":
+                        """Do attack"""
+                        pass
+                    case "2":
+                        print(self.player.inventory)
+                        pass
+                    case "3":
+                        print("Attempting to flee, Roll 12 or higher to succeed")
+                        prompt_dice_roll()
+                        roll = self.player.roll_dice()
+                        print(roll)
+                        if roll >= 12:
+                            if roll < 15:
+                                print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing\nPlayer hp remaining: {self.player.hp}")
+                                
+                            print(f"You sucessfully fled the {self.enemy.name}")
+            else:
+                              
+                enemyturn = False
+                continue
 
         self.map.get_room(self.player.position).is_enemy_defeated = True
 
