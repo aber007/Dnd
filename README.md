@@ -6,7 +6,7 @@ Karta som skapas när spelet öppnas (random)
 UI karta
 Player
 Inventory
-Stats (str, hp, magic (optional), lvl, luck (optional)
+Stats (str, hp, magic (optional), lvl, luck (optional))
 Rum
 Kistor
 Fällor

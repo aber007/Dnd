@@ -35,7 +35,9 @@ class Inventory:
     
     def receive_item(self, item : Item):
         if self.is_full():
-            pass # choose item to throw out (could be the new item)
+            print(f"Choose what item to swap out for {item.name}")
+            print(Inventory)
+            print(f"{self.size}) Leave item behind")
 
         else:
             for idx,slot in enumerate(self.slots):
@@ -44,9 +46,15 @@ class Inventory:
                     break
     
     def __str__(self):
-        return "\n".join(
-            "---------- [INVENTORY] ----------",
-            "Equipped weapon slot contains " + self.equipped_weapon.display_name,
-            *[f"Slot {idx} contains {item.display_name}" for idx,item in enumerate(self.slots)],
-            )
+        lines = []
+        lines.append("---------- [INVENTORY] ----------")
+        lines.append("0) Equipped weapon slot contains " + self.equipped_weapon.name)
+
+        for idx, item in enumerate(self.slots):
+            try:
+                lines.append(f"Slot {idx+1} contains {item.name}")
+            except AttributeError:
+                lines.append(f"Slot {idx+1} is empty")
+        
+        return "\n".join(lines)
 

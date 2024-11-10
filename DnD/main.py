@@ -376,6 +376,7 @@ def check_user_input_error(action_nr : str, action_options : list[str]) -> tuple
 
     """Checks if the user's input is valid. If not: return (True, "error message"), otherwise: return (False, "")"""
 
+    
     if not action_nr.isdigit():
         return (True, f"'{action_nr}' isn't a valid option")
     
@@ -385,13 +386,13 @@ def check_user_input_error(action_nr : str, action_options : list[str]) -> tuple
     return (False, "")
 
 
-
-
 def run_game():
     map = Map()
     player = Player(map.starting_position)
 
     map.open_window()
+
+    
 
 
     while True:
@@ -410,6 +411,7 @@ def run_game():
         # Ask the player to choose an action and handle possible errors
         # action_nr starts at 1
         action_nr : str[int] = input("Choose action: ")
+                      
         err, err_message = check_user_input_error(action_nr, action_options)
         if err:
             print(err_message, end="\n\n")
