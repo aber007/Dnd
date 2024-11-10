@@ -1,6 +1,5 @@
-import threading
-from time import sleep
-from .map_generation import createmap
+# import threading
+# from time import sleep
 import os
 try:
     import tkinter as tk
@@ -8,10 +7,12 @@ except ImportError:
     os.system("pip install tkinter")
     import tkinter as tk
 
-close_thread = False
 
-def openUIMap(size, map):
-    global close_thread, main, grids 
+def openUIMap(grids : dict, walls : dict, size : int):
+    """NOTE: the grids and walls variables are dict proxys handled by the parent multiprocessing process\n
+    The typehint says dict because they behave similarly"""
+
+    # global close_thread, main, grids 
     
     windowsize = 300
 
@@ -25,7 +26,6 @@ def openUIMap(size, map):
     xcord = int(size)
     ycord = int(size)
     
-    grids = {}
     grid_width = windowsize / ycord
     grid_height = windowsize / xcord
     
@@ -35,7 +35,6 @@ def openUIMap(size, map):
             grids[key] = tk.Frame(main, bg="gray", width=grid_width, height=grid_height)
             grids[key].place(x=(col - 1) * grid_width, y=(row - 1) * grid_height)
 
-    walls = {}
     wall_thickness = grid_width/20
 
     for row in range(1, xcord + 1):
@@ -56,46 +55,27 @@ def openUIMap(size, map):
         main.quit()
         main.destroy()
     
-    def check_close():
-        if close_thread:
-            print("Trying to close")
-            main.quit()
-            main.destroy()
-            print("Closed")
-        else:
-            main.after(100, check_close)  # Check every 100ms for close_thread update
-    
     main.bind("<Escape>", lambda e: destroy)
-    main.after(100, check_close)  # Start the periodic close check
     main.mainloop()
 
 
-def create_UI_Map(size, map, close=False) -> None:
-    global close_thread
+# def create_UI_Map(size : int, rooms : list[list[int]]) -> multip.Process:
+#     # global close_threads
 
-    if not close:
-        ui_thread = threading.Thread(target=openUIMap, args=(size, map))
-        ui_thread.start()
+#     BaseManager.register("Map.UI")
+#     ui_thread = Process(target=openUIMap, args=(size, rooms))
+#     ui_thread.start()
 
-    # Initial update and check for closure
-    sleep(0.5)
-    update(map)
-    
-    try:
-        if close:
-            close_thread = True  
-            ui_thread.join()     # Wait for the thread to exit
+#     # Initial update and check
+#     sleep(0.5)
+#     update(map)
 
-    except UnboundLocalError: # This is not a good way to close the program and needs to be changed later
-        exit()
+#     return ui_thread
 
 
 #Updating the map after movement. Needs to be ran after each move
-def update(map):
+def update(rooms : list[list[int]]):
     global grids
-
-    if close_thread:
-        return  # Skip update if close flag is set
     
     for x in range(len(map)):
         for y in range(len(map)):
@@ -120,7 +100,9 @@ def update(map):
 
 
 if __name__ == "__main__":
+    from .map_generation import createmap
+    
     size = 5
     map = createmap(size)
-    create_UI_Map(size, map)
+    # create_UI_Map(size, map)
     

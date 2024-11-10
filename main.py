@@ -1,3 +1,5 @@
 import DnD
 
-DnD.run_game()
+
+if __name__ == "__main__":
+    DnD.run_game()

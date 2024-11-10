@@ -1,6 +1,7 @@
+import os
 from random import randint, choices, choice
 from time import sleep
-from .UI_map_creation import create_UI_Map, update
+from .UI_map_creation import openUIMap, update
 from . import (
     CONSTANTS,
     ENEMY_DATA,
@@ -9,6 +10,11 @@ from . import (
     Vector2
     )
 
+try:
+    from multiprocessing import Process, Manager, freeze_support
+except ImportError:
+    os.system("pip install multiprocessing")
+    from multiprocessing import Process, Manager, freeze_support
 
 
 class Entity:
@@ -24,6 +30,7 @@ class Player(Entity):
     def __init__(self, position : Vector2) -> None:
         self.position = position
         self.hp = CONSTANTS["player_base_hp"]
+        self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
         self.active_dice_effects : list[int] = []
         
@@ -60,7 +67,7 @@ class Player(Entity):
 
     def on_death(self, dmg : int) -> None:
         print(f"The player was hit for {dmg} dmg and died")
-        quit() # make proper "Game Over" thingy
+        self.is_alive = False
 
 class Enemy(Entity):
     def __init__(self, enemy_type : str, target : Player) -> None:
@@ -141,6 +148,27 @@ class Map:
                     pass # shop dialog
 
 
+    class UI:
+        def __init__(self) -> None:
+            # to be set by the openUIMap thread
+            self.grids : dict[str,any]
+            self.walls : dict[str,any]
+
+            # to be set by the parent Map object
+            self.rooms : list[list[Map.Room]]
+            self.size : int
+
+            self.UI_thread : Process | None = None
+        
+        def open(self):
+            # create_UI_Map(self.size, self.rooms)
+
+            self.UI_thread = Process(target=openUIMap, args=(self.grids, self.walls, self.size))
+            self.UI_thread.start()
+        
+        def update():
+            pass
+
     def __init__(self, size : int = CONSTANTS["map_base_size"]) -> None:
         """Generates the playable map"""
         self.size = size
@@ -163,16 +191,29 @@ class Map:
                     roomtype = str(choices(room_types, probabilities)).removeprefix("['").removesuffix("']")
                     rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "E", "S", "W"])
         self.rooms = rooms
+
+        self.setup_UI_shared_vars()
     
-    def open_window(self) -> None:
+    def setup_UI_shared_vars(self):
+        self.UI_instance = Map.UI()
+        
+        self.UI_instance.manager = Manager()
+        self.UI_instance.grids = self.UI_instance.manager.dict()
+        self.UI_instance.walls = self.UI_instance.manager.dict()
+        self.UI_instance.rooms = self.rooms
+        self.UI_instance.size = self.size
+    
+    def open_UI_window(self):
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
-        create_UI_Map(self.size, self.rooms)
+        # return create_UI_Map(self.size, self.rooms)
+        self.UI_instance.open()
     
-    def close_window(self):
-        create_UI_Map(self.size, self.rooms, close=True)
-        pass
+
+    # def close_window(self):
+    #     create_UI_Map(self.size, self.rooms, close=True)
+    #     pass
 
     def get_room(self, position : Vector2) -> Room:
         """Using an x and a y value, return a room at that position"""
@@ -390,16 +431,10 @@ def run_game():
     map = Map()
     player = Player(map.starting_position)
 
-    map.open_window()
+    ui_thread = map.open_UI_window()
 
 
-    while True:
-        if player.hp <= 0:
-            print("Game over")           
-            sleep(0.5)
-            map.close_window()
-            break
-
+    while player.is_alive:
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and print them to console
@@ -435,7 +470,8 @@ def run_game():
         
         print()
 
-           
+    print("Game over")
+    
 
 
 
