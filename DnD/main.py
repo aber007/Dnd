@@ -396,9 +396,9 @@ def run_game():
 
     while True:
         if player.hp <= 0:
-            print("Game over")
-            map.close_window()
+            print("Game over")           
             sleep(0.5)
+            map.close_window()
             break
 
         print(f"{'='*15} New Round {'='*15}")
