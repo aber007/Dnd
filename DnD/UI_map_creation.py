@@ -36,7 +36,7 @@ def openUIMap(size, map):
             grids[key].place(x=(col - 1) * grid_width, y=(row - 1) * grid_height)
 
     walls = {}
-    wall_thickness = 5
+    wall_thickness = grid_width/20
 
     for row in range(1, xcord + 1):
         for col in range(1, ycord + 1):

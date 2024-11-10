@@ -31,22 +31,35 @@ class Inventory:
     
     def is_full(self):
         """if all slots arent None, return True"""
-        return all(self.values())
+        print(self.slots)
+        return False
     
-    def receive_item(self, item : Item):
+    def receive_item(self, item : str):
+
         if self.is_full():
-            pass # choose item to throw out (could be the new item)
+            print(f"Choose what item to swap out for {Item(item).name}")
+            print(Inventory)
+            print(f"{self.size}) Leave item behind")
 
         else:
+            print(f"You recieved {Item(item).name_in_sentence}")
             for idx,slot in enumerate(self.slots):
                 if slot == None:
                     self.slots[idx] = item
                     break
     
     def __str__(self):
-        return "\n".join(
-            "---------- [INVENTORY] ----------",
-            "Equipped weapon slot contains " + self.equipped_weapon.display_name,
-            *[f"Slot {idx} contains {item.display_name}" for idx,item in enumerate(self.slots)],
-            )
+        lines = []
+        lines.append("---------- [INVENTORY] ----------")
+        lines.append("0) Equipped weapon slot contains " + self.equipped_weapon.name)
+
+        for idx, item in enumerate(self.slots):
+            print(idx, item)
+            try:
+                lines.append(f"Slot {idx+1} contains {Item(item).name}")
+            except KeyError:
+                lines.append(f"Slot {idx+1} is empty")
+
+        
+        return "\n".join(lines)
 

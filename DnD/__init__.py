@@ -1,5 +1,5 @@
 CONSTANTS = {
-    "map_base_size": 9,
+    "map_base_size": 9, #Base size over 20 is not recommended
     "room_probabilities": {
         "empty": 0.25,
         "enemy": 0.5,
@@ -11,7 +11,7 @@ CONSTANTS = {
     "normal_trap_base_dmg": 3,
 
     "player_base_inventory_size": 3,
-    "player_base_hp": 1,
+    "player_base_hp": 10,
     "player_starting_gold": 0,
     
     "enemy_base_hp": 4,
