@@ -12,6 +12,7 @@ CONSTANTS = {
 
     "player_base_inventory_size": 3,
     "player_base_hp": 10,
+    "player_starting_gold": 0,
     
     "enemy_base_hp": 4,
     "enemy_base_dmg": 2,

@@ -1,4 +1,5 @@
 from random import randint, choices, choice
+from time import sleep
 from .UI_map_creation import create_UI_Map, update
 from . import (
     CONSTANTS,
@@ -11,18 +12,19 @@ from . import (
 
 
 class Entity:
-    def take_damage(self, dmg : int) -> None:
+    def take_damage(self, dmg : int, return_text : bool = False) -> None:
         self.hp = max(0, self.hp - dmg)
-
-        if 0 < self.hp:
-            self.on_damage_taken(dmg, self.hp)
-        else:
-            self.on_death(dmg)
+        if return_text:
+            if 0 < self.hp:
+                self.on_damage_taken(dmg, self.hp)
+            else:
+                self.on_death(dmg)
 
 class Player(Entity):
     def __init__(self, position : Vector2) -> None:
         self.position = position
         self.hp = CONSTANTS["player_base_hp"]
+        self.gold = CONSTANTS["player_starting_gold"]
         self.active_dice_effects : list[int] = []
         
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
@@ -32,17 +34,23 @@ class Player(Entity):
     def get_dice_modifier(self) -> int:
         return sum(self.active_dice_effects)
     
-    def roll_dice(self, success : callable) -> tuple[bool,int]:
-        """Roll the dice and include any dice modifiers.
-        success is a function that, given dice_result, returns a bool.
-        return (success function result, dice result)"""
+    def roll_dice(self, success : callable = None) -> tuple[bool,int] | int:
+        """
+        Roll the dice and include any dice modifiers.
+        If success is provided, it should be a function that takes dice_result and returns a bool.
+        If success is provided, returns (success function result, dice result).
+        Otherwise, returns only dice_result.
+        """
 
         # get a random number between 0 and dice_base_sides then add the dice modifier
         # max() ensures the roll has a min value of 1
         dice_result = max(1, randint(1, CONSTANTS["dice_base_sides"]) + self.get_dice_modifier())
         self.active_dice_effects.clear()
         
-        return (success(dice_result), dice_result)
+        if success:
+            return (success(dice_result), dice_result)
+        else:
+            return dice_result
 
     def attack(self) -> None:
         self.current_enemy.take_damage(self.inventory.equipped_weapon.dmg)
@@ -71,6 +79,9 @@ class Enemy(Entity):
     def on_death(self, dmg : int) -> None:
         print(f"The enemy was hit for {dmg} damage and died")
         self.target.current_enemy = None
+    def use_special(self, special : str) -> None:
+        """Runs the code for special abilites which can be used during combat"""
+        pass
 
 
 class Map:
@@ -158,6 +169,9 @@ class Map:
 
         # Press the map and then escape to close the window
         create_UI_Map(self.size, self.rooms)
+    
+    def close_window(self):
+        pass
 
     def get_room(self, position : Vector2) -> Room:
         """Using an x and a y value, return a room at that position"""
@@ -261,22 +275,42 @@ class Combat:
                         print("Attempting to flee, Roll 12 or higher to succeed")
                         prompt_dice_roll()
                         roll = self.player.roll_dice()
-                        print(roll)
+                        print(f"You rolled a {roll}")
                         if roll >= 12:
-                            if roll < 15:
-                                print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing\nPlayer hp remaining: {self.player.hp}")
-                                
+                            if roll < 15:      
+                                self.player.take_damage(self.enemy.dmg)
+                                if self.player.hp > 0:
+                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing\nPlayer hp remaining: {self.player.hp}")
+                                else:
+                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing and you died")
+                                    break
+                            elif roll == 20:
+                                print(f"You managed to scoop up a few coins while running out")
+                                self.player.gold += self.enemy.gold // 2
                             print(f"You sucessfully fled the {self.enemy.name}")
-            else:
-                              
+                            break
+                        else:
+                            self.player.take_damage(self.enemy.dmg * 2)
+                            if self.player.hp > 0:
+                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage")
+                            else:
+                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage and you died
+                                      break")
+                            enemyturn = True
+            else:             
                 enemyturn = False
-                continue
+                print(f"The {self.enemy.name} attacked you for {self.enemy.dmg} damage")
+                self.enemy.attack()
+                if randint(1,100) < self.enemy.special_chance*100:
+                    print(self.enemy.special_info)
+                    self.enemy.use_special(self.enemy.special)
 
+            sleep(1)
         self.map.get_room(self.player.position).is_enemy_defeated = True
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
-    input("[Press ENTER to roll dice]")
+    input("[Press ENTER to roll dice]\n")
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
     """Returns a list of strings containing the different actions the player can currently take"""
@@ -358,6 +392,11 @@ def run_game():
 
 
     while True:
+        if player.hp <= 0:
+            print("Game over")
+            map.close_window()
+            break
+
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and print them to console
