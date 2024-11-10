@@ -23,7 +23,7 @@ def openUIMap(size, map):
 
     xcord = int(size)
     ycord = int(size)
-    "Create grids"
+    #Create grids
     
     grids = {}
     grid_width = windowsize / ycord
@@ -35,11 +35,13 @@ def openUIMap(size, map):
             grids[key] = tk.Frame(main, bg="gray", width=grid_width, height=grid_height)
             grids[key].place(x=(col - 1) * grid_width, y=(row - 1) * grid_height)
 
-    "Create Walls"
+    #Create Walls
     walls = {}
     wall_thickness = 5
     existing_walls = []
 
+
+    """Placement of grids and walls on map"""
     for row in range(1, xcord + 1):
         for col in range(1, ycord + 1):
                 frame_key = f"{row:02d}{col:02d}"
@@ -64,11 +66,12 @@ def openUIMap(size, map):
     main.bind("<Escape>", lambda e: destroy())
     main.mainloop()
 
+"""Updating the map after movement. Needs to be ran after each move"""
 def update(map):
     global grids
     for x in range(len(map)):
         for y in range(len(map)):
-            key = f"{(y+1):02d}{(x+1):02d}"
+            key = f"{(y+1):02d}{(x+1):02d}" #Yes, this looks wrong but it's correct
             if map[x][y].discovered == True and map[x][y].type != "trap":
                 grids[key].configure(bg="gray")
             else:
