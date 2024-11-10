@@ -171,6 +171,7 @@ class Map:
         create_UI_Map(self.size, self.rooms)
     
     def close_window(self):
+        create_UI_Map(self.size, self.rooms, close=True)
         pass
 
     def get_room(self, position : Vector2) -> Room:
@@ -266,7 +267,7 @@ class Combat:
                     continue
                 match combat_action:
                     case "1":
-                        """Do attack"""
+                        enemyturn = True
                         pass
                     case "2":
                         print(self.player.inventory)
@@ -294,8 +295,8 @@ class Combat:
                             if self.player.hp > 0:
                                 print(f"You failed to flee and took {self.enemy.dmg * 2} damage")
                             else:
-                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage and you died
-                                      break")
+                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage and you died")
+                                break
                             enemyturn = True
             else:             
                 enemyturn = False
@@ -304,7 +305,9 @@ class Combat:
                 if randint(1,100) < self.enemy.special_chance*100:
                     print(self.enemy.special_info)
                     self.enemy.use_special(self.enemy.special)
-
+                if self.player.hp <= 0:
+                    print("You died")
+                    break
             sleep(1)
         self.map.get_room(self.player.position).is_enemy_defeated = True
 
@@ -395,6 +398,7 @@ def run_game():
         if player.hp <= 0:
             print("Game over")
             map.close_window()
+            sleep(0.5)
             break
 
         print(f"{'='*15} New Round {'='*15}")
