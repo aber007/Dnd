@@ -1,7 +1,7 @@
 import os
 from random import randint, choices, choice
 from time import sleep
-from .UI_map_creation import openUIMap, update
+from .UI_map_creation import openUIMap, Process, Manager
 from . import (
     CONSTANTS,
     ENEMY_DATA,
@@ -9,12 +9,6 @@ from . import (
     Inventory,
     Vector2
     )
-
-try:
-    from multiprocessing import Process, Manager, freeze_support
-except ImportError:
-    os.system("pip install multiprocessing")
-    from multiprocessing import Process, Manager, freeze_support
 
 
 class Entity:
@@ -128,7 +122,7 @@ class Map:
                         print(f"You rolled {dice_result} and managed to escape unharmed")
                     else:
                         print(f"You rolled {dice_result} and was harmed by the trap while escaping")
-                        player.take_damage(CONSTANTS["normal_trap_base_dmg"])
+                        player.take_damage(CONSTANTS["normal_trap_base_dmg"], return_text=True)
         
         def interact(self, player : Player, map) -> None:
             """Called when the player chooses to interact with a room. Eg. opening a chest or opening a shop etc\n
@@ -140,7 +134,7 @@ class Map:
 
                 case "mimic_trap":
                     print("\nOh no! As you opened the chest you got ambushed by a Mimic!")
-                    player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"])
+                    player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"], return_text=True)
                     print()
                     Combat(player, map, force_enemy_type = "Mimic").start()
                 
@@ -149,25 +143,27 @@ class Map:
 
 
     class UI:
-        def __init__(self) -> None:
-            # to be set by the openUIMap thread
-            self.grids : dict[str,any]
-            self.walls : dict[str,any]
-
+        def __init__(self, size, rooms) -> None:
             # to be set by the parent Map object
-            self.rooms : list[list[Map.Room]]
-            self.size : int
+            self.size : int = size
+            self.rooms : list[list[Map.Room]] = rooms
 
+            self.manager = Manager()
+            self.command_queue = self.manager.Queue(100)
             self.UI_thread : Process | None = None
         
         def open(self):
-            # create_UI_Map(self.size, self.rooms)
-
-            self.UI_thread = Process(target=openUIMap, args=(self.grids, self.walls, self.size))
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, self.command_queue))
             self.UI_thread.start()
+            sleep(0.5)
         
-        def update():
-            pass
+        def update(self, tile_position : Vector2, new_bg_color : str):
+            self.command_queue.put_nowait(f"{tile_position.x},{tile_position.y} {new_bg_color}")
+        
+        def close(self):
+            self.UI_thread.terminate()
+            self.UI_thread.join()
+            self.UI_thread.close()
 
     def __init__(self, size : int = CONSTANTS["map_base_size"]) -> None:
         """Generates the playable map"""
@@ -192,28 +188,16 @@ class Map:
                     rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "E", "S", "W"])
         self.rooms = rooms
 
-        self.setup_UI_shared_vars()
+        self.UI_instance = Map.UI(self.size, self.rooms)
     
-    def setup_UI_shared_vars(self):
-        self.UI_instance = Map.UI()
-        
-        self.UI_instance.manager = Manager()
-        self.UI_instance.grids = self.UI_instance.manager.dict()
-        self.UI_instance.walls = self.UI_instance.manager.dict()
-        self.UI_instance.rooms = self.rooms
-        self.UI_instance.size = self.size
-    
-    def open_UI_window(self):
+    def open_UI_window(self) -> None:
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
-        # return create_UI_Map(self.size, self.rooms)
         self.UI_instance.open()
     
-
-    # def close_window(self):
-    #     create_UI_Map(self.size, self.rooms, close=True)
-    #     pass
+    def close_UI_window(self) -> None:
+        self.UI_instance.close()
 
     def get_room(self, position : Vector2) -> Room:
         """Using an x and a y value, return a room at that position"""
@@ -226,7 +210,7 @@ class Map:
         match direction:
             case "N":
                 if y > 0:  # Ensure not moving out of bounds
-                    y -= 1         
+                    y -= 1
             case "S":
                 if y < len(self.rooms) - 1:  # Ensure not moving out of bounds
                     y += 1
@@ -241,7 +225,7 @@ class Map:
 
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
-        update(self.rooms)
+        self.UI_instance.update(player.position, "gray")
 
         self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
 
@@ -431,7 +415,7 @@ def run_game():
     map = Map()
     player = Player(map.starting_position)
 
-    ui_thread = map.open_UI_window()
+    map.open_UI_window()
 
 
     while player.is_alive:
@@ -471,6 +455,7 @@ def run_game():
         print()
 
     print("Game over")
+    map.open_UI_window()
     
 
 
