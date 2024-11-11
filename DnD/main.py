@@ -1,11 +1,13 @@
 import os
 from random import randint, choices, choice, uniform
 from time import sleep
+from .story import play, stop
 from .UI_map_creation import openUIMap, Process, Manager
 from . import (
     CONSTANTS,
     ITEM_DATA,
     ENEMY_DATA,
+    INTERACTION_DATA,
     Item,
     Inventory,
     Vector2,
@@ -119,6 +121,8 @@ class Map:
                     for item in possible_items:
                         item_probabilites.append(ITEM_DATA[item]["probability"])
                     self.chest_item = str(choices(possible_items, item_probabilites)).removeprefix("['").removesuffix("']")
+                    print(choice(INTERACTION_DATA["chest"])
+)
                     pass # decide chest item
 
                 case ("shop", True):
@@ -146,7 +150,8 @@ class Map:
                     pass # give player the chest_item, print to console f"You found {item.name_in_sentence}\n{item.description}"
 
                 case "mimic_trap":
-                    print("\nOh no! As you opened the chest you got ambushed by a Mimic!")
+                    print()
+                    print(choice(INTERACTION_DATA["mimic"]))
                     player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"], log=True)
                     print()
                     Combat(player, map, force_enemy_type = "Mimic").start()
@@ -280,8 +285,16 @@ class Combat:
 
     def start(self):
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
+        stop()
+        play("fight.mp3")
         print(f"{'='*15} Combat {'='*15}")
-        print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
+        story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
+        if "enemy" in story_text_enemy:
+            story_text_enemy.replace("enemy", self.enemy.name_in_sentence)
+            print(story_text_enemy.replace("enemy", self.enemy.name_in_sentence))
+        else:
+            print(story_text_enemy)
+            print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         enemyturn = choice([True, False])
 
         while self.player.is_alive and self.enemy.is_alive:
@@ -324,9 +337,9 @@ class Combat:
                             
                             # if you escaped with coins
                             elif roll == 20:
-                                print(f"You managed to scoop up a few coins while running out")
+                                print(choice(INTERACTION_DATA["escape_20"]))
                                 self.player.gold += self.enemy.gold // 2
-                            print(f"You successfully fled the {self.enemy.name}")
+                            print(choice(INTERACTION_DATA["escape"]))
                             break
 
                         # if you didnt escape
@@ -354,6 +367,7 @@ class Combat:
             enemyturn = not enemyturn
         
         self.map.get_room(self.player.position).is_enemy_defeated = True
+        play("test.wav")
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
@@ -422,10 +436,10 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 def run_game():
     map = Map()
     player = Player(map.starting_position)
-
     map.open_UI_window()
-
+    play("test.wav")
     while player.hp > 0:
+        
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and ask user to choose

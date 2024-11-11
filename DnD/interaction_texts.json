@@ -1,0 +1,63 @@
+{
+    "escape": [
+        "You manage to outrun the monster, its roar fading behind you.",
+        "With a final burst of speed, you escape the monste's reach.",
+        "You round a corner just in time, leaving the monster behind.",
+        "Breathing heavily, you glance back and see the monster is nowhere in sight.",
+        "Your legs burn, but you manage to put enough distance between you and the monster.",
+        "You hear the monster's growl fade as you slip into safety.",
+        "The monster gives up the chase as you disappear into the shadows.",
+        "With quick thinking and a fast pace, you lose the monster in the maze of streets.",
+        "You dive into a hidden alcove, just as the monster passes by unaware.",
+        "The monster slows, then stops, and you know you've escaped its pursuit."
+      ],
+    "escape_20": [
+        "You managed to scoop up a few coins while running out.",
+        "In the chaos, you grab some coins before making your escape.",
+        "With a handful of coins, you dash out of the room just in time.",
+        "You pocket a few coins as you slip out the door.",
+        "Coins jingle in your pocket as you make your escape.",
+        "You glance back, clutching the coins you managed to snag.",
+        "You grab a handful of coins, hoping it was worth the risk.",
+        "Barely making it out, you find a few coins clutched in your hand.",
+        "You don't leave empty-handed, a few coins safely in your grasp.",
+        "Your fingers close around a small pile of coins as you flee."
+    ],
+    "enemy": [
+        "A shadow looms as enemy steps into your path.",
+        "You freeze as a hostile figure appears before you.",
+        "Something confronts you, blocking your way forward.",
+        "You tense up as enemy emerges, ready for battle.",
+        "An ominous figure appears, eyes locked on you.",
+        "A threat materializes, and you brace yourself for combat.",
+        "A menacing foe appears, weapons drawn.",
+        "The air thickens as something steps forward, challenging you.",
+        "You're not alone— enemy has arrived, ready to fight.",
+        "Suddenly, enemy appears, disrupting your path."
+    ],
+    "chest": [
+        "You stumble upon a chest, its lid gleaming with potential treasure.",
+        "A dusty chest catches your eye, waiting to be opened.",
+        "You find a chest! What wonders might it hold?",
+        "The chest before you looks old, but promising.",
+        "Luck is on your side; you've discovered a chest!",
+        "You reach down, hand hovering over a mysterious chest.",
+        "An abandoned chest lies in your path, tempting you to open it.",
+        "You find a chest—could it be filled with gold, or something more?",
+        "Excitement bubbles up as you spot a chest in the corner.",
+        "A chest stands before you. What secrets could it hold?"
+    ],
+    "mimic": [
+        "You open the chest, only to reveal a grotesque mimic ready to strike!",
+        "The chest shudders and transforms into a monstrous mimic, jaws snapping shut.",
+        "You think you've found treasure, but the chest suddenly turns into a mimic!",
+        "The chest creaks and twists, and out pops a hungry mimic!",
+        "What you thought was a chest is now a mimic, its teeth gleaming hungrily.",
+        "As you lift the lid, the chest springs to life, revealing its true form: a mimic!",
+        "You're caught off guard as the chest morphs into a vicious mimic.",
+        "A glimmer of hope fades as the chest reveals itself to be a mimic, hungry for a fight.",
+        "You reach for the chest, only to see it shift into the terrifying form of a mimic.",
+        "The chest opens with a strange groan, but instead of treasure, a mimic leaps out!"
+  ]
+  }
+  

@@ -29,11 +29,12 @@ CONSTANTS = {
     "mimic_trap_base_ambush_dmg": 4,
     
     "item_config_file": "./items.json",
-    "enemy_config_file": "./enemies.json"
+    "enemy_config_file": "./enemies.json",
+    "interaction_text_file": "./interaction_texts.json"
 }
 
 from .player_actions import get_user_action_choice
-from .load_config_files import ITEM_DATA, ENEMY_DATA
+from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
 from .items import Item, Inventory
 from .main import run_game
