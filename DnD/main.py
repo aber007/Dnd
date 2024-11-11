@@ -47,7 +47,7 @@ class Player(Entity):
         # max() ensures the roll has a min value of 1
         dice_result = max(1, randint(1, CONSTANTS["dice_base_sides"]) + self.get_dice_modifier())
         self.active_dice_effects.clear()
-        
+
         if success:
             return (success(dice_result), dice_result)
         else:
@@ -73,7 +73,7 @@ class Enemy(Entity):
     
     def attack(self) -> None:
         self.target.take_damage(self.dmg)
-    
+
     def on_damage_taken(self, dmg : int, remaining_hp : int) -> None:
         print(f"The enemy was hit for {dmg} damage\nEnemy hp remaining: {remaining_hp}")
 
@@ -96,8 +96,8 @@ class Map:
             self.chest_item : Item | None = None
             self.is_enemy_defeated : bool | None = None
 
-            
-        
+
+
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. Eg. starts the trap interaction or decides a chest's item etc"""
 
@@ -137,7 +137,7 @@ class Map:
                     player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"], return_text=True)
                     print()
                     Combat(player, map, force_enemy_type = "Mimic").start()
-                
+
                 case "shop":
                     pass # shop dialog
 
@@ -168,7 +168,7 @@ class Map:
     def __init__(self, size : int = CONSTANTS["map_base_size"]) -> None:
         """Generates the playable map"""
         self.size = size
-        
+
         if self.size % 2 == 0:
             self.size += 1
         self.starting_position = Vector2(double=int(self.size/2))
@@ -252,34 +252,34 @@ class Combat:
             # if an enemy's probability is -1 it should only be spawned using force_enemy_type
             if (enemy_probability := ENEMY_DATA[enemy_type]["probability"]) != -1:
                 spawn_probabilities[enemy_type] = enemy_probability
-        
+
         distace_from_spawn = ((abs(self.map.starting_position.x - self.player.position.x)**2) + (abs(self.map.starting_position.y - self.player.position.y)**2))**0.5
         """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
         for enemy_type in enemy_types:
             if ENEMY_DATA[enemy_type]["probability"] == 0:
                 new_probability = distace_from_spawn * ((100-ENEMY_DATA[enemy_type]["exp"])/1000)
                 spawn_probabilities[enemy_type] += new_probability
-        
+
         enemy_type_to_spawn = str(choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))).removeprefix("['").removesuffix("']")
 
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
 
-    
+
     def start(self):
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
         print(f"{'='*15} Combat {'='*15}")
         print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         enemyturn = choice([True, False])
-        
+
         while self.player.hp > 0 or self.enemy.hp > 0:
             self.turn += 1
-            
+
             print(f"\n) Turn {self.turn} (")
             print(f"Player hp: {self.player.hp}")
             print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
 
             if enemyturn == False:
-                
+
                 print("Choose action") #Actions will always be same, No need to be dynamic
                 print("1) Attack")
                 print("2) Open Inventory")
@@ -303,7 +303,7 @@ class Combat:
                         roll = self.player.roll_dice()
                         print(f"You rolled a {roll}")
                         if roll >= 12:
-                            if roll < 15:      
+                            if roll < 15:
                                 self.player.take_damage(self.enemy.dmg)
                                 if self.player.hp > 0:
                                     print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing\nPlayer hp remaining: {self.player.hp}")
@@ -323,7 +323,7 @@ class Combat:
                                 print(f"You failed to flee and took {self.enemy.dmg * 2} damage and you died")
                                 break
                             enemyturn = True
-            else:             
+            else:
                 enemyturn = False
                 print(f"The {self.enemy.name} attacked you for {self.enemy.dmg} damage")
                 self.enemy.attack()
@@ -374,7 +374,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
             # when the player moves, if the new room contains a trap, the damage dialog is prompted right away
             # at this point the trap has been dealt with
             player_action_options = default_action_options
-        
+
         case "mimic_trap":
             # if the mimic hasnt been triggered yet the room should look like a chest room
             if not current_room.is_enemy_defeated:
@@ -404,7 +404,7 @@ def check_user_input_error(action_nr : str, action_options : list[str]) -> tuple
     
     if not action_nr.isdigit():
         return (True, f"'{action_nr}' isn't a valid option")
-    
+
     if not (0 < int(action_nr) <= len(action_options)):
         return (True, f"'{action_nr}' is out of range")
     
@@ -417,7 +417,6 @@ def run_game():
 
     map.open_UI_window()
 
-
     while player.is_alive:
         print(f"{'='*15} New Round {'='*15}")
 
@@ -428,7 +427,7 @@ def run_game():
         # Ask the player to choose an action and handle possible errors
         # action_nr starts at 1
         action_nr : str[int] = input("Choose action: ")
-                      
+
         err, err_message = check_user_input_error(action_nr, action_options)
         if err:
             print(err_message, end="\n\n")
@@ -436,7 +435,7 @@ def run_game():
 
         # Decide what to do based on the player's choice
         match action_options[int(action_nr)-1]:
-            case "Open chest" | "Buy from shop":
+            case "Buy from shop":
                 # interact with the current room
                 map.get_room(player.position).interact(player, map)
 
@@ -446,17 +445,35 @@ def run_game():
             
             case "Attempt to flee":
                 pass
+            
+            case "Open chest":
+                def get_random_item():
+                    with open("DnD/items.json", "r") as f:
+                        items = json.load(f)
+                        item_names = list(items.keys())
+                        probabilities = [items[item]["probability"] for item in item_names]
+                        chosen_item_name = choices(item_names, probabilities)[0]
+                        chosen_item = items[chosen_item_name]
+                    return chosen_item
+                item = get_random_item()
+                print(f"You found {item['display_name']}\n{item['description']}")
+                #add to inventory
+                #remove from chest
+
+                pass # print to console f"You found {item.display_name}\n{item.description}"
+            
+            case "Buy from shop":
+                pass
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
                 map.move_player(direction=door_to_open, player=player)
-        
+
         print()
 
     print("Game over")
     map.open_UI_window()
-    
 
 
 
