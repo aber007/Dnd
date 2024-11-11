@@ -1,18 +1,21 @@
-import threading
-from time import sleep
-from .map_generation import createmap
+# import threading
+# from time import sleep
 import os
+from . import Vector2
 try:
     import tkinter as tk
 except ImportError:
     os.system("pip install tkinter")
     import tkinter as tk
 
-close_thread = False
+try:
+    from multiprocessing import Process, Manager
+except ImportError:
+    os.system("pip install multiprocessing")
+    from multiprocessing import Process, Manager
 
-def openUIMap(size, map):
-    global close_thread, main, grids 
-    
+
+def openUIMap(size : int, rooms : list[list[any]], command_queue):
     windowsize = 300
 
     main = tk.Tk()
@@ -25,6 +28,7 @@ def openUIMap(size, map):
     xcord = int(size)
     ycord = int(size)
     
+    # Setup and place grid tiles
     grids = {}
     grid_width = windowsize / ycord
     grid_height = windowsize / xcord
@@ -35,6 +39,7 @@ def openUIMap(size, map):
             grids[key] = tk.Frame(main, bg="gray", width=grid_width, height=grid_height)
             grids[key].place(x=(col - 1) * grid_width, y=(row - 1) * grid_height)
 
+    # Setup walls
     walls = {}
     wall_thickness = grid_width/20
 
@@ -46,81 +51,58 @@ def openUIMap(size, map):
             if row < xcord:
                 walls[f"{frame_key}y"] = tk.Frame(grids[frame_key], bg="black", width=grid_width, height=wall_thickness)
 
+    # Place walls
     for key, wall in walls.items():
         if 'x' in key:
             wall.place(relx=1.0, y=0, anchor='ne')
         elif 'y' in key:
             wall.place(x=0, rely=1.0, anchor='sw')
 
-    def destroy():
+    # Initial grid color update
+    for x in range(len(rooms)):
+        for y in range(len(rooms)):
+            key = f"{(y+1):02d}{(x+1):02d}" #Yes, this looks wrong but it's correct
+            if rooms[x][y].discovered == True and rooms[x][y].type != "trap":
+                grids[key].configure(bg="gray")
+            else:
+                if rooms[x][y].type == "empty":
+                    grids[key].configure(bg="light gray")
+                elif rooms[x][y].type == "enemy":
+                    grids[key].configure(bg="red")
+                elif rooms[x][y].type == "chest":
+                    grids[key].configure(bg="yellow")
+                elif rooms[x][y].type == "trap":
+                    grids[key].configure(bg="dark green")
+                elif rooms[x][y].type == "mimic_trap":
+                    grids[key].configure(bg="light green")
+                elif rooms[x][y].type == "shop":
+                    grids[key].configure(bg="blue")
+
+    def handle_command_queue():
+        # not optimal but the other methods didnt work as expected 
+        try:
+            qsize = command_queue.qsize()
+        except:
+            destroy()
+            return
+
+        if qsize:
+            # eg. command: "10,5 red"
+            command = command_queue.get()
+
+            tile_coords_str, bg_color = command.split(" ")
+            x,y = list(map(lambda i : int(i), tile_coords_str.split(",")))
+            
+            key = f"{(y+1):02d}{(x+1):02d}"
+            grids[key].configure(bg=bg_color)
+
+        main.after(100, handle_command_queue)
+
+
+    def destroy(_ = None):
         main.quit()
         main.destroy()
     
-    def check_close():
-        if close_thread:
-            print("Trying to close")
-            main.quit()
-            main.destroy()
-            print("Closed")
-        else:
-            main.after(100, check_close)  # Check every 100ms for close_thread update
-    
-    main.bind("<Escape>", lambda e: destroy)
-    main.after(100, check_close)  # Start the periodic close check
+    main.bind("<Escape>", destroy)
+    main.after(100, handle_command_queue)
     main.mainloop()
-
-
-def create_UI_Map(size, map, close=False) -> None:
-    global close_thread
-
-    if not close:
-        ui_thread = threading.Thread(target=openUIMap, args=(size, map))
-        ui_thread.start()
-
-    # Initial update and check for closure
-    sleep(0.5)
-    update(map)
-    
-    try:
-        if close:
-            close_thread = True  
-            ui_thread.join()     # Wait for the thread to exit
-
-    except UnboundLocalError: # This is not a good way to close the program and needs to be changed later
-        exit()
-
-
-#Updating the map after movement. Needs to be ran after each move
-def update(map):
-    global grids
-
-    if close_thread:
-        return  # Skip update if close flag is set
-    
-    for x in range(len(map)):
-        for y in range(len(map)):
-            key = f"{(y+1):02d}{(x+1):02d}" #Yes, this looks wrong but it's correct
-            if map[x][y].discovered == True and map[x][y].type != "trap":
-                grids[key].configure(bg="gray")
-            else:
-                if map[x][y].type == "empty":
-                    grids[key].configure(bg="light gray")
-                elif map[x][y].type == "enemy":
-                    grids[key].configure(bg="red")
-                elif map[x][y].type == "chest":
-                    grids[key].configure(bg="yellow")
-                elif map[x][y].type == "trap":
-                    grids[key].configure(bg="dark green")
-                elif map[x][y].type == "mimic_trap":
-                    grids[key].configure(bg="light green")
-                elif map[x][y].type == "shop":
-                    grids[key].configure(bg="blue")
-
-
-
-
-if __name__ == "__main__":
-    size = 5
-    map = createmap(size)
-    create_UI_Map(size, map)
-    
