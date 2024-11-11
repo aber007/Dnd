@@ -109,8 +109,6 @@ class Map:
             self.chest_item : Item | None = None
             self.is_enemy_defeated : bool | None = None
 
-
-
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
@@ -122,11 +120,9 @@ class Map:
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
-                    item_probabilites = []
-                    for item in possible_items:
-                        item_probabilites.append(ITEM_DATA[item]["probability"])
-                    self.chest_item = str(choices(possible_items, item_probabilites)).removeprefix("['").removesuffix("']")
-                    pass # decide chest item
+                    item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
+                    chosen_chest_item_id = choices(possible_items, item_probabilites)[0]
+                    self.chest_item = Item(chosen_chest_item_id)
 
                 case ("shop", True):
                     pass # decide shop's wares/prices?
@@ -148,9 +144,8 @@ class Map:
 
             match self.type:
                 case "chest":
-                    print(f"You found {ITEM_DATA[self.chest_item]['name_in_sentence']}\n{ITEM_DATA[self.chest_item]['description']}")
                     player.inventory.receive_item(self.chest_item)
-                    pass # give player the chest_item, print to console f"You found {item.name_in_sentence}\n{item.description}"
+                    self.chest_item = None
 
                 case "mimic_trap":
                     print("\nOh no! As you opened the chest you got ambushed by a Mimic!")
@@ -160,7 +155,6 @@ class Map:
 
                 case "shop":
                     pass # shop dialog
-
 
     class UI:
         def __init__(self, size, rooms) -> None:
@@ -206,7 +200,7 @@ class Map:
                 if x == int(self.size/2) and y == int(self.size/2):
                     rooms[x][y] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"])
                 else:
-                    roomtype = str(choices(room_types, probabilities)).removeprefix("['").removesuffix("']")
+                    roomtype = choices(room_types, probabilities)[0]
                     rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "E", "S", "W"])
         self.rooms = rooms
 
@@ -282,7 +276,7 @@ class Combat:
                 new_probability = distace_from_spawn * ((100-ENEMY_DATA[enemy_type]["exp"])/1000)
                 spawn_probabilities[enemy_type] += new_probability
 
-        enemy_type_to_spawn = str(choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))).removeprefix("['").removesuffix("']")
+        enemy_type_to_spawn = choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))[0]
 
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
 
@@ -420,7 +414,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 *door_options
             ]
 
-    
     return player_action_options
 
 
@@ -447,8 +440,7 @@ def run_game():
                 map.get_room(player.position).interact(player, map)
 
             case "Open Inventory":
-                print(player.inventory)
-                print("Choose item?")
+                print("selected item:", player.inventory.select_item()) #temp
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
