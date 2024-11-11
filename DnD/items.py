@@ -11,7 +11,6 @@ class Item:
     def use(self) -> any:
         """If the item is offensive, return its damage\n
         If the item isnt offensive return a callable requiring 1 argument, player. This callable is expected to called in main"""
-        # remember item durability
 
         return_val : any = None
 
@@ -37,13 +36,14 @@ class Item:
         
         self.durability -= 1
         if self.durability == 0:
+            print(f"{self.name} broke and is now useless!")
             self.parent_inventory.remove_item(self)
         
         return return_val
 
     
     def __str__(self):
-        return self.id
+        return self.name
 
 
 
