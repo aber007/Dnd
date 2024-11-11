@@ -384,6 +384,11 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     match current_room.type:
         case "empty":
+            x, y = player.position
+            if x == int(map.size/2) and y == int(map.size/2):
+                print(choice(INTERACTION_DATA["start"]) + "\n")
+            else:
+                print(choice(INTERACTION_DATA["empty"]) + "\n")
             player_action_options = default_action_options
 
         case "enemy":
