@@ -243,7 +243,21 @@ class Map:
 
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
-        self.UI_instance.update(player.position, "gray")
+        color = "light gray"
+        if self.rooms[x][y].type == "empty":
+            color = "light gray"
+        elif self.rooms[x][y].type == "enemy":
+            color = "red"
+        elif self.rooms[x][y].type == "chest":
+            color = "yellow"
+        elif self.rooms[x][y].type == "trap":
+            color = "dark green"
+        elif self.rooms[x][y].type == "mimic_trap":
+            color = "yellow"
+        elif self.rooms[x][y].type == "shop":
+            color = "blue"
+            
+        self.UI_instance.update(player.position, color)
 
         self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
 
