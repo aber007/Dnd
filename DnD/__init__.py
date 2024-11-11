@@ -5,7 +5,7 @@ CONSTANTS = {
         "enemy": 0.5,
         "chest": 0.2,
         "trap": 0.05,
-        "mimic_trap": 0.05,
+        "mimic_trap": 10, #0.05,
         "shop": 0.05
     },
     "normal_trap_base_dmg": 3,
@@ -32,6 +32,7 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json"
 }
 
+from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA
 from .vector2 import Vector2
 from .items import Item, Inventory
