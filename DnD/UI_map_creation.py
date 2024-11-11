@@ -85,18 +85,28 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
             return
 
         if qsize:
-            # eg. command = "10,5 red"
-            command = command_queue.get()
+            # eg. command = "tile 10,5 red" or "pp 4,2"
+            raw_command = command_queue.get()
 
-            # update the color of the tile
-            tile_coords_str, bg_color = command.split(" ")
-            x,y = list(map(lambda i : int(i), tile_coords_str.split(",")))
+            command_type, command = raw_command.split(" ", 1)
             
-            key = f"{(y+1):02d}{(x+1):02d}"
-            grids[key].configure(bg=bg_color)
+            match command_type:
+                case "tile":
+                    # update the bg color of the tile
+                    tile_coords_str, bg_color = command.split(" ", 1)
+                    x,y = list(map(lambda i : int(i), tile_coords_str.split(",")))
+                    
+                    key = f"{(y+1):02d}{(x+1):02d}"
+                    grids[key].configure(bg=bg_color)
 
-            # update the position of the player rectangle
-            update_player_pos(Vector2(x,y))
+                case "pp":
+                    # reposition the player position rectangle
+                    x,y = list(map(lambda i : int(i), command.split(",")))
+                    update_player_pos(Vector2(x,y))
+        
+        # of there more than 1 command in the queue handle it right away
+        if 1 < qsize:
+            handle_command_queue()
         
         main.after(100, handle_command_queue)
 

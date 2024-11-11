@@ -171,10 +171,14 @@ class Map:
             self.UI_thread.start()
             sleep(0.5)
         
-        def update(self, player_pos : Vector2, new_bg_color : str):
-            """Sends a command to the UI to make the background color of the tile the player is standing on into new_bg_color\n
-            The same command also updates the player position rectangle to the players current position"""
-            self.command_queue.put_nowait(f"{player_pos.x},{player_pos.y} {new_bg_color}")
+        def send_command(self, type : str, position : Vector2, *args : str):
+            """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of tile\n
+            Eg. send_command("pp", player.position) updates the player rect postion to the players current position\n
+            Eg. send_command("tile", player.position + Vector2(0,1), "blue") sets background color of the tile to the players north to blue"""
+            command_line = f"{type} {position.x},{position.y}"
+            if len(args):
+                command_line += " " + " ".join([str(arg) for arg in args])
+            self.command_queue.put_nowait(command_line)
         
         def close(self):
             self.UI_thread.terminate()
@@ -241,7 +245,9 @@ class Map:
 
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
-        self.UI_instance.update(player.position, "gray")
+        
+        self.UI_instance.send_command("tile", player.position, "gray")
+        self.UI_instance.send_command("pp", player.position)
 
         self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
 
