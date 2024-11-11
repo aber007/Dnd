@@ -5,7 +5,7 @@ CONSTANTS = {
         "enemy": 0.5,
         "chest": 0.2,
         "trap": 0.05,
-        "mimic_trap": 10, #0.05,
+        "mimic_trap": 0.05,
         "shop": 0.05
     },
     "normal_trap_base_dmg": 3,
