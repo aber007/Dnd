@@ -425,7 +425,7 @@ def run_game():
 
     map.open_UI_window()
 
-    while player.is_alive:
+    while player.hp > 0:
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and print them to console
@@ -450,9 +450,6 @@ def run_game():
             case "Open inventory":
                 print(player.inventory)
                 print("Choose item?")
-            
-            case "Attempt to flee":
-                pass
             
             case "Open chest":
                 map.get_room(player.position).interact(player, map)
