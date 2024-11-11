@@ -46,11 +46,11 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
                 walls[f"{frame_key}y"] = tk.Frame(grids[frame_key], bg="black", width=grid_width, height=wall_thickness)
 
     # Place walls
-    # for key, wall in walls.items():
-    #     if 'x' in key:
-    #         wall.place(relx=1.0, y=0, anchor='ne')
-    #     elif 'y' in key:
-    #         wall.place(x=0, rely=1.0, anchor='sw')
+    for key, wall in walls.items():
+        if 'x' in key:
+            wall.place(relx=1.0, y=0, anchor='ne')
+        elif 'y' in key:
+            wall.place(x=0, rely=1.0, anchor='sw')
 
     # Setup player icon
     player_icon = tk.Frame(main, bg="magenta2", width=grid_width/3, height=grid_height/3)
