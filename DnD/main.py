@@ -335,7 +335,7 @@ class Combat:
                             if self.player.is_alive:
                                 print(f"You failed to flee and took {self.enemy.dmg * 2} damage")
                             else:
-                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage and you died")
+                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage, killing you in the process")
                                 break
             
             else:
