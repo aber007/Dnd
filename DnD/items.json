@@ -2,6 +2,7 @@
     "twig": {
         "name": "Twig",
         "name_in_sentence": "a twig",
+        "probability": 0.3,
         "type": "weapon",
         "dmg": 1,
         "durability": -1,
@@ -9,6 +10,7 @@
     },
     "knife": {
         "name": "Simple knife",
+        "probability": 0.2,
         "name_in_sentence": "a simple knife",
         "type": "weapon",
         "dmg": 3,
@@ -17,6 +19,7 @@
     },
     "sword": {
         "name": "Steel sword",
+        "probability": 0.1,
         "name_in_sentence": "a steel sword",
         "type": "weapon",
         "dmg": 5,
@@ -25,6 +28,7 @@
     },
     "good_luck_potion": {
         "name": "Potion of Good Luck",
+        "probability": 0.1,
         "name_in_sentence": "a Potion of Good Luck",
         "type": "potion",
         "durability": 1,
@@ -34,6 +38,7 @@
     },
     "the_eye_of_horus":{
         "name": "the Eye of Horus",
+        "probability": 0.1,
         "name_in_sentence": "the Eye of Horus",
         "type": "spell",
         "durability": 1,
@@ -41,6 +46,7 @@
     },
     "breath_of_life":{
         "name": "Breath of Life",
+        "probability": 0.1,
         "name_in_sentence": "a Breath of Life",
         "type": "spell",
         "durability": 3,
@@ -48,6 +54,7 @@
     },
     "breath_of_fire":{
         "name": "Breath of Fire",
+        "probability": 0.1,
         "name_in_sentence": "a Breath of Fire",
         "type": "spell",
         "durability": 3,

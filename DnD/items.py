@@ -31,7 +31,6 @@ class Inventory:
     
     def is_full(self):
         """if all slots arent None, return True"""
-        print(self.slots)
         return False
     
     def receive_item(self, item : str):

@@ -109,6 +109,11 @@ class Map:
                     Combat(player, map).start()
 
                 case ("chest", True):
+                    possible_items = list(ITEM_DATA.keys())
+                    item_probabilites = []
+                    for item in possible_items:
+                        item_probabilites.append(ITEM_DATA[item]["probability"])
+                    self.chest_item = str(choices(possible_items, item_probabilites)).removeprefix("['").removesuffix("']")
                     pass # decide chest item
 
                 case ("shop", True):
@@ -131,6 +136,8 @@ class Map:
 
             match self.type:
                 case "chest":
+                    print(f"You found {ITEM_DATA[self.chest_item]['name_in_sentence']}\n{ITEM_DATA[self.chest_item]['description']}")
+                    player.inventory.receive_item(self.chest_item)
                     pass # give player the chest_item, print to console f"You found {item.name_in_sentence}\n{item.description}"
 
                 case "mimic_trap":
@@ -448,16 +455,8 @@ def run_game():
                 pass
             
             case "Open chest":
-                def get_random_item():
-                    with open("DnD/items.json", "r") as f:
-                        items = ITEM_DATA
-                        item_names = list(items.keys())
-                        probabilities = [items[item]["probability"] for item in item_names]
-                        chosen_item_name = choices(item_names, probabilities)[0]
-                        chosen_item = items[chosen_item_name]
-                    return chosen_item
-                item = get_random_item()
-                print(f"You found {item['display_name']}\n{item['description']}")
+                map.get_room(player.position).interact(player, map)
+                
                 #add to inventory
                 #remove from chest
 
