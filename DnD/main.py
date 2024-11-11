@@ -37,7 +37,7 @@ class Player(Entity):
         
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
 
-        # self.current_enemy : Enemy | None = None
+        self.current_combat : Combat | None = None
     
     def get_dice_modifier(self) -> int:
         return sum(self.active_dice_effects)
@@ -59,6 +59,27 @@ class Player(Entity):
             return (success(dice_result), dice_result)
         else:
             return dice_result
+
+    def open_inventory(self) -> int | None:
+        """If any damage was dealt, return the amount.\n
+        If not damage was dealt return None"""
+
+        selected_item : Item | None = self.inventory.select_item()
+        if selected_item == None:
+            return None
+
+        if selected_item.offensive:
+            if self.current_combat == None:
+                print("You shouldn't use an offensive item outside of combat")
+            else:
+                dmg = selected_item.use()
+                self.current_combat.enemy.take_damage(dmg)
+                return dmg
+
+        else:
+            # non offensive items always return a callable where the argument 'player' is expected
+            use_callable = selected_item.use()
+            use_callable(self)
 
     def attack(self, target) -> int:
         """Attack target your weapons damage dmg_multiplier. The damage dealt is returned"""
@@ -278,6 +299,8 @@ class Combat:
         print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         enemyturn = choice([True, False])
 
+        self.player.current_combat = self
+
         while self.player.is_alive and self.enemy.is_alive:
             self.turn += 1
 
@@ -347,6 +370,9 @@ class Combat:
             sleep(1)
             enemyturn = not enemyturn
         
+        self.player.current_combat = None
+
+        #TODO should only trigger if defeated, not fled
         self.map.get_room(self.player.position).is_enemy_defeated = True
 
 def prompt_dice_roll():
@@ -433,7 +459,7 @@ def run_game():
                 map.get_room(player.position).interact(player, map)
 
             case "Open Inventory":
-                print("selected item:", player.inventory.select_item()) #temp
+                player.open_inventory()
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")

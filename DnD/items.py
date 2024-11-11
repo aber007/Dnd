@@ -2,16 +2,15 @@ from . import ITEM_DATA, get_user_action_choice
 
 class Item:
     def __init__(self, item_id : str) -> None:
-        """Item(item_id, items_data_dict[item_id])"""
-
         self.id = item_id
         self.parent_inventory : Inventory | None = None
 
         # get the attributes of the given item_id and make them properties of this object
         [setattr(self, k, v) for k,v in ITEM_DATA[item_id].items()]
     
-    def use(self):
-        """If the item is offensive, return its damage"""
+    def use(self) -> any:
+        """If the item is offensive, return its damage\n
+        If the item isnt offensive return a callable requiring 1 argument, player. This callable is expected to called in main"""
         # remember item durability
 
         return_val : any = None
@@ -22,8 +21,7 @@ class Item:
     
             case "potion":
                 if self.affects == "dice":
-                    # player.active_dice_effects.append(self.effect)
-                    return_val = lambda : player.active_dice_effects.append(self.effect)
+                    return_val = lambda player: [player.active_dice_effects.append(self.effect), print("Success")]
             
             case "spell":
                 pass #custom code for each spell
