@@ -1,4 +1,4 @@
-from . import ITEM_DATA
+from . import ITEM_DATA, get_user_action_choice
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -10,10 +10,11 @@ class Item:
         [setattr(self, k, v) for k,v in ITEM_DATA[item_id].items()]
     
     def use(self, player):
+        # remember item durability
         match self.type:
             case "weapon":
                 pass
-            
+    
             case "potion":
                 if self.affects == "dice":
                     player.active_dice_effects.append(self.effect)
@@ -30,7 +31,7 @@ class Inventory:
     def __init__(self, size : int) -> None:
         self.size = size
         self.equipped_weapon = Item("twig")
-        self.slots : list[Item | None] = [None] * size
+        self.slots : list[Item | None] = [None] * size # this length should never change
     
     def is_full(self):
         """if all slots arent None, return True"""
@@ -45,12 +46,14 @@ class Inventory:
             action_nr = get_user_action_choice("Choose item to throw out: ", action_options)
             self.slots[int(action_nr)-1] = None
 
+        print(f"\nYou recieved {item.name_in_sentence}")
+
         # set the first found empty slot to the received item
         for idx,slot in enumerate(self.slots):
             if slot == None:
                 self.slots[idx] = item
                 break
-    
+
     def select_item(self) -> Item | None:
         items_in_inventory = [item for item in self.slots if item != None]
 
@@ -68,20 +71,15 @@ class Inventory:
         else:
             print("You have no items to use!")
             return None
-
     
     def __str__(self):
-        lines = []
-        lines.append("---------- [INVENTORY] ----------")
-        lines.append("0) Equipped weapon slot contains " + self.equipped_weapon.name)
+        lines = [
+            "---------- [INVENTORY] ----------",
+            "Equipped weapon: " + self.equipped_weapon.name,
+        ]
 
         for idx, item in enumerate(self.slots):
-            print(idx, item)
-            try:
-                lines.append(f"Slot {idx+1} contains {Item(item).name}")
-            except KeyError:
-                lines.append(f"Slot {idx+1} is empty")
-
+            lines.append(f"Slot {idx+1}: " + item.name if item != None else "empty")
         
         return "\n".join(lines)
 

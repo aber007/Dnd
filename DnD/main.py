@@ -1,29 +1,40 @@
 import os
-from random import randint, choices, choice
+from random import randint, choices, choice, uniform
 from time import sleep
-from .UI_map_creation import openUIMap, Process, Manager
+from .UI_map_creation import openUIMap
 from . import (
     CONSTANTS,
     ITEM_DATA,
     ENEMY_DATA,
     Item,
     Inventory,
-    Vector2
+    Vector2,
+    get_user_action_choice
     )
+
+try:
+    from multiprocessing import Process, Manager
+except ImportError:
+    os.system("pip install multiprocessing")
+    from multiprocessing import Process, Manager
+
 
 
 class Entity:
-    def take_damage(self, dmg : int, return_text : bool = False) -> None:
+    def take_damage(self, dmg : int, log : bool = False) -> None:
         self.hp = max(0, self.hp - dmg)
-        if return_text:
+        self.is_alive = 0 < self.hp
+        if log:
             if 0 < self.hp:
                 self.on_damage_taken(dmg, self.hp)
             else:
                 self.on_death(dmg)
+        
+        return dmg
 
 class Player(Entity):
-    def __init__(self, position : Vector2) -> None:
-        self.position = position
+    def __init__(self, starting_position : Vector2) -> None:
+        self.position = starting_position
         self.hp = CONSTANTS["player_base_hp"]
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
@@ -41,10 +52,10 @@ class Player(Entity):
         Roll the dice and include any dice modifiers.
         If success is provided, it should be a function that takes dice_result and returns a bool.
         If success is provided, returns (success function result, dice result).
-        Otherwise, returns only dice_result.
+        Otherwise, return only dice_result.
         """
 
-        # get a random number between 0 and dice_base_sides then add the dice modifier
+        # get a random number between 1 and dice_base_sides then add the dice modifier
         # max() ensures the roll has a min value of 1
         dice_result = max(1, randint(1, CONSTANTS["dice_base_sides"]) + self.get_dice_modifier())
         self.active_dice_effects.clear()
@@ -54,35 +65,36 @@ class Player(Entity):
         else:
             return dice_result
 
-    def attack(self) -> None:
-        self.current_enemy.take_damage(self.inventory.equipped_weapon.dmg)
+    def attack(self, target, dmg_multiplier : int = 1) -> int:
+        """Attack target your weapons damage  dmg_multiplier. The damage dealt is returned"""
+        return target.take_damage(self.inventory.equipped_weapon.dmg * dmg_multiplier)
 
     def on_damage_taken(self, dmg : int, remaining_hp : int) -> None:
         print(f"The player was hit for {dmg} damage\nPlayer hp remaining: {remaining_hp}")
 
     def on_death(self, dmg : int) -> None:
         print(f"The player was hit for {dmg} dmg and died")
-        self.is_alive = False
 
 class Enemy(Entity):
     def __init__(self, enemy_type : str, target : Player) -> None:
         # get the attributes of the given enemy_type and make them properties of this object
-        # since the probability value wont be useful its not added as an attribute
+        # since the probability value won't be useful it's not added as an attribute
         [setattr(self, k, v) for k,v in ENEMY_DATA[enemy_type].items() if k != "probability"]
 
-        self.target = target
+        self.is_alive = True
     
-    def attack(self) -> None:
-        self.target.take_damage(self.dmg)
+    def attack(self, target, dmg_multiplier : int = 1) -> int:
+        """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
+        return target.take_damage(self.dmg * dmg_multiplier)
 
     def on_damage_taken(self, dmg : int, remaining_hp : int) -> None:
         print(f"The enemy was hit for {dmg} damage\nEnemy hp remaining: {remaining_hp}")
 
     def on_death(self, dmg : int) -> None:
         print(f"The enemy was hit for {dmg} damage and died")
-        self.target.current_enemy = None
+    
     def use_special(self, special : str) -> None:
-        """Runs the code for special abilites which can be used during combat"""
+        """Runs the code for special abilities which can be used during combat"""
         pass
 
 
@@ -98,7 +110,7 @@ class Map:
             self.is_enemy_defeated : bool | None = None
 
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
-            """Called right when the player enters the room. Eg. starts the trap interaction or decides a chest's item etc"""
+            """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
@@ -124,10 +136,10 @@ class Map:
                         print(f"You rolled {dice_result} and managed to escape unharmed")
                     else:
                         print(f"You rolled {dice_result} and was harmed by the trap while escaping")
-                        player.take_damage(CONSTANTS["normal_trap_base_dmg"], return_text=True)
+                        player.take_damage(CONSTANTS["normal_trap_base_dmg"], log=True)
         
         def interact(self, player : Player, map) -> None:
-            """Called when the player chooses to interact with a room. Eg. opening a chest or opening a shop etc\n
+            """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
             match self.type:
@@ -137,7 +149,7 @@ class Map:
 
                 case "mimic_trap":
                     print("\nOh no! As you opened the chest you got ambushed by a Mimic!")
-                    player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"], return_text=True)
+                    player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"], log=True)
                     print()
                     Combat(player, map, force_enemy_type = "Mimic").start()
 
@@ -154,13 +166,15 @@ class Map:
             self.command_queue = self.manager.Queue(100)
             self.UI_thread : Process | None = None
         
-        def open(self):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, self.command_queue))
+        def open(self, player_pos : Vector2):
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
             self.UI_thread.start()
             sleep(0.5)
         
-        def update(self, tile_position : Vector2, new_bg_color : str):
-            self.command_queue.put_nowait(f"{tile_position.x},{tile_position.y} {new_bg_color}")
+        def update(self, player_pos : Vector2, new_bg_color : str):
+            """Sends a command to the UI to make the background color of the tile the player is standing on into new_bg_color\n
+            The same command also updates the player position rectangle to the players current position"""
+            self.command_queue.put_nowait(f"{player_pos.x},{player_pos.y} {new_bg_color}")
         
         def close(self):
             self.UI_thread.terminate()
@@ -180,7 +194,7 @@ class Map:
         rooms = [[0 for x in range(self.size)] for y in range(self.size)]
         
 
-        # Assign random values to each location with set probabilites
+        # Assign random values to each location with set probabilities
         for x in range(self.size):
             for y in range(self.size):
                 if x == int(self.size/2) and y == int(self.size/2):
@@ -192,11 +206,11 @@ class Map:
 
         self.UI_instance = Map.UI(self.size, self.rooms)
     
-    def open_UI_window(self) -> None:
+    def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
-        self.UI_instance.open()
+        self.UI_instance.open(player_pos)
     
     def close_UI_window(self) -> None:
         self.UI_instance.close()
@@ -234,9 +248,9 @@ class Map:
 
 class Combat:
     def __init__(self, player : Player, map : Map, force_enemy_type : str | None = None) -> None:
-        self.player = player
-        self.map = map
-        self.enemy = self.create_enemy(force_enemy_type)
+        self.player : Player = player
+        self.map : Map = map
+        self.enemy : Enemy = self.create_enemy(force_enemy_type)
         self.turn = 0
 
     def create_enemy(self, force_enemy_type : str | None) -> Enemy:
@@ -266,76 +280,80 @@ class Combat:
 
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
 
-
     def start(self):
-        # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
-        print(f"{'='*15} Combat {'='*15}")
+        print(f"\n{'='*15} Combat {'='*15}")
         print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         enemyturn = choice([True, False])
 
-        while self.player.hp > 0 or self.enemy.hp > 0:
+        while self.player.is_alive and self.enemy.is_alive:
             self.turn += 1
 
             print(f"\n) Turn {self.turn} (")
             print(f"Player hp: {self.player.hp}")
             print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
 
-            if enemyturn == False:
+            if not enemyturn:
+                action_options = ["Attack", "Open Inventory", "Attempt to Flee"]
+                action_nr = get_user_action_choice("Choose action: ", action_options)
 
-                print("Choose action") #Actions will always be same, No need to be dynamic
-                print("1) Attack")
-                print("2) Open Inventory")
-                print("3) Flee")
-                actions = ["Attack", "Open Inventory", "Flee"]
-                combat_action : str[int] = input("Choose action: ")
-                err, err_message = check_user_input_error(combat_action, actions)
-                if err:
-                    print(err_message, end="\n\n")
-                    continue
-                match combat_action:
-                    case "1":
-                        enemyturn = True
-                        pass
-                    case "2":
+                match action_options[int(action_nr)-1]:
+                    case "Attack":
+                        dmg_dealt = self.player.attack(target=self.enemy)
+                        print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
+                    
+                    case "Open Inventory":
                         print(self.player.inventory)
-                        pass
-                    case "3":
+                        # item_to_use = self.player.inventory.select_item()
+                        # item_to_use.use()
+                    
+                    case "Attempt to Flee":
                         print("Attempting to flee, Roll 12 or higher to succeed")
                         prompt_dice_roll()
                         roll = self.player.roll_dice()
                         print(f"You rolled a {roll}")
-                        if roll >= 12:
+
+                        # if you managed to escape
+                        if 12 <= roll:
+                            # if the enemy hit you on your way out
                             if roll < 15:
-                                self.player.take_damage(self.enemy.dmg)
-                                if self.player.hp > 0:
+                                self.enemy.attack(target=self.player)
+                                if self.player.is_alive:
                                     print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing\nPlayer hp remaining: {self.player.hp}")
                                 else:
-                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing and you died")
+                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing, killing you in the process")
                                     break
+                            
+                            # if you escaped with coins
                             elif roll == 20:
                                 print(f"You managed to scoop up a few coins while running out")
                                 self.player.gold += self.enemy.gold // 2
-                            print(f"You sucessfully fled the {self.enemy.name}")
+                            print(f"You successfully fled the {self.enemy.name}")
                             break
+
+                        # if you didnt escape
                         else:
-                            self.player.take_damage(self.enemy.dmg * 2)
-                            if self.player.hp > 0:
+                            self.enemy.attack(target=self.player, dmg_multiplier=2)
+                            if self.player.is_alive:
                                 print(f"You failed to flee and took {self.enemy.dmg * 2} damage")
                             else:
-                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage and you died")
+                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage, killing you in the process")
                                 break
-                            enemyturn = True
+            
             else:
-                enemyturn = False
                 print(f"The {self.enemy.name} attacked you for {self.enemy.dmg} damage")
-                self.enemy.attack()
-                if randint(1,100) < self.enemy.special_chance*100:
+                self.enemy.attack(target=self.player)
+
+                if uniform(0, 1) < self.enemy.special_chance:
                     print(self.enemy.special_info)
                     self.enemy.use_special(self.enemy.special)
-                if self.player.hp <= 0:
+                
+                if not self.player.is_alive:
                     print("You died")
                     break
+            
             sleep(1)
+            enemyturn = not enemyturn
+        
         self.map.get_room(self.player.position).is_enemy_defeated = True
 
 def prompt_dice_roll():
@@ -348,7 +366,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
     current_room : Map.Room = map.get_room(player.position)
     door_options = [f"Open door facing {door_direction}" for door_direction in current_room.doors]
 
-    default_action_options = [*door_options, "Open inventory"]
+    default_action_options = [*door_options, "Open Inventory"]
 
 
     match current_room.type:
@@ -367,7 +385,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 player_action_options = [
                     "Open chest",
                     *door_options,
-                    "Open inventory"
+                    "Open Inventory"
                 ]
             else:
                 player_action_options = default_action_options
@@ -378,12 +396,12 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
             player_action_options = default_action_options
 
         case "mimic_trap":
-            # if the mimic hasnt been triggered yet the room should look like a chest room
+            # if the mimic hasn't been triggered yet the room should look like a chest room
             if not current_room.is_enemy_defeated:
                 player_action_options = [
                     "Open chest",
                     *door_options,
-                    "Open inventory"
+                    "Open Inventory"
                 ]
             # if the mimic has been defeated
             else:
@@ -392,56 +410,37 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
         case "shop":
             player_action_options = [
                 "Buy from shop",
-                "Open inventory",
+                "Open Inventory",
                 *door_options
             ]
 
     return player_action_options
 
-def check_user_input_error(action_nr : str, action_options : list[str]) -> tuple[bool, str]:
 
-    """Checks if the user's input is valid. If not: return (True, "error message"), otherwise: return (False, "")"""
-
-    
-    if not action_nr.isdigit():
-        return (True, f"'{action_nr}' isn't a valid option")
-
-    if not (0 < int(action_nr) <= len(action_options)):
-        return (True, f"'{action_nr}' is out of range")
-    
-    return (False, "")
 
 
 def run_game():
     map = Map()
     player = Player(map.starting_position)
 
-    map.open_UI_window()
+    map.open_UI_window(player_pos = player.position)
 
     while player.is_alive:
         print(f"{'='*15} New Round {'='*15}")
 
-        # Get a list of the players currently available options and print them to console
+        # Get a list of the players currently available options and ask user to choose
+        # Retry until a valid answer has been given
         action_options : list[str] = get_player_action_options(player, map)
-        print("\n".join(f"{idx+1}) {action}" for idx,action in enumerate(action_options)))
-
-        # Ask the player to choose an action and handle possible errors
-        # action_nr starts at 1
-        action_nr : str[int] = input("Choose action: ")
-
-        err, err_message = check_user_input_error(action_nr, action_options)
-        if err:
-            print(err_message, end="\n\n")
-            continue
+        action_nr = get_user_action_choice("Choose action: ", action_options)
 
         # Decide what to do based on the player's choice
         match action_options[int(action_nr)-1]:
-            case "Buy from shop":
+            case "Open chest" | "Buy from shop":
                 # interact with the current room
                 map.get_room(player.position).interact(player, map)
 
             case "Open Inventory":
-                print("selected item:", player.inventory.select_item())
+                print("selected item:", player.inventory.select_item()) #temp
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
@@ -451,7 +450,7 @@ def run_game():
         print()
 
     print("Game over")
-    map.open_UI_window()
+    map.close_UI_window()
 
 
 

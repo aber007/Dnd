@@ -32,6 +32,7 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json"
 }
 
+from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA
 from .vector2 import Vector2
 from .items import Item, Inventory
