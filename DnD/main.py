@@ -1,8 +1,8 @@
 import os
 from random import randint, choices, choice, uniform
 from time import sleep
+from .UI_map_creation import openUIMap
 from .story import play, stop
-from .UI_map_creation import openUIMap, Process, Manager
 from . import (
     CONSTANTS,
     ITEM_DATA,
@@ -13,6 +13,13 @@ from . import (
     Vector2,
     get_user_action_choice
     )
+
+try:
+    from multiprocessing import Process, Manager
+except ImportError:
+    os.system("pip install multiprocessing")
+    from multiprocessing import Process, Manager
+
 
 
 class Entity:
@@ -28,8 +35,8 @@ class Entity:
         return dmg
 
 class Player(Entity):
-    def __init__(self, position : Vector2) -> None:
-        self.position = position
+    def __init__(self, starting_position : Vector2) -> None:
+        self.position = starting_position
         self.hp = CONSTANTS["player_base_hp"]
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
@@ -50,7 +57,7 @@ class Player(Entity):
         Otherwise, return only dice_result.
         """
 
-        # get a random number between 0 and dice_base_sides then add the dice modifier
+        # get a random number between 1 and dice_base_sides then add the dice modifier
         # max() ensures the roll has a min value of 1
         dice_result = max(1, randint(1, CONSTANTS["dice_base_sides"]) + self.get_dice_modifier())
         self.active_dice_effects.clear()
@@ -104,8 +111,6 @@ class Map:
             self.chest_item : Item | None = None
             self.is_enemy_defeated : bool | None = None
 
-
-
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
@@ -117,13 +122,10 @@ class Map:
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
-                    item_probabilites = []
-                    for item in possible_items:
-                        item_probabilites.append(ITEM_DATA[item]["probability"])
-                    self.chest_item = str(choices(possible_items, item_probabilites)).removeprefix("['").removesuffix("']")
-                    print(choice(INTERACTION_DATA["chest"])
-)
-                    pass # decide chest item
+                    item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
+                    chosen_chest_item_id = choices(possible_items, item_probabilites)[0]
+                    self.chest_item = Item(chosen_chest_item_id)
+                    print(choice(INTERACTION_DATA["chest"]))
 
                 case ("shop", True):
                     pass # decide shop's wares/prices?
@@ -145,9 +147,8 @@ class Map:
 
             match self.type:
                 case "chest":
-                    print(f"You found {ITEM_DATA[self.chest_item]['name_in_sentence']}\n{ITEM_DATA[self.chest_item]['description']}")
                     player.inventory.receive_item(self.chest_item)
-                    pass # give player the chest_item, print to console f"You found {item.name_in_sentence}\n{item.description}"
+                    self.chest_item = None
 
                 case "mimic_trap":
                     print()
@@ -159,7 +160,6 @@ class Map:
                 case "shop":
                     pass # shop dialog
 
-
     class UI:
         def __init__(self, size, rooms) -> None:
             # to be set by the parent Map object
@@ -170,13 +170,15 @@ class Map:
             self.command_queue = self.manager.Queue(100)
             self.UI_thread : Process | None = None
         
-        def open(self):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, self.command_queue))
+        def open(self, player_pos : Vector2):
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
             self.UI_thread.start()
             sleep(0.5)
         
-        def update(self, tile_position : Vector2, new_bg_color : str):
-            self.command_queue.put_nowait(f"{tile_position.x},{tile_position.y} {new_bg_color}")
+        def update(self, player_pos : Vector2, new_bg_color : str):
+            """Sends a command to the UI to make the background color of the tile the player is standing on into new_bg_color\n
+            The same command also updates the player position rectangle to the players current position"""
+            self.command_queue.put_nowait(f"{player_pos.x},{player_pos.y} {new_bg_color}")
         
         def close(self):
             self.UI_thread.terminate()
@@ -202,17 +204,17 @@ class Map:
                 if x == int(self.size/2) and y == int(self.size/2):
                     rooms[x][y] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"])
                 else:
-                    roomtype = str(choices(room_types, probabilities)).removeprefix("['").removesuffix("']")
+                    roomtype = choices(room_types, probabilities)[0]
                     rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "E", "S", "W"])
         self.rooms = rooms
 
         self.UI_instance = Map.UI(self.size, self.rooms)
     
-    def open_UI_window(self) -> None:
+    def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
-        self.UI_instance.open()
+        self.UI_instance.open(player_pos)
     
     def close_UI_window(self) -> None:
         self.UI_instance.close()
@@ -292,10 +294,9 @@ class Combat:
                 new_probability = distace_from_spawn * ((100-ENEMY_DATA[enemy_type]["exp"])/1000)
                 spawn_probabilities[enemy_type] += new_probability
 
-        enemy_type_to_spawn = str(choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))).removeprefix("['").removesuffix("']")
+        enemy_type_to_spawn = choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))[0]
 
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
-
 
     def start(self):
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
@@ -446,7 +447,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 *door_options
             ]
 
-    
     return player_action_options
 
 
@@ -455,10 +455,11 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 def run_game():
     map = Map()
     player = Player(map.starting_position)
-    map.open_UI_window()
     play("test.wav")
-    while player.hp > 0:
-        
+
+    map.open_UI_window(player_pos = player.position)
+
+    while player.is_alive:
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and ask user to choose
@@ -473,8 +474,7 @@ def run_game():
                 map.get_room(player.position).interact(player, map)
 
             case "Open Inventory":
-                print(player.inventory)
-                print("Choose item?")
+                print("selected item:", player.inventory.select_item()) #temp
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
@@ -484,7 +484,7 @@ def run_game():
         print()
 
     print("Game over")
-    map.open_UI_window()
+    map.close_UI_window()
 
 
 
