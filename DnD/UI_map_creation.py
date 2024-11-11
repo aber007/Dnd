@@ -1,7 +1,7 @@
 # import threading
 # from time import sleep
 import os
-from . import Vector2
+from . import CONSTANTS, Vector2
 try:
     import tkinter as tk
 except ImportError:
@@ -59,21 +59,10 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
     for x in range(len(rooms)):
         for y in range(len(rooms)):
             key = f"{(y+1):02d}{(x+1):02d}" #Yes, this looks wrong but it's correct
-            if rooms[x][y].discovered == True and rooms[x][y].type not in ["trap", "shop"]:
-                grids[key].configure(bg="gray")
+            if rooms[x][y].discovered == True:
+                grids[key].configure(bg=CONSTANTS["room_ui_colors"]["discovered"])
             else:
-                if rooms[x][y].type == "empty":
-                    grids[key].configure(bg="light gray")
-                elif rooms[x][y].type == "enemy":
-                    grids[key].configure(bg="red")
-                elif rooms[x][y].type == "chest":
-                    grids[key].configure(bg="yellow")
-                elif rooms[x][y].type == "trap":
-                    grids[key].configure(bg="dark green")
-                elif rooms[x][y].type == "mimic_trap":
-                    grids[key].configure(bg="light green")
-                elif rooms[x][y].type == "shop":
-                    grids[key].configure(bg="blue")
+                grids[key].configure(bg=CONSTANTS["room_ui_colors"][rooms[x][y].type])
 
     def handle_command_queue():
         # not optimal but the other methods didnt work as expected 

@@ -8,6 +8,16 @@ CONSTANTS = {
         "mimic_trap": 0.05,
         "shop": 0.05
     },
+    "room_ui_colors": {
+        "discovered": "gray",
+        "empty": "light gray",
+        "enemy": "red",
+        "chest": "yellow",
+        "trap": "dark green",
+        "mimic_trap": "light green",
+        "shop": "blue",
+    },
+
     "normal_trap_base_dmg": 3,
 
     "player_base_inventory_size": 3,
