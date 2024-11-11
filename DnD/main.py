@@ -71,7 +71,7 @@ class Player(Entity):
 class Enemy(Entity):
     def __init__(self, enemy_type : str, target : Player) -> None:
         # get the attributes of the given enemy_type and make them properties of this object
-        # since the probability value wont be useful its not added as an attribute
+        # since the probability value won't be useful it's not added as an attribute
         [setattr(self, k, v) for k,v in ENEMY_DATA[enemy_type].items() if k != "probability"]
 
         self.is_alive = True
@@ -87,7 +87,7 @@ class Enemy(Entity):
         print(f"The enemy was hit for {dmg} damage and died")
     
     def use_special(self, special : str) -> None:
-        """Runs the code for special abilites which can be used during combat"""
+        """Runs the code for special abilities which can be used during combat"""
         pass
 
 
@@ -105,7 +105,7 @@ class Map:
 
 
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
-            """Called right when the player enters the room. Eg. starts the trap interaction or decides a chest's item etc"""
+            """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
@@ -114,6 +114,11 @@ class Map:
                     Combat(player, map).start()
 
                 case ("chest", True):
+                    possible_items = list(ITEM_DATA.keys())
+                    item_probabilites = []
+                    for item in possible_items:
+                        item_probabilites.append(ITEM_DATA[item]["probability"])
+                    self.chest_item = str(choices(possible_items, item_probabilites)).removeprefix("['").removesuffix("']")
                     pass # decide chest item
 
                 case ("shop", True):
@@ -131,11 +136,13 @@ class Map:
                         player.take_damage(CONSTANTS["normal_trap_base_dmg"], log=True)
         
         def interact(self, player : Player, map) -> None:
-            """Called when the player chooses to interact with a room. Eg. opening a chest or opening a shop etc\n
+            """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
             match self.type:
                 case "chest":
+                    print(f"You found {ITEM_DATA[self.chest_item]['name_in_sentence']}\n{ITEM_DATA[self.chest_item]['description']}")
+                    player.inventory.receive_item(self.chest_item)
                     pass # give player the chest_item, print to console f"You found {item.name_in_sentence}\n{item.description}"
 
                 case "mimic_trap":
@@ -184,7 +191,7 @@ class Map:
         rooms = [[0 for x in range(self.size)] for y in range(self.size)]
         
 
-        # Assign random values to each location with set probabilites
+        # Assign random values to each location with set probabilities
         for x in range(self.size):
             for y in range(self.size):
                 if x == int(self.size/2) and y == int(self.size/2):
@@ -319,7 +326,7 @@ class Combat:
                             elif roll == 20:
                                 print(f"You managed to scoop up a few coins while running out")
                                 self.player.gold += self.enemy.gold // 2
-                            print(f"You sucessfully fled the {self.enemy.name}")
+                            print(f"You successfully fled the {self.enemy.name}")
                             break
 
                         # if you didnt escape
@@ -388,7 +395,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
             player_action_options = default_action_options
 
         case "mimic_trap":
-            # if the mimic hasnt been triggered yet the room should look like a chest room
+            # if the mimic hasn't been triggered yet the room should look like a chest room
             if not current_room.is_enemy_defeated:
                 player_action_options = [
                     "Open chest",
@@ -418,7 +425,7 @@ def run_game():
 
     map.open_UI_window()
 
-    while player.is_alive:
+    while player.hp > 0:
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and ask user to choose
@@ -435,9 +442,6 @@ def run_game():
             case "Open Inventory":
                 print(player.inventory)
                 print("Choose item?")
-            
-            case "Buy from shop":
-                pass
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
