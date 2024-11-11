@@ -60,8 +60,8 @@ class Player(Entity):
         else:
             return dice_result
 
-    def open_inventory(self) -> int | None:
-        """If any damage was dealt, return the amount.\n
+    def open_inventory(self) -> tuple[int, str] | None:
+        """If any damage was dealt, return the amount and item name_in_sentence.\n
         If not damage was dealt return None"""
 
         selected_item : Item | None = self.inventory.select_item()
@@ -73,8 +73,7 @@ class Player(Entity):
                 print("You shouldn't use an offensive item outside of combat")
             else:
                 dmg = selected_item.use()
-                self.current_combat.enemy.take_damage(dmg)
-                return dmg
+                return (dmg, selected_item.name_in_sentence)
 
         else:
             # non offensive items always return a callable where the argument 'player' is expected
@@ -318,9 +317,13 @@ class Combat:
                         print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
                     
                     case "Open Inventory":
-                        print(self.player.inventory)
-                        # item_to_use = self.player.inventory.select_item()
-                        # item_to_use.use()
+                        # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
+                        item_return = self.player.open_inventory()
+                        if item_return != None:
+                            print(item_return)
+                            dmg, item_name_in_sentence = item_return
+                            self.enemy.take_damage(dmg)
+                            print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
                     
                     case "Attempt to Flee":
                         print("Attempting to flee, Roll 12 or higher to succeed")

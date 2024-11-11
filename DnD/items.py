@@ -21,10 +21,19 @@ class Item:
     
             case "potion":
                 if self.affects == "dice":
-                    return_val = lambda player: [player.active_dice_effects.append(self.effect), print("Success")]
+                    return_val = lambda player: player.active_dice_effects.append(self.effect)
             
             case "spell":
-                pass #custom code for each spell
+                match self.id:
+                    case "the_eye_of_horus":
+                        pass
+                    
+                    case "breath_of_life":
+                        return_val = lambda player: player.heal(self.effect)
+                    
+                    case "breath_of_fire":
+                        return_val = self.effect
+                    
         
         self.durability -= 1
         if self.durability == 0:

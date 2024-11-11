@@ -55,15 +55,16 @@
         "name_in_sentence": "a Breath of Life",
         "type": "spell",
         "offensive": false,
+        "effect": 6,
         "durability": 3,
         "description": "Use it to heal yourself"
     },
     "breath_of_fire":{
         "name": "Breath of Fire",
-        "probability": 0.1,
         "name_in_sentence": "a Breath of Fire",
         "type": "spell",
         "offensive": true,
+        "effect": 6,
         "durability": 3,
         "description": "Use it to burn your enemies"
     }
