@@ -62,7 +62,7 @@ def openUIMap(size : int, rooms : list[list[any]], command_queue):
     for x in range(len(rooms)):
         for y in range(len(rooms)):
             key = f"{(y+1):02d}{(x+1):02d}" #Yes, this looks wrong but it's correct
-            if rooms[x][y].discovered == True and rooms[x][y].type != "trap":
+            if rooms[x][y].discovered == True and rooms[x][y].type not in ["trap", "shop"]:
                 grids[key].configure(bg="gray")
             else:
                 if rooms[x][y].type == "empty":

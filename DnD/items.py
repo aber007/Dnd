@@ -12,14 +12,17 @@ class Item:
     def use(self, player):
         match self.type:
             case "weapon":
-                player.current_enemy.take_damage(self.dmg)
-        
+                pass
+            
             case "potion":
                 if self.affects == "dice":
                     player.active_dice_effects.append(self.effect)
             
             case "spell":
                 pass #custom code for each spell
+    
+    def __str__(self):
+        return self.id
 
 
 
@@ -31,21 +34,41 @@ class Inventory:
     
     def is_full(self):
         """if all slots arent None, return True"""
-        return False
+        return all(self.slots)
     
-    def receive_item(self, item : str):
+    def receive_item(self, item : Item):
+        print(f"\nYou recieved {item.name_in_sentence}\n{item.description}")
 
         if self.is_full():
-            print(f"Choose what item to swap out for {Item(item).name}")
-            print(Inventory)
-            print(f"{self.size}) Leave item behind")
+            print("Your inventory is full!", end="\n"*2)
+            action_options = [item for item in self.slots if item != None]
+            action_nr = get_user_action_choice("Choose item to throw out: ", action_options)
+            self.slots[int(action_nr)-1] = None
+
+        # set the first found empty slot to the received item
+        for idx,slot in enumerate(self.slots):
+            if slot == None:
+                self.slots[idx] = item
+                break
+    
+    def select_item(self) -> Item | None:
+        items_in_inventory = [item for item in self.slots if item != None]
+
+        print()
+        if len(items_in_inventory):
+            action_options = items_in_inventory + ["CANCEL"]
+            action_nr = get_user_action_choice("Choose item to use: ", action_options)
+
+            match action_options[int(action_nr)-1]:
+                case "CANCEL":
+                    return None
+                case _item:
+                    return _item
 
         else:
-            print(f"You recieved {Item(item).name_in_sentence}")
-            for idx,slot in enumerate(self.slots):
-                if slot == None:
-                    self.slots[idx] = item
-                    break
+            print("You have no items to use!")
+            return None
+
     
     def __str__(self):
         lines = []
