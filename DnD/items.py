@@ -1,4 +1,4 @@
-from . import ITEM_DATA
+from . import ITEM_DATA, get_user_action_choice
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -11,9 +11,6 @@ class Item:
     
     def use(self, player):
         match self.type:
-            case "weapon":
-                player.current_enemy.take_damage(self.dmg)
-        
             case "potion":
                 if self.affects == "dice":
                     player.active_dice_effects.append(self.effect)
@@ -27,39 +24,35 @@ class Inventory:
     def __init__(self, size : int) -> None:
         self.size = size
         self.equipped_weapon = Item("twig")
-        self.slots : list[Item | None] = [None] * size
+        self.slots : list[Item | None] = [None] * size # this length should never change
     
     def is_full(self):
         """if all slots arent None, return True"""
-        print(self.slots)
-        return False
+        return not all(self.slots)
     
-    def receive_item(self, item : str):
-
+    def receive_item(self, item : Item):
         if self.is_full():
-            print(f"Choose what item to swap out for {Item(item).name}")
-            print(Inventory)
-            print(f"{self.size}) Leave item behind")
+            print("Your inventory is full", end="\n"*2)
+            action_options = [item for item in self.slots if item != None]
+            action_nr = get_user_action_choice("Choose item to throw out: ", action_options)
+            self.slots[int(action_nr)-1] = None
 
-        else:
-            print(f"You recieved {Item(item).name_in_sentence}")
-            for idx,slot in enumerate(self.slots):
-                if slot == None:
-                    self.slots[idx] = item
-                    break
+        print(f"\nYou recieved {item.name_in_sentence}")
+
+        # set the first found empty slot to the received item
+        for idx,slot in enumerate(self.slots):
+            if slot == None:
+                self.slots[idx] = item
+                break
     
     def __str__(self):
-        lines = []
-        lines.append("---------- [INVENTORY] ----------")
-        lines.append("0) Equipped weapon slot contains " + self.equipped_weapon.name)
+        lines = [
+            "---------- [INVENTORY] ----------",
+            "Equipped weapon: " + self.equipped_weapon.name,
+        ]
 
         for idx, item in enumerate(self.slots):
-            print(idx, item)
-            try:
-                lines.append(f"Slot {idx+1} contains {Item(item).name}")
-            except KeyError:
-                lines.append(f"Slot {idx+1} is empty")
-
+            lines.append(f"Slot {idx+1}: " + item.name if item != None else "empty")
         
         return "\n".join(lines)
 
