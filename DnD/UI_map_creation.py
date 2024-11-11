@@ -93,7 +93,8 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
                     x,y = list(map(lambda i : int(i), command.split(",")))
                     update_player_pos(Vector2(x,y))
         
-        # of there more than 1 command in the queue handle it right away
+        # if there are more than 1 command in the queue: handle them all right away
+        # since we wont be having thousands of commands per second recursion limit shouldnt be a problem
         if 1 < qsize:
             handle_command_queue()
         

@@ -1,4 +1,20 @@
-from . import ITEM_DATA, get_user_action_choice
+from . import CONSTANTS, ITEM_DATA, get_user_action_choice
+
+
+def eye_of_horus(player):
+    map = player.parent_map
+    current_room = map.get_room(player.position)
+
+    action_options = [f"Cast on door facing {direction}" for direction in current_room.doors]
+    action_nr = get_user_action_choice("Choose direction to cast the Eye of Horus: ", action_options)
+
+    selected_direction = action_options[int(action_nr)-1].rsplit(" ", 1)[-1]
+    coord_offset = {"N": [0,-1], "E": [1,0], "S": [0,1], "W": [-1,0]}[selected_direction]
+    
+    selected_room_coords = player.position + coord_offset
+
+    map.get_room(selected_room_coords).discovered = True
+    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"]["discovered"])
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -25,7 +41,7 @@ class Item:
             case "spell":
                 match self.id:
                     case "the_eye_of_horus":
-                        pass
+                        return_val = eye_of_horus
                     
                     case "breath_of_life":
                         return_val = lambda player: player.heal(self.effect)
@@ -36,7 +52,7 @@ class Item:
         
         self.durability -= 1
         if self.durability == 0:
-            print(f"{self.name} broke and is now useless!")
+            print(f"\n{self.name} broke and is now useless!", end="\n"*2)
             self.parent_inventory.remove_item(self)
         
         return return_val

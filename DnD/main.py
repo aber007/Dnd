@@ -28,8 +28,9 @@ class Entity:
         return dmg
 
 class Player(Entity):
-    def __init__(self, starting_position : Vector2) -> None:
-        self.position = starting_position
+    def __init__(self, parent_map) -> None:
+        self.parent_map : Map = parent_map
+        self.position : Vector2 = self.parent_map.starting_position
         self.hp = CONSTANTS["player_base_hp"]
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
@@ -258,7 +259,7 @@ class Map:
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
         
-        self.UI_instance.send_command("tile", player.position, "gray")
+        self.UI_instance.send_command("tile", player.position, CONSTANTS["room_ui_colors"]["discovered"])
         self.UI_instance.send_command("pp", player.position)
 
         self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
@@ -448,7 +449,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 def run_game():
     map = Map()
-    player = Player(map.starting_position)
+    player = Player(map)
 
     map.open_UI_window(player_pos = player.position)
 
