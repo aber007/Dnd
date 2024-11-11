@@ -5,7 +5,7 @@
         "probability": 0.3,
         "type": "weapon",
         "offensive": true,
-        "dmg": 1,
+        "effect": 1,
         "durability": -1,
         "description": "Your most reliable defense. Use it to defend yourself against monsters"
     },
@@ -15,7 +15,7 @@
         "name_in_sentence": "a simple knife",
         "type": "weapon",
         "offensive": true,
-        "dmg": 3,
+        "effect": 3,
         "durability": 5,
         "description": "Use it to defend yourself against monsters"
     },
@@ -25,7 +25,7 @@
         "name_in_sentence": "a steel sword",
         "type": "weapon",
         "offensive": true,
-        "dmg": 5,
+        "effect": 5,
         "durability": 15,
         "description": "Use it to defend yourself against monsters"
     },
@@ -61,6 +61,7 @@
     },
     "breath_of_fire":{
         "name": "Breath of Fire",
+        "probability": 0.1,
         "name_in_sentence": "a Breath of Fire",
         "type": "spell",
         "offensive": true,

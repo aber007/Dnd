@@ -80,6 +80,11 @@ class Player(Entity):
             use_callable = selected_item.use()
             use_callable(self)
 
+    def heal(self, additional_hp : int):
+        # cap the hp to player_base_hp
+        self.hp = min(self.hp + additional_hp, CONSTANTS["player_base_hp"])
+        print(f"The player was healed for {additional_hp}. New HP: {self.hp}")
+
     def attack(self, target) -> int:
         """Attack target your weapons damage dmg_multiplier. The damage dealt is returned"""
         dmg = self.inventory.equipped_weapon.use()

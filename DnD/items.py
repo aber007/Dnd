@@ -17,7 +17,7 @@ class Item:
 
         match self.type:
             case "weapon":
-                return_val = self.dmg
+                return_val = self.effect
     
             case "potion":
                 if self.affects == "dice":
