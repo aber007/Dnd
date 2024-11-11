@@ -1,7 +1,7 @@
 import os
 from random import randint, choices, choice, uniform
 from time import sleep
-from .UI_map_creation import openUIMap, Process, Manager
+from .UI_map_creation import openUIMap
 from . import (
     CONSTANTS,
     ITEM_DATA,
@@ -11,6 +11,13 @@ from . import (
     Vector2,
     get_user_action_choice
     )
+
+try:
+    from multiprocessing import Process, Manager
+except ImportError:
+    os.system("pip install multiprocessing")
+    from multiprocessing import Process, Manager
+
 
 
 class Entity:
@@ -26,8 +33,8 @@ class Entity:
         return dmg
 
 class Player(Entity):
-    def __init__(self, position : Vector2) -> None:
-        self.position = position
+    def __init__(self, starting_position : Vector2) -> None:
+        self.position = starting_position
         self.hp = CONSTANTS["player_base_hp"]
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
@@ -165,13 +172,15 @@ class Map:
             self.command_queue = self.manager.Queue(100)
             self.UI_thread : Process | None = None
         
-        def open(self):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, self.command_queue))
+        def open(self, player_pos : Vector2):
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
             self.UI_thread.start()
             sleep(0.5)
         
-        def update(self, tile_position : Vector2, new_bg_color : str):
-            self.command_queue.put_nowait(f"{tile_position.x},{tile_position.y} {new_bg_color}")
+        def update(self, player_pos : Vector2, new_bg_color : str):
+            """Sends a command to the UI to make the background color of the tile the player is standing on into new_bg_color\n
+            The same command also updates the player position rectangle to the players current position"""
+            self.command_queue.put_nowait(f"{player_pos.x},{player_pos.y} {new_bg_color}")
         
         def close(self):
             self.UI_thread.terminate()
@@ -203,11 +212,11 @@ class Map:
 
         self.UI_instance = Map.UI(self.size, self.rooms)
     
-    def open_UI_window(self) -> None:
+    def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
-        self.UI_instance.open()
+        self.UI_instance.open(player_pos)
     
     def close_UI_window(self) -> None:
         self.UI_instance.close()
@@ -278,7 +287,7 @@ class Combat:
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
 
     def start(self):
-        print(f"{'='*15} Combat {'='*15}")
+        print(f"\n{'='*15} Combat {'='*15}")
         print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         enemyturn = choice([True, False])
 
@@ -421,7 +430,7 @@ def run_game():
     map = Map()
     player = Player(map.starting_position)
 
-    map.open_UI_window()
+    map.open_UI_window(player_pos = player.position)
 
     while player.is_alive:
         print(f"{'='*15} New Round {'='*15}")
@@ -449,7 +458,7 @@ def run_game():
         print()
 
     print("Game over")
-    map.open_UI_window()
+    map.close_UI_window()
 
 
 
