@@ -48,7 +48,7 @@ class Player(Entity):
         Otherwise, return only dice_result.
         """
 
-        # get a random number between 0 and dice_base_sides then add the dice modifier
+        # get a random number between 1 and dice_base_sides then add the dice modifier
         # max() ensures the roll has a min value of 1
         dice_result = max(1, randint(1, CONSTANTS["dice_base_sides"]) + self.get_dice_modifier())
         self.active_dice_effects.clear()
@@ -277,9 +277,7 @@ class Combat:
 
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
 
-
     def start(self):
-        # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
         print(f"{'='*15} Combat {'='*15}")
         print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         enemyturn = choice([True, False])
@@ -425,7 +423,7 @@ def run_game():
 
     map.open_UI_window()
 
-    while player.hp > 0:
+    while player.is_alive:
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and ask user to choose
