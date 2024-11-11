@@ -1,7 +1,7 @@
 # import threading
 # from time import sleep
 import os
-from . import Vector2
+from . import CONSTANTS, Vector2
 try:
     import tkinter as tk
 except ImportError:
@@ -59,21 +59,10 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
     for x in range(len(rooms)):
         for y in range(len(rooms)):
             key = f"{(y+1):02d}{(x+1):02d}" #Yes, this looks wrong but it's correct
-            if rooms[x][y].discovered == True and rooms[x][y].type not in ["trap", "shop"]:
-                grids[key].configure(bg="gray")
+            if rooms[x][y].discovered == True:
+                grids[key].configure(bg=CONSTANTS["room_ui_colors"]["discovered"])
             else:
-                if rooms[x][y].type == "empty":
-                    grids[key].configure(bg="light gray")
-                elif rooms[x][y].type == "enemy":
-                    grids[key].configure(bg="red")
-                elif rooms[x][y].type == "chest":
-                    grids[key].configure(bg="yellow")
-                elif rooms[x][y].type == "trap":
-                    grids[key].configure(bg="dark green")
-                elif rooms[x][y].type == "mimic_trap":
-                    grids[key].configure(bg="light green")
-                elif rooms[x][y].type == "shop":
-                    grids[key].configure(bg="blue")
+                grids[key].configure(bg=CONSTANTS["room_ui_colors"][rooms[x][y].type])
 
     def handle_command_queue():
         # not optimal but the other methods didnt work as expected 
@@ -85,18 +74,29 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
             return
 
         if qsize:
-            # eg. command = "10,5 red"
-            command = command_queue.get()
+            # eg. command = "tile 10,5 red" or "pp 4,2"
+            raw_command = command_queue.get()
 
-            # update the color of the tile
-            tile_coords_str, bg_color = command.split(" ")
-            x,y = list(map(lambda i : int(i), tile_coords_str.split(",")))
+            command_type, command = raw_command.split(" ", 1)
             
-            key = f"{(y+1):02d}{(x+1):02d}"
-            grids[key].configure(bg=bg_color)
+            match command_type:
+                case "tile":
+                    # update the bg color of the tile
+                    tile_coords_str, bg_color = command.split(" ", 1)
+                    x,y = list(map(lambda i : int(i), tile_coords_str.split(",")))
+                    
+                    key = f"{(y+1):02d}{(x+1):02d}"
+                    grids[key].configure(bg=bg_color)
 
-            # update the position of the player rectangle
-            update_player_pos(Vector2(x,y))
+                case "pp":
+                    # reposition the player position rectangle
+                    x,y = list(map(lambda i : int(i), command.split(",")))
+                    update_player_pos(Vector2(x,y))
+        
+        # if there are more than 1 command in the queue: handle them all right away
+        # since we wont be having thousands of commands per second recursion limit shouldnt be a problem
+        if 1 < qsize:
+            handle_command_queue()
         
         main.after(100, handle_command_queue)
 
