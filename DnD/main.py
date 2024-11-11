@@ -4,6 +4,7 @@ from time import sleep
 from .UI_map_creation import openUIMap, Process, Manager
 from . import (
     CONSTANTS,
+    ITEM_DATA,
     ENEMY_DATA,
     Item,
     Inventory,
@@ -449,7 +450,7 @@ def run_game():
             case "Open chest":
                 def get_random_item():
                     with open("DnD/items.json", "r") as f:
-                        items = json.load(f)
+                        items = ITEM_DATA
                         item_names = list(items.keys())
                         probabilities = [items[item]["probability"] for item in item_names]
                         chosen_item_name = choices(item_names, probabilities)[0]
