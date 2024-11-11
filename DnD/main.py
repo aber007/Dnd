@@ -200,6 +200,9 @@ def run_game():
                     return chosen_item
                 item = get_random_item()
                 print(f"You found {item['display_name']}\n{item['description']}")
+                #add to inventory
+                #remove from chest
+
                 pass # print to console f"You found {item.display_name}\n{item.description}"
             
             case "Buy from shop":
