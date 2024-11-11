@@ -21,14 +21,9 @@ except ImportError:
 
 
 class Entity:
-    def take_damage(self, dmg : int, log : bool = False) -> None:
+    def take_damage(self, dmg : int) -> int:
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
-        if log:
-            if 0 < self.hp:
-                self.on_damage_taken(dmg, self.hp)
-            else:
-                self.on_death(dmg)
         
         return dmg
 
@@ -65,15 +60,11 @@ class Player(Entity):
         else:
             return dice_result
 
-    def attack(self, target, dmg_multiplier : int = 1) -> int:
-        """Attack target your weapons damage  dmg_multiplier. The damage dealt is returned"""
-        return target.take_damage(self.inventory.equipped_weapon.dmg * dmg_multiplier)
-
-    def on_damage_taken(self, dmg : int, remaining_hp : int) -> None:
-        print(f"The player was hit for {dmg} damage\nPlayer hp remaining: {remaining_hp}")
-
-    def on_death(self, dmg : int) -> None:
-        print(f"The player was hit for {dmg} dmg and died")
+    def attack(self, target) -> int:
+        """Attack target your weapons damage dmg_multiplier. The damage dealt is returned"""
+        dmg = self.inventory.equipped_weapon.use()
+        target.take_damage(dmg)
+        return dmg
 
 class Enemy(Entity):
     def __init__(self, enemy_type : str, target : Player) -> None:
@@ -86,12 +77,6 @@ class Enemy(Entity):
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
         return target.take_damage(self.dmg * dmg_multiplier)
-
-    def on_damage_taken(self, dmg : int, remaining_hp : int) -> None:
-        print(f"The enemy was hit for {dmg} damage\nEnemy hp remaining: {remaining_hp}")
-
-    def on_death(self, dmg : int) -> None:
-        print(f"The enemy was hit for {dmg} damage and died")
     
     def use_special(self, special : str) -> None:
         """Runs the code for special abilities which can be used during combat"""
@@ -136,7 +121,9 @@ class Map:
                         print(f"You rolled {dice_result} and managed to escape unharmed")
                     else:
                         print(f"You rolled {dice_result} and was harmed by the trap while escaping")
-                        player.take_damage(CONSTANTS["normal_trap_base_dmg"], log=True)
+                        dmg_taken = player.take_damage(CONSTANTS["normal_trap_base_dmg"])
+                        print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
+
         
         def interact(self, player : Player, map) -> None:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
@@ -149,8 +136,8 @@ class Map:
 
                 case "mimic_trap":
                     print("\nOh no! As you opened the chest you got ambushed by a Mimic!")
-                    player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"], log=True)
-                    print()
+                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"])
+                    print(f"The player took {dmg_taken} damage from the Mimic ambush. {player.hp} HP remaining", end="\n"*2)
                     Combat(player, map, force_enemy_type = "Mimic").start()
 
                 case "shop":
@@ -316,17 +303,17 @@ class Combat:
                         print("Attempting to flee, Roll 12 or higher to succeed")
                         prompt_dice_roll()
                         roll = self.player.roll_dice()
-                        print(f"You rolled a {roll}")
+                        print(f"You rolled {roll}")
 
                         # if you managed to escape
                         if 12 <= roll:
                             # if the enemy hit you on your way out
                             if roll < 15:
-                                self.enemy.attack(target=self.player)
+                                dmg_dealt_to_player = self.enemy.attack(target=self.player)
                                 if self.player.is_alive:
-                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing\nPlayer hp remaining: {self.player.hp}")
+                                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing\nPlayer hp remaining: {self.player.hp}")
                                 else:
-                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing, killing you in the process")
+                                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
                                     break
                             
                             # if you escaped with coins
@@ -338,16 +325,16 @@ class Combat:
 
                         # if you didnt escape
                         else:
-                            self.enemy.attack(target=self.player, dmg_multiplier=2)
+                            dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
                             if self.player.is_alive:
-                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage")
+                                print(f"You failed to flee and took {dmg_dealt_to_player} damage")
                             else:
-                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage, killing you in the process")
+                                print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
                                 break
             
             else:
-                print(f"The {self.enemy.name} attacked you for {self.enemy.dmg} damage")
-                self.enemy.attack(target=self.player)
+                dmg_dealt_to_player = self.enemy.attack(target=self.player)
+                print(f"The {self.enemy.name} attacked you for {dmg_dealt_to_player} damage")
 
                 if uniform(0, 1) < self.enemy.special_chance:
                     print(self.enemy.special_info)
