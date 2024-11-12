@@ -112,13 +112,14 @@ class Enemy(Entity):
 class Map:
     class Room:
 
-        def __init__(self, type, discovered, doors) -> None:
+        def __init__(self, type, discovered, doors, parent_map) -> None:
             self.type = type
             self.discovered = discovered
             self.doors = doors
 
             self.chest_item : Item | None = None
-            self.is_enemy_defeated : bool | None = None
+            # self.is_enemy_defeated : bool | None = None
+            self.is_cleared : bool = False
 
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
@@ -126,8 +127,9 @@ class Map:
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
-                case ("enemy", True):
-                    Combat(player, map).start()
+                case ("enemy", _):
+                    if not map.get_room(player.position).is_cleared:
+                        Combat(player, map).start()
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
@@ -149,8 +151,10 @@ class Map:
                         print(f"You rolled {dice_result} and was harmed by the trap while escaping")
                         dmg_taken = player.take_damage(CONSTANTS["normal_trap_base_dmg"])
                         print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
+            
+            # update the tile the player just entered
+            player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
 
-        
         def interact(self, player : Player, map) -> None:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
@@ -159,6 +163,7 @@ class Map:
                 case "chest":
                     player.inventory.receive_item(self.chest_item)
                     self.chest_item = None
+                    self.is_cleared = True
 
                 case "mimic_trap":
                     print("\nOh no! As you opened the chest you got ambushed by a Mimic!")
@@ -168,6 +173,9 @@ class Map:
 
                 case "shop":
                     pass # shop dialog
+            
+            # update the tile the player just interacted with
+            player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
 
     class UI:
         def __init__(self, size, rooms) -> None:
@@ -185,7 +193,7 @@ class Map:
             sleep(0.5)
         
         def send_command(self, type : str, position : Vector2, *args : str):
-            """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of tile\n
+            """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of a tile\n
             Eg. send_command("pp", player.position) updates the player rect postion to the players current position\n
             Eg. send_command("tile", player.position + Vector2(0,1), "blue") sets background color of the tile to the players north to blue"""
             command_line = f"{type} {position.x},{position.y}"
@@ -215,11 +223,11 @@ class Map:
         for x in range(self.size):
             for y in range(self.size):
                 if x == int(self.size/2) and y == int(self.size/2):
-                    rooms[x][y] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"])
+                    rooms[x][y] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"], parent_map=self)
                 else:
                     roomtype = choices(room_types, probabilities)[0]
-                    rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "E", "S", "W"])
-        self.rooms = rooms
+                    rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "E", "S", "W"], parent_map=self)
+        self.rooms : list[list[Map.Room]] = rooms
 
         self.UI_instance = Map.UI(self.size, self.rooms)
     
@@ -236,6 +244,30 @@ class Map:
         """Using an x and a y value, return a room at that position"""
         return self.rooms[position.x][position.y]
     
+    def decide_room_color(self, room_position : Vector2) -> str:
+        room : Map.Room = self.rooms[room_position.x][room_position.y]
+        colors = CONSTANTS["room_ui_colors"]
+        match room.type:
+            case "empty":
+                return colors["discovered"] if room.discovered else colors["empty"]
+
+            case "enemy":
+                return colors["discovered"] if room.is_cleared else colors["enemy"]
+
+            case "chest":
+                return colors["discovered"] if room.is_cleared else colors["chest"]
+
+            case "trap":
+                return colors["trap"]
+
+            case "mimic_trap":
+                return colors["discovered"] if room.is_cleared else colors["mimic_trap"]
+
+            case "shop":
+                return colors["shop"]
+
+
+
     def move_player(self, direction : str, player : Player) -> None:
         """Move the player in the given direction"""
         x, y = player.position
@@ -259,7 +291,7 @@ class Map:
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
         
-        self.UI_instance.send_command("tile", player.position, CONSTANTS["room_ui_colors"]["discovered"])
+        self.UI_instance.send_command("tile", player.position, self.decide_room_color(player.position))
         self.UI_instance.send_command("pp", player.position)
 
         self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
@@ -376,13 +408,14 @@ class Combat:
                     print("You died")
                     break
             
-            sleep(1)
+            sleep(0.5)
             enemyturn = not enemyturn
         
-        self.player.current_combat = None
+        # if the combat ended and the enemy died: mark the room as cleared
+        if not self.enemy.is_alive:
+            self.map.get_room(self.player.position).is_cleared = True
 
-        #TODO should only trigger if defeated, not fled
-        self.map.get_room(self.player.position).is_enemy_defeated = True
+        self.player.current_combat = None
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
