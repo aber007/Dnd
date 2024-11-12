@@ -315,9 +315,9 @@ class Combat:
 
             if not enemyturn:
                 action_options = ["Attack", "Open Inventory", "Attempt to Flee"]
-                action_nr = get_user_action_choice("Choose action: ", action_options)
+                action_idx = get_user_action_choice("Choose action: ", action_options)
 
-                match action_options[int(action_nr)-1]:
+                match action_options[action_idx]:
                     case "Attack":
                         dmg_dealt = self.player.attack(target=self.enemy)
                         print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
@@ -459,10 +459,10 @@ def run_game():
         # Get a list of the players currently available options and ask user to choose
         # Retry until a valid answer has been given
         action_options : list[str] = get_player_action_options(player, map)
-        action_nr = get_user_action_choice("Choose action: ", action_options)
+        action_idx = get_user_action_choice("Choose action: ", action_options)
 
         # Decide what to do based on the player's choice
-        match action_options[int(action_nr)-1]:
+        match action_options[action_idx]:
             case "Open chest" | "Buy from shop":
                 # interact with the current room
                 map.get_room(player.position).interact(player, map)

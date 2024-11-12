@@ -6,9 +6,9 @@ def eye_of_horus(player):
     current_room = map.get_room(player.position)
 
     action_options = [f"Cast on door facing {direction}" for direction in current_room.doors]
-    action_nr = get_user_action_choice("Choose direction to cast the Eye of Horus: ", action_options)
+    action_idx = get_user_action_choice("Choose direction to cast the Eye of Horus: ", action_options)
 
-    selected_direction = action_options[int(action_nr)-1].rsplit(" ", 1)[-1]
+    selected_direction = action_options[action_idx].rsplit(" ", 1)[-1]
     coord_offset = {"N": [0,-1], "E": [1,0], "S": [0,1], "W": [-1,0]}[selected_direction]
     
     selected_room_coords = player.position + coord_offset
@@ -81,8 +81,8 @@ class Inventory:
         if self.is_full():
             print("Your inventory is full!", end="\n"*2)
             action_options = [item for item in self.slots if item != None]
-            action_nr = get_user_action_choice("Choose item to throw out: ", action_options)
-            self.slots[int(action_nr)-1] = item
+            action_idx = get_user_action_choice("Choose item to throw out: ", action_options)
+            self.slots[action_idx] = item
 
         # set the first found empty slot to the received item
         else:
@@ -100,9 +100,9 @@ class Inventory:
         print()
         if len(items_in_inventory):
             action_options = items_in_inventory + ["CANCEL"]
-            action_nr = get_user_action_choice("Choose item to use: ", action_options)
+            action_idx = get_user_action_choice("Choose item to use: ", action_options)
 
-            match action_options[int(action_nr)-1]:
+            match action_options[action_idx]:
                 case "CANCEL":
                     return None
                 case _item:

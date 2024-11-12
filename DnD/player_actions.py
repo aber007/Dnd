@@ -1,5 +1,7 @@
 def get_user_action_choice(choose_message : str, action_options : list[str]) -> str:
-    """Have the user select an action for a list of actions. Retry until a valid answer has been given"""
+    """Have the user select an action for a list of actions. Retry until a valid answer has been given.\n
+    Choose message is the string the player will see when prompted to choose. Recomended example: "Choose action: "\n
+    The index of the selected action in action_options is returned"""
     print("\n".join(f"{idx+1}) {action}" for idx,action in enumerate(action_options)))
     
     while True:
@@ -10,7 +12,7 @@ def get_user_action_choice(choose_message : str, action_options : list[str]) -> 
         else:
             break
     
-    return action_nr
+    return int(action_nr)-1
     
 
 def check_user_input_error(action_nr : str, action_options : list[str]) -> tuple[bool, str]:
