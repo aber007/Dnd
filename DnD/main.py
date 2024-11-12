@@ -23,20 +23,16 @@ except ImportError:
 
 
 class Entity:
-    def take_damage(self, dmg : int, log : bool = False) -> None:
+    def take_damage(self, dmg : int) -> int:
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
-        if log:
-            if 0 < self.hp:
-                self.on_damage_taken(dmg, self.hp)
-            else:
-                self.on_death(dmg)
         
         return dmg
 
 class Player(Entity):
-    def __init__(self, starting_position : Vector2) -> None:
-        self.position = starting_position
+    def __init__(self, parent_map) -> None:
+        self.parent_map : Map = parent_map
+        self.position : Vector2 = self.parent_map.starting_position
         self.hp = CONSTANTS["player_base_hp"]
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
@@ -44,7 +40,7 @@ class Player(Entity):
         
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
 
-        # self.current_enemy : Enemy | None = None
+        self.current_combat : Combat | None = None
     
     def get_dice_modifier(self) -> int:
         return sum(self.active_dice_effects)
@@ -67,15 +63,36 @@ class Player(Entity):
         else:
             return dice_result
 
-    def attack(self, target, dmg_multiplier : int = 1) -> int:
-        """Attack target your weapons damage  dmg_multiplier. The damage dealt is returned"""
-        return target.take_damage(self.inventory.equipped_weapon.dmg * dmg_multiplier)
+    def open_inventory(self) -> tuple[int, str] | None:
+        """If any damage was dealt, return the amount and item name_in_sentence.\n
+        If not damage was dealt return None"""
 
-    def on_damage_taken(self, dmg : int, remaining_hp : int) -> None:
-        print(f"The player was hit for {dmg} damage\nPlayer hp remaining: {remaining_hp}")
+        selected_item : Item | None = self.inventory.select_item()
+        if selected_item == None:
+            return None
 
-    def on_death(self, dmg : int) -> None:
-        print(f"The player was hit for {dmg} dmg and died")
+        if selected_item.offensive:
+            if self.current_combat == None:
+                print("You shouldn't use an offensive item outside of combat")
+            else:
+                dmg = selected_item.use()
+                return (dmg, selected_item.name_in_sentence)
+
+        else:
+            # non offensive items always return a callable where the argument 'player' is expected
+            use_callable = selected_item.use()
+            use_callable(self)
+
+    def heal(self, additional_hp : int):
+        # cap the hp to player_base_hp
+        self.hp = min(self.hp + additional_hp, CONSTANTS["player_base_hp"])
+        print(f"The player was healed for {additional_hp}. New HP: {self.hp}")
+
+    def attack(self, target) -> int:
+        """Attack target your weapons damage dmg_multiplier. The damage dealt is returned"""
+        dmg = self.inventory.equipped_weapon.use()
+        target.take_damage(dmg)
+        return dmg
 
 class Enemy(Entity):
     def __init__(self, enemy_type : str, target : Player) -> None:
@@ -88,12 +105,6 @@ class Enemy(Entity):
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
         return target.take_damage(self.dmg * dmg_multiplier)
-
-    def on_damage_taken(self, dmg : int, remaining_hp : int) -> None:
-        print(f"The enemy was hit for {dmg} damage\nEnemy hp remaining: {remaining_hp}")
-
-    def on_death(self, dmg : int) -> None:
-        print(f"The enemy was hit for {dmg} damage and died")
     
     def use_special(self, special : str) -> None:
         """Runs the code for special abilities which can be used during combat"""
@@ -139,7 +150,9 @@ class Map:
                         print(f"You rolled {dice_result} and managed to escape unharmed")
                     else:
                         print(f"You rolled {dice_result} and was harmed by the trap while escaping")
-                        player.take_damage(CONSTANTS["normal_trap_base_dmg"], log=True)
+                        dmg_taken = player.take_damage(CONSTANTS["normal_trap_base_dmg"])
+                        print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
+
         
         def interact(self, player : Player, map) -> None:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
@@ -151,10 +164,9 @@ class Map:
                     self.chest_item = None
 
                 case "mimic_trap":
-                    print()
                     print(choice(INTERACTION_DATA["mimic"]))
-                    player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"], log=True)
-                    print()
+                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"])
+                    print(f"The player took {dmg_taken} damage from the Mimic ambush. {player.hp} HP remaining", end="\n"*2)
                     Combat(player, map, force_enemy_type = "Mimic").start()
 
                 case "shop":
@@ -175,10 +187,14 @@ class Map:
             self.UI_thread.start()
             sleep(0.5)
         
-        def update(self, player_pos : Vector2, new_bg_color : str):
-            """Sends a command to the UI to make the background color of the tile the player is standing on into new_bg_color\n
-            The same command also updates the player position rectangle to the players current position"""
-            self.command_queue.put_nowait(f"{player_pos.x},{player_pos.y} {new_bg_color}")
+        def send_command(self, type : str, position : Vector2, *args : str):
+            """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of tile\n
+            Eg. send_command("pp", player.position) updates the player rect postion to the players current position\n
+            Eg. send_command("tile", player.position + Vector2(0,1), "blue") sets background color of the tile to the players north to blue"""
+            command_line = f"{type} {position.x},{position.y}"
+            if len(args):
+                command_line += " " + " ".join([str(arg) for arg in args])
+            self.command_queue.put_nowait(command_line)
         
         def close(self):
             self.UI_thread.terminate()
@@ -245,21 +261,9 @@ class Map:
 
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
-        color = "light gray"
-        if self.rooms[x][y].type == "empty":
-            color = "light gray"
-        elif self.rooms[x][y].type == "enemy":
-            color = "red"
-        elif self.rooms[x][y].type == "chest":
-            color = "yellow"
-        elif self.rooms[x][y].type == "trap":
-            color = "dark green"
-        elif self.rooms[x][y].type == "mimic_trap":
-            color = "yellow"
-        elif self.rooms[x][y].type == "shop":
-            color = "blue"
-            
-        self.UI_instance.update(player.position, color)
+        
+        self.UI_instance.send_command("tile", player.position, CONSTANTS["room_ui_colors"]["discovered"])
+        self.UI_instance.send_command("pp", player.position)
 
         self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
 
@@ -312,6 +316,8 @@ class Combat:
             print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
         enemyturn = choice([True, False])
 
+        self.player.current_combat = self
+
         while self.player.is_alive and self.enemy.is_alive:
             self.turn += 1
 
@@ -321,33 +327,37 @@ class Combat:
 
             if not enemyturn:
                 action_options = ["Attack", "Open Inventory", "Attempt to Flee"]
-                action_nr = get_user_action_choice("Choose action: ", action_options)
+                action_idx = get_user_action_choice("Choose action: ", action_options)
 
-                match action_options[int(action_nr)-1]:
+                match action_options[action_idx]:
                     case "Attack":
                         dmg_dealt = self.player.attack(target=self.enemy)
                         print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
                     
                     case "Open Inventory":
-                        print(self.player.inventory)
-                        # item_to_use = self.player.inventory.select_item()
-                        # item_to_use.use()
+                        # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
+                        item_return = self.player.open_inventory()
+                        if item_return != None:
+                            print(item_return)
+                            dmg, item_name_in_sentence = item_return
+                            self.enemy.take_damage(dmg)
+                            print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
                     
                     case "Attempt to Flee":
                         print("Attempting to flee, Roll 12 or higher to succeed")
                         prompt_dice_roll()
                         roll = self.player.roll_dice()
-                        print(f"You rolled a {roll}")
+                        print(f"You rolled {roll}")
 
                         # if you managed to escape
                         if 12 <= roll:
                             # if the enemy hit you on your way out
                             if roll < 15:
-                                self.enemy.attack(target=self.player)
+                                dmg_dealt_to_player = self.enemy.attack(target=self.player)
                                 if self.player.is_alive:
-                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing\nPlayer hp remaining: {self.player.hp}")
+                                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing\nPlayer hp remaining: {self.player.hp}")
                                 else:
-                                    print(f"The {self.enemy.name} managed to hit you for {self.enemy.dmg} while fleeing, killing you in the process")
+                                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
                                     break
                             
                             # if you escaped with coins
@@ -359,16 +369,16 @@ class Combat:
 
                         # if you didnt escape
                         else:
-                            self.enemy.attack(target=self.player, dmg_multiplier=2)
+                            dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
                             if self.player.is_alive:
-                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage")
+                                print(f"You failed to flee and took {dmg_dealt_to_player} damage")
                             else:
-                                print(f"You failed to flee and took {self.enemy.dmg * 2} damage, killing you in the process")
+                                print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
                                 break
             
             else:
-                print(f"The {self.enemy.name} attacked you for {self.enemy.dmg} damage")
-                self.enemy.attack(target=self.player)
+                dmg_dealt_to_player = self.enemy.attack(target=self.player)
+                print(f"The {self.enemy.name} attacked you for {dmg_dealt_to_player} damage")
 
                 if uniform(0, 1) < self.enemy.special_chance:
                     print(self.enemy.special_info)
@@ -381,6 +391,9 @@ class Combat:
             sleep(1)
             enemyturn = not enemyturn
         
+        self.player.current_combat = None
+
+        #TODO should only trigger if defeated, not fled
         self.map.get_room(self.player.position).is_enemy_defeated = True
         play("test.wav")
 
@@ -454,7 +467,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 def run_game():
     map = Map()
-    player = Player(map.starting_position)
+    player = Player(map)
     play("test.wav")
 
     map.open_UI_window(player_pos = player.position)
@@ -465,16 +478,16 @@ def run_game():
         # Get a list of the players currently available options and ask user to choose
         # Retry until a valid answer has been given
         action_options : list[str] = get_player_action_options(player, map)
-        action_nr = get_user_action_choice("Choose action: ", action_options)
+        action_idx = get_user_action_choice("Choose action: ", action_options)
 
         # Decide what to do based on the player's choice
-        match action_options[int(action_nr)-1]:
+        match action_options[action_idx]:
             case "Open chest" | "Buy from shop":
                 # interact with the current room
                 map.get_room(player.position).interact(player, map)
 
             case "Open Inventory":
-                print("selected item:", player.inventory.select_item()) #temp
+                player.open_inventory()
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")

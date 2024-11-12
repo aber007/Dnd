@@ -10,5 +10,12 @@ class Vector2:
         # enables cases like: x, y = Vector2(...)
         return [self.x, self.y][i]
 
+    def __add__(self, part):
+        """Only supports variable 'part' of type Vector2 or iterable"""
+        if isinstance(part, Vector2):
+            return Vector2(self.x + part.x, self.y + part.y)
+        else:
+            return Vector2(self.x + part[0], self.y + part[1])
+
     def __str__(self):
         return f"<Vector2({self.x}, {self.y})>"
