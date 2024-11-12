@@ -83,15 +83,15 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
                 case "tile":
                     # update the bg color of the tile
                     tile_coords_str, bg_color = command.split(" ", 1)
-                    x,y = list(map(lambda i : int(i), tile_coords_str.split(",")))
+                    x,y = eval(f"Vector2({tile_coords_str})")
                     
                     key = f"{(y+1):02d}{(x+1):02d}"
                     grids[key].configure(bg=bg_color)
 
                 case "pp":
                     # reposition the player position rectangle
-                    x,y = list(map(lambda i : int(i), command.split(",")))
-                    update_player_pos(Vector2(x,y))
+                    player_position = eval(f"Vector2({command})")
+                    update_player_pos(player_position)
         
         # if there are more than 1 command in the queue: handle them all right away
         # since we wont be having thousands of commands per second recursion limit shouldnt be a problem
