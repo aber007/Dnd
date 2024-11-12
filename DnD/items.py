@@ -13,8 +13,7 @@ def eye_of_horus(player):
     
     selected_room_coords = player.position + coord_offset
 
-    map.get_room(selected_room_coords).discovered = True
-    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"]["discovered"])
+    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][map.get_room(player.position).type])
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -66,8 +65,9 @@ class Item:
 class Inventory:
     def __init__(self, size : int) -> None:
         self.size = size
-        self.equipped_weapon = Item("twig")
+        self.chosen_weapon = None
         self.slots : list[Item | None] = [None] * size # this length should never change
+        self.slots[0] = Item("twig")
     
     def is_full(self):
         """if all slots arent None, return True"""
@@ -115,7 +115,6 @@ class Inventory:
     def __str__(self):
         lines = [
             "---------- [INVENTORY] ----------",
-            "Equipped weapon: " + self.equipped_weapon.name,
         ]
 
         for idx, item in enumerate(self.slots):

@@ -9,7 +9,8 @@ CONSTANTS = {
         "shop": 0.05
     },
     "room_ui_colors": {
-        "discovered": "gray",
+        "default" : "gray",
+        "discovered": "light gray",
         "empty": "light gray",
         "enemy": "red",
         "chest": "yellow",
@@ -21,7 +22,7 @@ CONSTANTS = {
     "normal_trap_base_dmg": 3,
 
     "player_base_inventory_size": 3,
-    "player_base_hp": 10,
+    "player_base_hp": 1000000,
     "player_starting_gold": 0,
     
     "enemy_base_hp": 4,
@@ -39,11 +40,14 @@ CONSTANTS = {
     "mimic_trap_base_ambush_dmg": 4,
     
     "item_config_file": "./items.json",
-    "enemy_config_file": "./enemies.json"
+    "enemy_config_file": "./enemies.json",
+    "interaction_text_file": "./interaction_texts.json",
+
+    "music": False
 }
 
 from .player_actions import get_user_action_choice
-from .load_config_files import ITEM_DATA, ENEMY_DATA
+from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
 from .items import Item, Inventory
 from .main import run_game
