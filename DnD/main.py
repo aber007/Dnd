@@ -38,7 +38,7 @@ class Player(Entity):
         self.gold = CONSTANTS["player_starting_gold"]
         self.active_dice_effects : list[int] = []
         
-        self.inventory = Inventory(CONSTANTS["player_inventory_size"])
+        self.inventory = Inventory()
 
         self.current_combat : Combat | None = None
     

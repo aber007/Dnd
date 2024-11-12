@@ -65,10 +65,10 @@ class Item:
 
 
 class Inventory:
-    def __init__(self, size : int) -> None:
-        self.size = size
+    def __init__(self) -> None:
+        self.size = CONSTANTS["player_inventory_size"]
         self.chosen_weapon = None
-        self.slots : list[Item | None] = [None] * size # this length should never change
+        self.slots : list[Item | None] = [None] * self.size # this length should never change
         self.slots[0] = Item("twig")
     
     def is_full(self):
@@ -100,7 +100,10 @@ class Inventory:
 
     def remove_item(self, item : Item) -> None:
         item.parent_inventory = None
-        self.slots[self.slots.index(item)] = None
+
+        # this removes the item from the list, making later items move 'upwards'
+        self.slots.remove(item)
+        self.slots.append(None)
 
     def open(self) -> Item | None:
         """If an item was used return that item to be processed by the function that called this function
