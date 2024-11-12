@@ -24,6 +24,7 @@ CONSTANTS = {
     "player_base_inventory_size": 3,
     "player_base_hp": 1000000,
     "player_starting_gold": 0,
+    "player_base_defence" : 0,
     
     "enemy_base_hp": 4,
     "enemy_base_dmg": 2,
@@ -43,7 +44,7 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": False
+    "music": True
 }
 
 from .player_actions import get_user_action_choice

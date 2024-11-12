@@ -24,6 +24,11 @@ except ImportError:
 
 class Entity:
     def take_damage(self, dmg : int) -> int:
+        caller = type(self).__name__
+        if isinstance(self, Enemy):
+            dmg -= max(0, self.defence_melee)
+        elif isinstance(self, Player):
+            dmg -= max(0, self.defence)
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
         
@@ -37,6 +42,7 @@ class Player(Entity):
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
         self.active_dice_effects : list[int] = []
+        self.defence = CONSTANTS["player_base_defence"]
         
         self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
 
@@ -92,7 +98,8 @@ class Player(Entity):
 
     def attack(self, target, item) -> int:
         """Attack target your weapons damage dmg_multiplier. The damage dealt is returned"""
-        dmg = self.inventory.equipped_weapon.use()
+        print(target)
+        dmg = self.inventory.equipped_weapon.use() 
         target.take_damage(dmg)
         return dmg
 
@@ -177,6 +184,8 @@ class Map:
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
+                    music.stop()
+                    music.play("shop")
                     pass # shop dialog
             
             # update the tile the player just interacted with
@@ -326,7 +335,7 @@ class Combat:
                 spawn_probabilities[enemy_type] = enemy_probability
 
         distace_from_spawn = ((abs(self.map.starting_position.x - self.player.position.x)**2) + (abs(self.map.starting_position.y - self.player.position.y)**2))**0.5
-        """Adjust probabilites depending on distance away from spawn and difficulty of enemy"""
+        # """Adjust probabilites depending on distance away from spawn and difficulty of enemy""" Should be changed later
         for enemy_type in enemy_types:
             if ENEMY_DATA[enemy_type]["probability"] == 0:
                 new_probability = distace_from_spawn * ((100-ENEMY_DATA[enemy_type]["exp"])/1000)
@@ -370,8 +379,9 @@ class Combat:
                         if item_return != None:
                             print(item_return)
                             dmg, item_name_in_sentence = item_return
-                            self.enemy.take_damage(dmg)
+                            dmg_dealt = self.enemy.take_damage(dmg)
                             print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
+                            print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
                         else:
                             dmg_dealt = self.player.attack(target=self.enemy)
                             print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")

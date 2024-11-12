@@ -5,7 +5,7 @@
         "probability": 0.01,
         "type": "weapon",
         "offensive": true,
-        "effect": 1,
+        "effect": 2,
         "durability": -1,
         "description": "Your most reliable defense. Use it to defend yourself against monsters"
     },
