@@ -118,7 +118,6 @@ class Map:
             self.doors = doors
 
             self.chest_item : Item | None = None
-            # self.is_enemy_defeated : bool | None = None
             self.is_cleared : bool = False
 
         def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
@@ -441,8 +440,8 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
         
         case "chest":
             # when the player moves, if the new room contains a chest, the room.chest_item property gets set right away
-            # if room.chest_item is None then the chest has already been looted
-            if current_room.chest_item != None:
+            # if is_cleared is True then the chest has already been looted
+            if not current_room.is_cleared:
                 player_action_options = [
                     "Open chest",
                     *door_options,
@@ -458,7 +457,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
         case "mimic_trap":
             # if the mimic hasn't been triggered yet the room should look like a chest room
-            if not current_room.is_enemy_defeated:
+            if not current_room.is_cleared:
                 player_action_options = [
                     "Open chest",
                     *door_options,
