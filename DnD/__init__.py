@@ -9,7 +9,8 @@ CONSTANTS = {
         "shop": 0.05
     },
     "room_ui_colors": {
-        "discovered": "gray",
+        "default" : "gray",
+        "discovered": "light gray",
         "empty": "light gray",
         "enemy": "red",
         "chest": "yellow",
@@ -21,7 +22,7 @@ CONSTANTS = {
     "normal_trap_base_dmg": 3,
 
     "player_base_inventory_size": 3,
-    "player_base_hp": 10,
+    "player_base_hp": 1000000,
     "player_starting_gold": 0,
     
     "enemy_base_hp": 4,
