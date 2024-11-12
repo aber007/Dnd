@@ -2,7 +2,7 @@ import os
 from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
-from .ambience import play, stop
+from .ambience import music
 from . import (
     CONSTANTS,
     ITEM_DATA,
@@ -304,8 +304,8 @@ class Combat:
 
     def start(self):
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
-        stop()
-        play("fight.mp3")
+        music.stop(self=None)
+        music.play("fight.mp3")
         print(f"{'='*15} Combat {'='*15}")
         story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
         if "enemy" in story_text_enemy:
@@ -391,7 +391,7 @@ class Combat:
 
         #TODO should only trigger if defeated, not fled
         self.map.get_room(self.player.position).is_enemy_defeated = True
-        play("test.wav")
+        music.play("test.wav")
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
@@ -464,7 +464,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 def run_game():
     map = Map()
     player = Player(map)
-    play("test.wav")
+    music.play("test.wav")
 
     map.open_UI_window(player_pos = player.position)
 

@@ -15,7 +15,7 @@ pygame.mixer.init()
 class music:
 
     def __init__(self, ambience_playlist):
-        self.ambience_playlist = ["../story/test.wav", "../story/fight.mp3"]
+        self.ambience_playlist = ["../story/ambience1.wav", "../story/fight.mp3"]
 
     def play(file_path):
         if CONSTANTS["music"]:
