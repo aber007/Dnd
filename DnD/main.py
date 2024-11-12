@@ -132,7 +132,7 @@ class Map:
             match (self.type, first_time_entering_room):
                 case ("enemy", _):
                     if not map.get_room(player.position).is_cleared:
-                        Combat(player, map).start()
+                        Combat(player, map).start(music=music)
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
