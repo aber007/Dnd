@@ -27,13 +27,16 @@ class Music:
         if CONSTANTS["music"]:
             match type:
                 case "ambience":
-                    self.file_path = choice(self.ambience)
                     if len(self.ambience) != 0:
+                        self.file_path = choice(self.ambience)
                         self.replace_ambience.append(self.file_path)
                         self.ambience.pop(self.ambience.index(self.file_path))
                     else:
-                        self.ambience = self.replace_ambience
+                        self.ambience = self.replace_ambience.copy()
                         self.replace_ambience.clear()
+                        self.file_path = choice(self.ambience)
+                        self.replace_ambience.append(self.file_path)
+                        self.ambience.pop(self.ambience.index(self.file_path))
                 case "fight":
                     self.file_path = self.fight
                 case "shop":
