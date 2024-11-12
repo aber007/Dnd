@@ -149,6 +149,8 @@ class Map:
                     print(choice(INTERACTION_DATA["chest"]))
 
                 case ("shop", True):
+                    music.stop()
+                    music.play("shop")
                     pass # decide shop's wares/prices?
 
                 case ("trap", _):
@@ -162,6 +164,7 @@ class Map:
                         print(f"You rolled {dice_result} and was harmed by the trap while escaping")
                         dmg_taken = player.take_damage(CONSTANTS["normal_trap_base_dmg"])
                         print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
+                    self.is_cleared = True
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -184,8 +187,6 @@ class Map:
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
-                    music.stop()
-                    music.play("shop")
                     pass # shop dialog
             
             # update the tile the player just interacted with

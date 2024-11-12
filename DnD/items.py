@@ -118,7 +118,7 @@ class Inventory:
         ]
 
         for idx, item in enumerate(self.slots):
-            lines.append(f"Slot {idx+1}: " + item.name if item != None else "")
+            lines.append(f"Slot {idx+1}: " + item.name if item != None else f"Slot {idx+1}: empty")
         
         return "\n".join(lines)
 
