@@ -2,7 +2,7 @@ import os
 from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
-from .ambience import music
+from .ambience import Music
 from . import (
     CONSTANTS,
     ITEM_DATA,
@@ -122,14 +122,14 @@ class Map:
             self.chest_item : Item | None = None
             self.is_enemy_defeated : bool | None = None
 
-        def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
+        def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
                 case ("enemy", True):
-                    Combat(player, map).start()
+                    Combat(player, map).start(music)
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
@@ -154,7 +154,7 @@ class Map:
                         print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
 
         
-        def interact(self, player : Player, map) -> None:
+        def interact(self, player : Player, map, music : Music) -> None:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
@@ -167,7 +167,7 @@ class Map:
                     print(choice(INTERACTION_DATA["mimic"]))
                     dmg_taken = player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"])
                     print(f"The player took {dmg_taken} damage from the Mimic ambush. {player.hp} HP remaining", end="\n"*2)
-                    Combat(player, map, force_enemy_type = "Mimic").start()
+                    Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
                     pass # shop dialog
@@ -239,7 +239,7 @@ class Map:
         """Using an x and a y value, return a room at that position"""
         return self.rooms[position.x][position.y]
     
-    def move_player(self, direction : str, player : Player) -> None:
+    def move_player(self, direction : str, player : Player, music = Music) -> None:
         """Move the player in the given direction"""
         x, y = player.position
     
@@ -265,7 +265,7 @@ class Map:
         self.UI_instance.send_command("tile", player.position, CONSTANTS["room_ui_colors"][self.get_room(player.position).type])
         self.UI_instance.send_command("pp", player.position)
 
-        self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
+        self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room, music=music)
 
 
 class Combat:
@@ -302,10 +302,10 @@ class Combat:
 
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
 
-    def start(self):
+    def start(self, music):
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
-        music.stop(self=None)
-        music.play("fight.mp3")
+        music.stop()
+        music.play("fight")
         print(f"{'='*15} Combat {'='*15}")
         story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
         if "enemy" in story_text_enemy:
@@ -391,7 +391,7 @@ class Combat:
 
         #TODO should only trigger if defeated, not fled
         self.map.get_room(self.player.position).is_enemy_defeated = True
-        music.play("test.wav")
+        music.play("ambience")
 
 def prompt_dice_roll():
     """Waits for the user to press enter"""
@@ -464,7 +464,8 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 def run_game():
     map = Map()
     player = Player(map)
-    music.play("test.wav")
+    music = Music()
+    music.play(type="ambience")
 
     map.open_UI_window(player_pos = player.position)
 
@@ -480,7 +481,7 @@ def run_game():
         match action_options[action_idx]:
             case "Open chest" | "Buy from shop":
                 # interact with the current room
-                map.get_room(player.position).interact(player, map)
+                map.get_room(player.position).interact(player, map, music)
 
             case "Open Inventory":
                 player.open_inventory()
@@ -488,7 +489,7 @@ def run_game():
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
-                map.move_player(direction=door_to_open, player=player)
+                map.move_player(direction=door_to_open, player=player, music=music)
 
         print()
 

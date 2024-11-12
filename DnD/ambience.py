@@ -1,6 +1,7 @@
 #This does not need to be in the final game, i was just bored
 
 from . import CONSTANTS
+from random import choice
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 try:
@@ -12,13 +13,28 @@ except:
 # Initialize pygame mixer
 pygame.mixer.init()
 
-class music:
+class Music:
 
-    def __init__(self, ambience_playlist):
-        self.ambience_playlist = ["../story/ambience1.wav", "../story/fight.mp3"]
+    def __init__(self):
+        self.ambience = ["../story/ambience1.mp3", "../story/ambience2.mp3"]
+        self.replace_ambience = []
+        self.fight = "../story/fight.mp3"
 
-    def play(file_path):
+
+    def play(self, type):
         if CONSTANTS["music"]:
+            match type:
+                case "ambience":
+                    file_path = choice(self.ambience)
+                    if len(self.ambience) != 0:
+                        self.replace_ambience.append(file_path)
+                        self.ambience.pop(self.ambience.index(file_path))
+                    else:
+                        self.ambience = self.replace_ambience
+                        self.replace_ambience.clear()
+                case "fight":
+                    file_path = choice(self.fight)
+
             current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
             target_file = os.path.join(current_dir, '..', 'story', file_path)
             target_file = os.path.abspath(target_file)

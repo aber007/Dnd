@@ -13,8 +13,7 @@ def eye_of_horus(player):
     
     selected_room_coords = player.position + coord_offset
 
-    map.get_room(selected_room_coords).discovered = True
-    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"]["discovered"])
+    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][map.get_room(player.position).type])
 
 class Item:
     def __init__(self, item_id : str) -> None:
