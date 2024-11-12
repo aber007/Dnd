@@ -370,55 +370,58 @@ class Combat:
             print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
 
             if not enemyturn:
-                action_options = ["Use item / Attack", "Attempt to Flee"]
-                action_idx = get_user_action_choice("Choose action: ", action_options)
+                action_completed = False  # Loop control variable to retry actions
+                while not action_completed:
+                    action_options = ["Use item / Attack", "Attempt to Flee"]
+                    action_idx = get_user_action_choice("Choose action: ", action_options)
 
-                match action_options[action_idx]:                   
-                    case "Use item / Attack":
-                        # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
-                        item_return = self.player.open_inventory()
-                        if item_return != None:
-                            print(item_return)
-                            dmg, item_name_in_sentence = item_return
-                            dmg_dealt = self.enemy.take_damage(dmg)
-                            print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
-                            print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
-                        else:
-                            dmg_dealt = self.player.attack(target=self.enemy)
-                            print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
-                    
-                    case "Attempt to Flee":
-                        print("Attempting to flee, Roll 12 or higher to succeed")
-                        prompt_dice_roll()
-                        roll = self.player.roll_dice()
-                        print(f"You rolled {roll}")
-
-                        # if you managed to escape
-                        if 12 <= roll:
-                            # if the enemy hit you on your way out
-                            if roll < 15:
-                                dmg_dealt_to_player = self.enemy.attack(target=self.player)
-                                if self.player.is_alive:
-                                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing\nPlayer hp remaining: {self.player.hp}")
-                                else:
-                                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
-                                    break
-                            
-                            # if you escaped with coins
-                            elif roll == 20:
-                                print(choice(INTERACTION_DATA["escape_20"]))
-                                self.player.gold += self.enemy.gold // 2
-                            print(choice(INTERACTION_DATA["escape"]))
-                            break
-
-                        # if you didnt escape
-                        else:
-                            dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
-                            if self.player.is_alive:
-                                print(f"You failed to flee and took {dmg_dealt_to_player} damage")
+                    match action_options[action_idx]:                   
+                        case "Use item / Attack":
+                            # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
+                            item_return = self.player.open_inventory()
+                            if item_return is not None:
+                                print(item_return)
+                                dmg, item_name_in_sentence = item_return
+                                dmg_dealt = self.enemy.take_damage(dmg)
+                                print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
+                                print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
+                                action_completed = True  
                             else:
-                                print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
-                                break
+                                continue 
+
+                        case "Attempt to Flee":
+                            print("Attempting to flee, Roll 12 or higher to succeed")
+                            prompt_dice_roll()
+                            roll = self.player.roll_dice()
+                            print(f"You rolled {roll}")
+
+                            # if you managed to escape
+                            if 12 <= roll:
+                                # if the enemy hit you on your way out
+                                if roll < 15:
+                                    dmg_dealt_to_player = self.enemy.attack(target=self.player)
+                                    if self.player.is_alive:
+                                        print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing\nPlayer hp remaining: {self.player.hp}")
+                                    else:
+                                        print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
+                                        self.enemy.is_alive = False
+                                
+                                # if you escaped with coins
+                                elif roll == 20:
+                                    print(choice(INTERACTION_DATA["escape_20"]))
+                                    self.player.gold += self.enemy.gold // 2
+                                print(choice(INTERACTION_DATA["escape"]))
+                                self.enemy.is_alive = False
+
+                            # if you didnt escape
+                            else:
+                                dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
+                                if self.player.is_alive:
+                                    print(f"You failed to flee and took {dmg_dealt_to_player} damage")
+                                else:
+                                    print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
+                                    self.enemy.is_alive = False
+                            action_completed = True
             
             else:
                 dmg_dealt_to_player = self.enemy.attack(target=self.player)
