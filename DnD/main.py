@@ -262,7 +262,7 @@ class Map:
         first_time_entering_room = not self.rooms[x][y].discovered
         self.rooms[x][y].discovered = True
         
-        self.UI_instance.send_command("tile", player.position, CONSTANTS["room_ui_colors"]["discovered"])
+        self.UI_instance.send_command("tile", player.position, CONSTANTS["room_ui_colors"][self.get_room(player.position).type])
         self.UI_instance.send_command("pp", player.position)
 
         self.rooms[x][y].on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
