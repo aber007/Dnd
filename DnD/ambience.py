@@ -16,30 +16,34 @@ pygame.mixer.init()
 class Music:
 
     def __init__(self):
-        self.ambience = ["../story/ambience1.mp3", "../story/ambience2.mp3"]
+        self.ambience = ["ambience1.mp3", "ambience2.mp3"]
         self.replace_ambience = []
-        self.fight = "../story/fight.mp3"
+        self.fight = "fight.mp3"
+        self.shop = "Shop_music.mp3"
+        self.file_path = ""
 
 
     def play(self, type):
         if CONSTANTS["music"]:
             match type:
                 case "ambience":
-                    file_path = choice(self.ambience)
+                    self.file_path = choice(self.ambience)
                     if len(self.ambience) != 0:
-                        self.replace_ambience.append(file_path)
-                        self.ambience.pop(self.ambience.index(file_path))
+                        self.replace_ambience.append(self.file_path)
+                        self.ambience.pop(self.ambience.index(self.file_path))
                     else:
                         self.ambience = self.replace_ambience
                         self.replace_ambience.clear()
                 case "fight":
-                    file_path = choice(self.fight)
+                    self.file_path = self.fight
+                case "shop":
+                    self.file_path = self.shop
 
             current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
-            target_file = os.path.join(current_dir, '..', 'story', file_path)
+            target_file = os.path.join(current_dir, '..', 'story', self.file_path)
             target_file = os.path.abspath(target_file)
             pygame.mixer.music.load(target_file)
-            pygame.mixer.music.play(loops=-1)
+            pygame.mixer.music.play(loops=-1, fade_ms=500)
 
     def nexttrack(self):
         global index
@@ -59,5 +63,5 @@ class Music:
         pygame.mixer.music.stop()
 
     def fadeout(self):
-        pygame.mixer.music.fadeout()
+        pygame.mixer.music.fadeout(200)
 

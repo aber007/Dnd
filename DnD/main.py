@@ -302,10 +302,10 @@ class Combat:
 
         return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
 
-    def start(self, music):
+    def start(self, music : Music):
         # remember to deal with Enemy.on_damage_taken, Enemy.on_death, Player.on_damage_taken, Player.on_death
-        music.stop()
-        music.play("fight")
+        music.fadeout()
+        music.play(type="fight")
         print(f"{'='*15} Combat {'='*15}")
         story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
         if "enemy" in story_text_enemy:
