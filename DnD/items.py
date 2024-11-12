@@ -66,8 +66,9 @@ class Item:
 class Inventory:
     def __init__(self, size : int) -> None:
         self.size = size
-        self.equipped_weapon = Item("twig")
+        self.chosen_weapon = None
         self.slots : list[Item | None] = [None] * size # this length should never change
+        self.slots[0] = Item("twig")
     
     def is_full(self):
         """if all slots arent None, return True"""
@@ -115,7 +116,6 @@ class Inventory:
     def __str__(self):
         lines = [
             "---------- [INVENTORY] ----------",
-            "Equipped weapon: " + self.equipped_weapon.name,
         ]
 
         for idx, item in enumerate(self.slots):
