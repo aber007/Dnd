@@ -2,11 +2,11 @@ CONSTANTS = {
     "map_base_size": 9, #Base size over 20 is not recommended
     "room_probabilities": {
         "empty": 0.25,
-        "enemy": 0.5,
-        "chest": 0.2,
+        "enemy": 0.4,
+        "chest": 0.25,
         "trap": 0.05,
         "mimic_trap": 0.05,
-        "shop": 0.05
+        "shop": 0.1
     },
     "room_ui_colors": {
         "default" : "gray",
