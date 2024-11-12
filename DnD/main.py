@@ -65,6 +65,8 @@ class Player(Entity):
         """If any damage was dealt, return the amount and item name_in_sentence.\n
         If not damage was dealt return None"""
 
+        print(Inventory.__str__(self.inventory))
+
         selected_item : Item | None = self.inventory.select_item()
         if selected_item == None:
             return None
