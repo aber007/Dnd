@@ -2,7 +2,7 @@
     "twig": {
         "name": "Twig",
         "name_in_sentence": "a twig",
-        "probability": 0.3,
+        "probability": 0.01,
         "type": "weapon",
         "offensive": true,
         "effect": 1,
