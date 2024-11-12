@@ -18,11 +18,19 @@ CONSTANTS = {
         "mimic_trap": "light green",
         "shop": "blue",
     },
+    "room_contains_text": {
+        "empty": "nothing",
+        "enemy": "an enemy",
+        "chest": "a chest",
+        "trap": "a trap",
+        "mimic_trap": "a Mimic trap",
+        "shop": "a shop"
+    },
 
     "normal_trap_base_dmg": 3,
 
     "player_base_inventory_size": 3,
-    "player_base_hp": 1000000,
+    "player_base_hp": 10,
     "player_starting_gold": 0,
     
     "enemy_base_hp": 4,
@@ -43,7 +51,9 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": False
+    "music": False,
+
+    "debug": False # True: dont gray the UI map tiles
 }
 
 from .player_actions import get_user_action_choice

@@ -12,8 +12,10 @@ def eye_of_horus(player):
     coord_offset = {"N": [0,-1], "E": [1,0], "S": [0,1], "W": [-1,0]}[selected_direction]
     
     selected_room_coords = player.position + coord_offset
+    selected_room = map.get_room(selected_room_coords)
 
-    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][map.get_room(player.position).type])
+    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][selected_room.type])
+    print(f"\nThe Eye of Horus shows you that the room behind the door facing {selected_direction} is {CONSTANTS['room_contains_text'][selected_room.type]}")
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -73,6 +75,13 @@ class Inventory:
         """if all slots arent None, return True"""
         return all(self.slots)
     
+    def get_items(self, include_emtpy = False):
+        """Returns the content of all slots that arent None except if include_empty is True"""
+        if include_emtpy:
+            return self.slots
+        else:
+            return [item for item in self.slots if item != None]
+
     def receive_item(self, item : Item):
         print(f"\nYou recieved {item.name_in_sentence}\n{item.description}")
 
@@ -80,11 +89,10 @@ class Inventory:
 
         if self.is_full():
             print("Your inventory is full!", end="\n"*2)
-            action_options = [item for item in self.slots if item != None]
+            action_options = self.get_items()
             action_idx = get_user_action_choice("Choose item to throw out: ", action_options)
             self.slots[action_idx] = item
-
-        # set the first found empty slot to the received item
+        
         else:
             # set the first found empty slot to the received item
             first_found_empty_slot_idx = self.slots.index(None)
@@ -92,12 +100,47 @@ class Inventory:
 
     def remove_item(self, item : Item) -> None:
         item.parent_inventory = None
-        self.slots.remove(item)
+        self.slots[self.slots.index(item)] = None
 
-    def select_item(self) -> Item | None:
-        items_in_inventory = [item for item in self.slots if item != None]
+    def open(self) -> Item | None:
+        """If an item was used return that item to be processed by the function that called this function
+        If no item was used return None"""
 
-        print()
+        return_item : Item | None = None
+        items_in_inventory = self.get_items(include_emtpy=True)
+
+        print(f"\n{'='*15} INVENTORY {'='*15}")
+        # print gold/xp here
+        print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
+
+        action_options = ["Use item", "CANCEL"]
+        action_idx = get_user_action_choice("Choose action: ", action_options)
+
+        match action_options[action_idx]:
+            case "Use item":
+                return_item = self.select_item_to_use()
+
+            case "CANCEL":
+                return None
+        
+        # recursively call this function until the player either
+        #     cancelled the at the 'show inventory' dialog or an item was selected
+        # this allows the player to: show inventory -> show use item dialog ->
+        #     cancel use item -> show inventory.
+        #     in other words, cancelling the use of an item doesnt close the inventory
+        if return_item == None:
+            return self.open()
+        else:
+            return return_item
+
+
+
+
+    def select_item_to_use(self) -> Item | None:
+        items_in_inventory = self.get_items()
+
+        print(f"\n{'='*15} USE ITEM {'='*15}")
+
         if len(items_in_inventory):
             action_options = items_in_inventory + ["CANCEL"]
             action_idx = get_user_action_choice("Choose item to use: ", action_options)

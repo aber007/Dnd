@@ -67,15 +67,15 @@ class Player(Entity):
         """If any damage was dealt, return the amount and item name_in_sentence.\n
         If not damage was dealt return None"""
 
-        print(Inventory.__str__(self.inventory))
+        selected_item : Item | None = self.inventory.open()
+        #for later   if player.in_shop: return selected_item
 
-        selected_item : Item | None = self.inventory.select_item()
         if selected_item == None:
             return None
 
         if selected_item.offensive:
             if self.current_combat == None:
-                print("You shouldn't use an offensive item outside of combat")
+                print("\nYou shouldn't use an offensive item outside of combat")
             else:
                 dmg = selected_item.use()
                 return (dmg, selected_item.name_in_sentence)
@@ -252,6 +252,7 @@ class Map:
     def decide_room_color(self, room_position : Vector2) -> str:
         room : Map.Room = self.rooms[room_position.x][room_position.y]
         colors = CONSTANTS["room_ui_colors"]
+
         match room.type:
             case "empty":
                 return colors["discovered"] if room.discovered else colors["empty"]
