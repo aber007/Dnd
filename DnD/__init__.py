@@ -42,7 +42,7 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": True
+    "music": False
 }
 
 from .player_actions import get_user_action_choice
