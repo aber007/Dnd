@@ -209,24 +209,58 @@ class Map:
 
         if self.size % 2 == 0:
             self.size += 1
-        self.starting_position = Vector2(double=int(self.size/2))
+        self.starting_position = Vector2(double=self.size//2)
         room_types = list(CONSTANTS["room_probabilities"].keys())
         probabilities = list(CONSTANTS["room_probabilities"].values())
+
+        
+        def get_doors_for_room(x,y):
+            doors = ["N", "E", "S", "W"]
+            xy_max = self.size-1
+
+            if x == 0: doors.remove("W")
+            elif x == xy_max: doors.remove("E")
+
+            if y == 0: doors.remove("N")
+            elif y == xy_max: doors.remove("S")
+            
+            # add randomization
+
+            return doors
+
+        # Assign random values to each location with set probabilities
+
         # Initialize 2D array
         rooms = [[0 for x in range(self.size)] for y in range(self.size)]
         
-
-        # Assign random values to each location with set probabilities
-        for x in range(self.size):
-            for y in range(self.size):
-                if x == int(self.size/2) and y == int(self.size/2):
-                    rooms[x][y] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"], parent_map=self)
+        # Decide room type and doors for each room
+        for y in range(self.size):
+            for x in range(self.size):
+                # starting room
+                if x == y == self.size//2:
+                    rooms[y][x] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"], parent_map=self)
+                
                 else:
                     roomtype = choices(room_types, probabilities)[0]
-                    rooms[x][y] = Map.Room(type=roomtype, discovered=False, doors=["N", "E", "S", "W"], parent_map=self)
+                    rooms[y][x] = Map.Room(type=roomtype, discovered=False, doors=get_doors_for_room(x, y), parent_map=self)
+        
+
+
         self.rooms : list[list[Map.Room]] = rooms
 
         self.UI_instance = Map.UI(self.size, self.rooms)
+
+
+        # ===== WIP =====
+
+        for y in self.rooms:
+            print([f"{''.join(x.doors)},{x.type}" for x in y])
+        
+        print(self.rooms[self.size//2][self.size//2].type)
+
+
+
+
     
     def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
@@ -270,6 +304,7 @@ class Map:
         """Move the player in the given direction"""
         x, y = player.position
     
+        raise Exception("obsolete code, FIX THIS")
         match direction:
             case "N":
                 if y > 0:  # Ensure not moving out of bounds
@@ -495,9 +530,10 @@ def run_game():
     music = Music()
     music.play(type="ambience")
 
-    map.open_UI_window(player_pos = player.position)
+    # map.open_UI_window(player_pos = player.position)
 
     while player.is_alive:
+        break
         print(f"{'='*15} New Round {'='*15}")
 
         # Get a list of the players currently available options and ask user to choose
@@ -522,7 +558,7 @@ def run_game():
         print()
 
     print("Game over")
-    map.close_UI_window()
+    # map.close_UI_window()
 
 
 
