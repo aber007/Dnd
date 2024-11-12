@@ -1,7 +1,6 @@
 #This does not need to be in the final game, i was just bored
 
 from . import CONSTANTS
-import time
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 try:

@@ -2,7 +2,7 @@ import os
 from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
-from .story import play, stop
+from .ambience import play, stop
 from . import (
     CONSTANTS,
     ITEM_DATA,
