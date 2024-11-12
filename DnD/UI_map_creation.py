@@ -59,7 +59,7 @@ def openUIMap(size : int, rooms : list[list[any]], player_pos : Vector2, command
     for x in range(len(rooms)):
         for y in range(len(rooms)):
             key = f"{(y+1):02d}{(x+1):02d}" #Yes, this looks wrong but it's correct
-            if rooms[x][y].discovered == True:
+            if rooms[x][y].discovered != True:
                 grids[key].configure(bg=CONSTANTS["room_ui_colors"]["discovered"])
             else:
                 grids[key].configure(bg=CONSTANTS["room_ui_colors"][rooms[x][y].type])
