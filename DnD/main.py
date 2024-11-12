@@ -88,7 +88,7 @@ class Player(Entity):
         self.hp = min(self.hp + additional_hp, CONSTANTS["player_base_hp"])
         print(f"The player was healed for {additional_hp}. New HP: {self.hp}")
 
-    def attack(self, target) -> int:
+    def attack(self, target, item) -> int:
         """Attack target your weapons damage dmg_multiplier. The damage dealt is returned"""
         dmg = self.inventory.equipped_weapon.use()
         target.take_damage(dmg)
@@ -326,22 +326,18 @@ class Combat:
             print(f"{self.enemy.name} hp: {self.enemy.hp} \n")
 
             if not enemyturn:
-                action_options = ["Attack", "Open Inventory", "Attempt to Flee"]
+                action_options = ["Use item / Attack", "Attempt to Flee"]
                 action_idx = get_user_action_choice("Choose action: ", action_options)
 
-                match action_options[action_idx]:
-                    case "Attack":
-                        dmg_dealt = self.player.attack(target=self.enemy)
-                        print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
-                    
-                    case "Open Inventory":
+                match action_options[action_idx]:                   
+                    case "Use item / Attack":
                         # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
                         item_return = self.player.open_inventory()
                         if item_return != None:
                             print(item_return)
                             dmg, item_name_in_sentence = item_return
                             self.enemy.take_damage(dmg)
-                            print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
+                            print(f"The {self.enemy.name} was hurt by the player for {dmg} damage using {item_name_in_sentence}")
                     
                     case "Attempt to Flee":
                         print("Attempting to flee, Roll 12 or higher to succeed")
