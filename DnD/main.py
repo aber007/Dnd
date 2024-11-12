@@ -330,6 +330,9 @@ class Combat:
                             dmg, item_name_in_sentence = item_return
                             self.enemy.take_damage(dmg)
                             print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
+                        else:
+                            dmg_dealt = self.player.attack(target=self.enemy)
+                            print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
                     
                     case "Attempt to Flee":
                         print("Attempting to flee, Roll 12 or higher to succeed")
