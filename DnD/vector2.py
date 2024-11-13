@@ -16,6 +16,9 @@ class Vector2:
             return Vector2(self.x + part.x, self.y + part.y)
         else:
             return Vector2(self.x + part[0], self.y + part[1])
+    
+    def __eq__(self, part):
+        return self[0] == part[0] and self[1] == part[1]
 
     def __str__(self):
         return f"<Vector2({self.x}, {self.y})>"
