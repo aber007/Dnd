@@ -38,50 +38,42 @@ class Player(Entity):
     def __init__(self, parent_map) -> None:
         self.parent_map : Map = parent_map
         self.position : Vector2 = self.parent_map.starting_position
-        self.hp = CONSTANTS["player_base_hp"]
+        self.hp = CONSTANTS["player_hp"]
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
         self.active_dice_effects : list[int] = []
         self.defence = CONSTANTS["player_base_defence"]
         
-        self.inventory = Inventory(CONSTANTS["player_base_inventory_size"])
+        self.inventory = Inventory()
 
         self.current_combat : Combat | None = None
     
     def get_dice_modifier(self) -> int:
         return sum(self.active_dice_effects)
     
-    def roll_dice(self, success : callable = None) -> tuple[bool,int] | int:
-        """
-        Roll the dice and include any dice modifiers.
-        If success is provided, it should be a function that takes dice_result and returns a bool.
-        If success is provided, returns (success function result, dice result).
-        Otherwise, return only dice_result.
-        """
+    def roll_dice(self) -> tuple[bool,int] | int:
+        """Roll the dice and include any dice modifiers. Return the result"""
 
-        # get a random number between 1 and dice_base_sides then add the dice modifier
+        # get a random number between 1 and dice_sides then add the dice modifier
         # max() ensures the roll has a min value of 1
-        dice_result = max(1, randint(1, CONSTANTS["dice_base_sides"]) + self.get_dice_modifier())
+        dice_result = max(1, randint(1, CONSTANTS["dice_sides"]) + self.get_dice_modifier())
         self.active_dice_effects.clear()
 
-        if success:
-            return (success(dice_result), dice_result)
-        else:
-            return dice_result
+        return dice_result
 
     def open_inventory(self) -> tuple[int, str] | None:
         """If any damage was dealt, return the amount and item name_in_sentence.\n
-        If not damage was dealt return None"""
+        If no damage was dealt return None"""
 
-        print(Inventory.__str__(self.inventory))
+        selected_item : Item | None = self.inventory.open()
+        #for later   if player.in_shop: return selected_item
 
-        selected_item : Item | None = self.inventory.select_item()
         if selected_item == None:
             return None
 
         if selected_item.offensive:
             if self.current_combat == None:
-                print("You shouldn't use an offensive item outside of combat")
+                print("\nYou shouldn't use an offensive item outside of combat")
             else:
                 dmg = selected_item.use()
                 return (dmg, selected_item.name_in_sentence)
@@ -92,9 +84,10 @@ class Player(Entity):
             use_callable(self)
 
     def heal(self, additional_hp : int):
-        # cap the hp to player_base_hp
-        self.hp = min(self.hp + additional_hp, CONSTANTS["player_base_hp"])
-        print(f"The player was healed for {additional_hp}. New HP: {self.hp}")
+        # cap the hp to player_hp
+        hp_before = self.hp
+        self.hp = min(self.hp + additional_hp, CONSTANTS["player_hp"])
+        print(f"The player was healed for {additional_hp}. HP: {hp_before} -> {self.hp}")
 
     def attack(self, target, item) -> int:
         """Attack target your weapons damage dmg_multiplier. The damage dealt is returned"""
@@ -154,22 +147,21 @@ class Map:
                     pass # decide shop's wares/prices?
 
                 case ("trap", _):
-                    print(f"\nYou stepped in a trap! Roll at least {CONSTANTS['normal_trap_base_min_roll_to_escape']} to save yourself")
+                    print(f"\nYou stepped in a trap! Roll at least {CONSTANTS['normal_trap_min_roll_to_escape']} to save yourself")
                     prompt_dice_roll()
-                    success, dice_result = player.roll_dice(success=lambda dice_result : CONSTANTS["normal_trap_base_min_roll_to_escape"] <= dice_result)
+                    roll = player.roll_dice()
 
-                    if success:
-                        print(f"You rolled {dice_result} and managed to escape unharmed")
+                    if CONSTANTS["normal_trap_min_roll_to_escape"] <= roll:
+                        print(f"You rolled {roll} and managed to escape unharmed")
                     else:
-                        print(f"You rolled {dice_result} and was harmed by the trap while escaping")
-                        dmg_taken = player.take_damage(CONSTANTS["normal_trap_base_dmg"])
+                        print(f"You rolled {roll} and was harmed by the trap while escaping")
+                        dmg_taken = player.take_damage(CONSTANTS["normal_trap_dmg"])
                         print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
                     self.is_cleared = True
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
 
-        
         def interact(self, player : Player, map, music : Music) -> None:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
@@ -182,7 +174,7 @@ class Map:
 
                 case "mimic_trap":
                     print(choice(INTERACTION_DATA["mimic"]))
-                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_base_ambush_dmg"])
+                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"])
                     print(f"The player took {dmg_taken} damage from the Mimic ambush. {player.hp} HP remaining", end="\n"*2)
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
@@ -262,6 +254,7 @@ class Map:
     def decide_room_color(self, room_position : Vector2) -> str:
         room : Map.Room = self.rooms[room_position.x][room_position.y]
         colors = CONSTANTS["room_ui_colors"]
+
         match room.type:
             case "empty":
                 return colors["discovered"] if room.discovered else colors["empty"]

@@ -18,33 +18,36 @@ CONSTANTS = {
         "mimic_trap": "light green",
         "shop": "blue",
     },
+    "room_contains_text": {
+        "empty": "nothing",
+        "enemy": "an enemy",
+        "chest": "a chest",
+        "trap": "a trap",
+        "mimic_trap": "a Mimic trap",
+        "shop": "a shop"
+    },
 
-    "normal_trap_base_dmg": 3,
+    "normal_trap_dmg": 3,
+    "mimic_trap_ambush_dmg": 4,
 
-    "player_base_inventory_size": 3,
-    "player_base_hp": 1000000,
+    "player_inventory_size": 3,
+    "player_hp": 10,
     "player_starting_gold": 0,
     "player_base_defence" : 0,
     
-    "enemy_base_hp": 4,
-    "enemy_base_dmg": 2,
-    "enemy_special" : "none",
-    "enemy_special_info": "none",
-    "enemy_defence_melee": 0,
-    "enemy_defence_ranged": 0,
-    "enemy_defence_magic": 0,
-    "enemy_exp": 1,
-    "enemy_gold": 1,
-    
-    "dice_base_sides": 20,
-    'normal_trap_base_min_roll_to_escape': 10,
-    "mimic_trap_base_ambush_dmg": 4,
+    "dice_sides": 20,
+    "normal_trap_min_roll_to_escape": 10,
+    "flee_min_roll_to_escape": 12,
+    "flee_min_roll_to_escape_unharmed": 15,
+    "flee_exact_roll_to_escape_coins": 20,
     
     "item_config_file": "./items.json",
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": True
+    "music": False,
+
+    "debug": False # True: dont gray the UI map tiles
 }
 
 from .player_actions import get_user_action_choice
