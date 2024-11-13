@@ -110,9 +110,10 @@ class Enemy(Entity):
 class Map:
 
     class ReachableRoom:
-        def __init__(self, doors) -> None:
-            self.doors : list[str] = doors
+        def __init__(self) -> None:
+            self.doors : list[str] = ["N", "E", "S", "W"]
             self.reachable : bool = False
+            self.had_a_door_removed = False
 
     class Room:
 
@@ -213,7 +214,7 @@ class Map:
     def __init__(self, size : int = CONSTANTS["map_base_size"]) -> None:
         """Generates the playable map"""
         self.size = size
-
+ 
         if self.size % 2 == 0:
             self.size += 1
         self.starting_position = Vector2(double=self.size//2)
@@ -221,24 +222,34 @@ class Map:
         probabilities = list(CONSTANTS["room_probabilities"].values())
 
         
-        def get_doors_for_room(x,y):
+        def get_doors_for_room(rooms : Array2D, x : int, y : int):
             """Get the doors for room depending on coords while\n
             - Removing doors facing non-existent rooms outside of the map\n
             - Randomly removing a door CONSTANTS["remove_door_percent"] percent of the time"""
 
-            doors = ["N", "E", "S", "W"]
+            current_room = rooms[x,y]
+            print(current_room, rooms[x,y])
             xy_max = self.size-1
 
-            if x == 0: doors.remove("W")
-            elif x == xy_max: doors.remove("E")
+            if x == 0: current_room.doors.remove("W")
+            elif x == xy_max: current_room.doors.remove("E")
 
-            if y == 0: doors.remove("N")
-            elif y == xy_max: doors.remove("S")
+            if y == 0: current_room.doors.remove("N")
+            elif y == xy_max: current_room.doors.remove("S")
             
-            if CONSTANTS["remove_door_percent"] < uniform(0,1):
-                doors.remove(choice(doors))
+            if not current_room.had_a_door_removed and CONSTANTS["remove_door_percent"] < uniform(0,1):
+                # remove the chosen door of this room
+                door_to_remove = choice(current_room.doors)
+                current_room.doors.remove(door_to_remove)
+                current_room.had_a_door_removed = True
 
-            return doors
+                # remove the door facing this room inside the room the removed door previously faced
+                room_behind_door_to_remove = rooms[Vector2(x,y) + CONSTANTS["directional_coord_offsets"][door_to_remove]]
+                opposite_facing_door = {"N": "S", "E": "W", "S": "N", "W": "E"}[door_to_remove]
+
+                if opposite_facing_door in room_behind_door_to_remove.doors:
+                    room_behind_door_to_remove.doors.remove(opposite_facing_door)
+                room_behind_door_to_remove.had_a_door_removed = True
         
         def recursive_check_room_reachability(rooms : Array2D, position: Vector2):
             current_room : Map.ReachableRoom = rooms[position]
@@ -250,13 +261,7 @@ class Map:
             current_room.reachable = True
 
             for door in current_room.doors:
-                next_position : Vector2
-                match door:
-                    case "N": next_position = position + [0,-1]
-                    case "E": next_position = position + [1,0]
-                    case "S": next_position = position + [0,1]
-                    case "W": next_position = position + [-1,0]
-                
+                next_position = position + CONSTANTS["directional_coord_offsets"][door]
                 recursive_check_room_reachability(rooms, next_position)
 
         # Initialize 2D array
@@ -265,17 +270,26 @@ class Map:
         # generate new doors configurations until every single room is reachable
         # usually 80% chance its successful on the first loop iteration
         while True:
-            # assign doors to the rooms. theres a CONSTANTS["remove_door_percent"] percent chance a door is removed
+            for x, y, val in self.rooms:
+                self.rooms[x,y] = Map.ReachableRoom()
+            
             for x, y, _val in self.rooms:
-                self.rooms[x,y] = Map.ReachableRoom(doors=get_doors_for_room(x, y))
+                get_doors_for_room(self.rooms, x, y)
+                
             
             # go through each Map.ReachableRoom and set .reachable = True if its reachable
             recursive_check_room_reachability(self.rooms, self.starting_position)
 
+            #! temp stats
+            reachable = [val.reachable for _x, _y, val in self.rooms]
+            print(reachable.count(True)/len(reachable))
+
             # if all rooms are reachable, break the loop
             if all([val.reachable for _x, _y, val in self.rooms]):
                 break
-        
+
+        quit() # test
+
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
         for x, y, val in self.rooms:
             if (x, y) == self.starting_position:
@@ -288,6 +302,7 @@ class Map:
         self.UI_instance = Map.UI(self.size, self.rooms)
 
         # TODO
+        # ensure neighboring rooms have doors facing eachother
         # update all coordinate changing things
         # UI coord system to use x,y rather than y,x
 
