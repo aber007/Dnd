@@ -1,7 +1,7 @@
 {
-    "twig": {
-        "name": "Twig",
-        "name_in_sentence": "a twig",
+    "sharp_twig": {
+        "name": "Sharp Twig",
+        "name_in_sentence": "a sharp twig",
         "probability": 0.01,
         "type": "weapon",
         "offensive": true,

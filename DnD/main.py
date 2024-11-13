@@ -45,8 +45,6 @@ class Player(Entity):
         self.current_combat : Combat | None = None
 
         # progression related attributes
-        self.gold = CONSTANTS["player_starting_gold"]
-        self.exp = CONSTANTS["player_starting_exp"]
         self.inventory = Inventory()
 
         self.active_dice_effects : list[int] = []
@@ -68,8 +66,7 @@ class Player(Entity):
         """If any damage was dealt, return the amount and item name_in_sentence.\n
         If no damage was dealt return None"""
 
-        selected_item : Item | None = self.inventory.open(player_gold = self.gold, player_exp = self.exp)
-        #for later   if player.in_shop: return selected_item
+        selected_item : Item | None = self.inventory.open()
 
         if selected_item == None:
             return None
@@ -112,6 +109,8 @@ class Enemy(Entity):
 class Map:
 
     class ReachableRoom:
+        """A simple version of Map.Room that's used when generating room doors"""
+
         def __init__(self, doors) -> None:
             self.doors : list[str] = doors
             self.reachable : bool = False
@@ -143,12 +142,12 @@ class Map:
                     chosen_chest_item_id = choices(possible_items, item_probabilites)[0]
 
                     self.chest_item = Item(chosen_chest_item_id)
-                    print(choice(INTERACTION_DATA["chest"]))
+                    print("\n" + choice(INTERACTION_DATA["chest"]))
 
                 case ("shop", True):
                     music.stop()
                     music.play("shop")
-                    print(choice(INTERACTION_DATA["shop"]))
+                    print("\n" + choice(INTERACTION_DATA["shop"]))
 
                     possible_items = list(ITEM_DATA.keys())
                     item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
@@ -197,7 +196,8 @@ class Map:
                     
                     # stay in the shop menu unitl the player explicitly chooses to Leave
                     while True:
-                        print(f"\n{'='*15} STORE {'='*15}")
+                        print(f"\n{'='*15} SHOP {'='*15}")
+                        print(f"\nCurrent gold: {player.inventory.gold}")
                         print("\nAvalible items:")
                         shop_options = [f"{item.name}: {item.current_price} gold" for idx,item in enumerate(self.shop_items)]
                         shop_options += ["Open Inventory", "Leave"]
@@ -215,8 +215,8 @@ class Map:
                                 selected_item = self.shop_items[shop_option_idx]
 
                                 # if the player can afford the item
-                                if selected_item.current_price < player.gold:
-                                    player.gold -= selected_item.current_price
+                                if selected_item.current_price < player.inventory.gold:
+                                    player.inventory.gold -= selected_item.current_price
                                     player.inventory.receive_item(selected_item)
                                     self.shop_items.remove(selected_item)
 
@@ -246,7 +246,6 @@ class Map:
         def open(self, player_pos : Vector2):
             self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
             self.UI_thread.start()
-            sleep(0.5)
         
         def send_command(self, type : str, position : Vector2, *args : str):
             """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of a tile\n
@@ -456,7 +455,7 @@ class Combat:
         music.fadeout()
         music.play(type="fight")
 
-        print(f"{'='*15} COMBAT {'='*15}")
+        print(f"\n{'='*15} COMBAT {'='*15}")
         
         story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
         if "enemy" in story_text_enemy:
@@ -488,8 +487,8 @@ class Combat:
         if not self.enemy.is_alive:
             self.map.get_room(self.player.position).is_cleared = True
 
-            self.player.gold += self.enemy.gold
-            self.player.exp += self.enemy.exp
+            self.player.inventory.gold += self.enemy.gold
+            self.player.inventory.exp += self.enemy.exp
 
             story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
             print("\n" + story_text_enemy_defeated.replace("enemy", self.enemy.name))
@@ -529,7 +528,7 @@ class Combat:
             dmg, item_name_in_sentence = item_return
             dmg_dealt = self.enemy.take_damage(dmg)
 
-            print(f"The {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
+            print(f"\nThe {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
             print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
 
             action_completed = True
@@ -561,7 +560,7 @@ class Combat:
             # if you escaped with coins
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
                 print(choice(INTERACTION_DATA["escape_20"]))
-                self.player.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
+                self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
             
             print(choice(INTERACTION_DATA["escape"]))
             fled = True
@@ -598,6 +597,10 @@ class Combat:
 def prompt_dice_roll():
     """Waits for the user to press enter"""
     input("[Press ENTER to roll dice]\n")
+
+def prompt_continue():
+    """Waits for the user to press enter"""
+    input("[Press ENTER to continue]\n")
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
     """Returns a list of strings containing the different actions the player can currently take"""
@@ -672,6 +675,9 @@ def run_game():
     map.open_UI_window(player_pos = player.position)
 
     while player.is_alive:
+        if not CONSTANTS["debug"]["disable_console_clearing"]:
+            os.system("cls")
+        
         print(f"{'='*15} NEW ROUND {'='*15}", end="\n"*2)
 
         # Get a list of the players currently available options and ask user to choose
@@ -694,6 +700,7 @@ def run_game():
                 map.move_player(direction=door_to_open, player=player, music=music)
 
         print()
+        prompt_continue()
 
     print("Game over")
     map.close_UI_window()

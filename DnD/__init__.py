@@ -65,7 +65,8 @@ CONSTANTS = {
     "debug": {
         "gray_map_tiles": False, # default True
         "remove_room_doors": False, # default True
-        "print_map": False # default False
+        "print_map": False, # default False
+        "disable_console_clearing": False # default False
     }
 }
 

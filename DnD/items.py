@@ -70,6 +70,9 @@ class Inventory:
         self.chosen_weapon = None
         self.slots : list[Item | None] = [None] * self.size # this length should never change
         self.slots[0] = Item("twig")
+
+        self.gold = CONSTANTS["player_starting_gold"]
+        self.exp = CONSTANTS["player_starting_exp"]
     
     def is_full(self):
         """if all slots arent None, return True"""
@@ -105,27 +108,27 @@ class Inventory:
         self.slots.remove(item)
         self.slots.append(None)
 
-    def open(self, player_gold, player_exp) -> Item | None:
-        """If an item was used return that item to be processed by the function that called this function
+    def open(self) -> Item | None:
+        """If an item was used return that item to be processed by the function that called this function\n
         If no item was used return None"""
 
 
         return_item : Item | None = None
         items_in_inventory = self.get_items(include_emtpy=True)
 
-        print(f"\n{'='*15} INVENTORY {'='*15}")
-        print(f"Gold: {player_gold} \nEXP: {player_exp}")
+        print(f"\n{'='*15} INVENTORY {'='*15}", end="\n"*2)
+        print(f"Gold: {self.gold}\nEXP: {self.exp}", end="\n"*2)
         # print gold/xp here
         print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
 
-        action_options = ["Select item", "CANCEL"]
+        action_options = ["Use item", "Cancel"]
         action_idx = get_user_action_choice("Choose action: ", action_options)
 
         match action_options[action_idx]:
-            case "Select item":
+            case "Use item":
                 return_item = self.select_item_to_use()
 
-            case "CANCEL":
+            case "Cancel":
                 return None
         
         # recursively call this function until the player either
@@ -134,7 +137,7 @@ class Inventory:
         #     cancel use item -> show inventory.
         #     in other words, cancelling the use of an item doesnt close the inventory
         if return_item == None:
-            return self.open()
+            return self.open() #! missing args
         else:
             return return_item
 
@@ -144,14 +147,14 @@ class Inventory:
     def select_item_to_use(self) -> Item | None:
         items_in_inventory = self.get_items()
 
-        print(f"\n{'='*15} USE ITEM {'='*15}")
+        print(f"\n{'='*15} USE ITEM {'='*15}", end="\n"*2)
 
         if len(items_in_inventory):
-            action_options = items_in_inventory + ["CANCEL"]
+            action_options = items_in_inventory + ["Cancel"]
             action_idx = get_user_action_choice("Choose item to use: ", action_options)
 
             match action_options[action_idx]:
-                case "CANCEL":
+                case "Cancel":
                     return None
                 case _item:
                     return _item
