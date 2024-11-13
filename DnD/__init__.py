@@ -48,6 +48,13 @@ CONSTANTS = {
 
     "music": False,
 
+    "directional_coord_offsets": {
+        "N": [0, -1],
+        "E": [1, 0],
+        "S": [0, 1],
+        "W": [-1, 0]
+    },
+
     "debug": False # True: dont gray the UI map tiles
 }
 
