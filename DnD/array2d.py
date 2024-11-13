@@ -1,9 +1,12 @@
+from .vector2 import Vector2
+
 class Array2D:
     def __init__(self, *rows) -> None:
         """A custom 2D array class that supports item assignment and subscription with format x,y, rather than the traditional y,x\n
         To assign item use 'array_2d_instance[x,y] = new_val'\n
         To get/subscribe item use 'array_2d_instance[x,y]'"""
         self.rows = rows
+        self.size = Vector2(len(self.rows[0]), len(self.rows))
     
     def create_frame_by_size(width : int, height : int, val : any = None):
         """Creates an Array2D object from width and height. Every item in the array is set to val\n
@@ -24,12 +27,12 @@ class Array2D:
         if not (0 <= y <= y_max):
             raise IndexError(f"y ({y}) not within range 0 -> {y_max} (incl.)")
 
-    def __setitem__(self, coords : tuple[int], val : any) -> None:
+    def __setitem__(self, coords : tuple[int] | Vector2, val : any) -> None:
         x,y = coords
         self._check_idx_error(x,y)
         self.rows[y][x] = val
 
-    def __getitem__(self, coords : tuple[int]) -> any:
+    def __getitem__(self, coords : tuple[int] | Vector2) -> any:
         x,y = coords
         self._check_idx_error(x,y)
         return self.rows[y][x]
