@@ -44,7 +44,7 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": False,
+    "music": True,
 
     "debug": False # True: dont gray the UI map tiles
 }

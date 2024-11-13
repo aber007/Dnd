@@ -16,7 +16,7 @@ pygame.mixer.init()
 class Music:
 
     def __init__(self):
-        self.ambience = ["ambience1.mp3", "ambience2.mp3", "ambience3maybe.mp3"]
+        self.ambience = ["ambience1.mp3", "ambience2.mp3", "ambience3maybe.mp3", "ambience4.mp3", "ambience5.mp3"]
         self.replace_ambience = []
         self.fight = "fight.mp3"
         self.shop = "Shop_music.mp3"
@@ -46,15 +46,30 @@ class Music:
             target_file = os.path.join(current_dir, '..', 'story', self.file_path)
             target_file = os.path.abspath(target_file)
             pygame.mixer.music.load(target_file)
-            pygame.mixer.music.play(loops=-1, fade_ms=500)
+            if type == "ambience":
+                pygame.mixer.music.play(loops=0, fade_ms=500)
+                self.nexttrack()
+            else:
+                pygame.mixer.music.play(loops=-1, fade_ms=500)
+
 
     def nexttrack(self):
-        global index
-        index += 1
-        if index >= len(self.ambience_playlist):
-            index = 0
-        pygame.mixer.music.load(self.ambience_playlist[index])
-        pygame.mixer.music.play()
+        if len(self.ambience) != 0:
+            self.file_path = choice(self.ambience)
+            self.replace_ambience.append(self.file_path)
+            self.ambience.pop(self.ambience.index(self.file_path))
+        else:
+            self.ambience = self.replace_ambience.copy()
+            self.replace_ambience.clear()
+            self.file_path = choice(self.ambience)
+            self.replace_ambience.append(self.file_path)
+            self.ambience.pop(self.ambience.index(self.file_path))
+
+        current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
+        target_file = os.path.join(current_dir, '..', 'story', self.file_path)
+        target_file = os.path.abspath(target_file)
+
+        pygame.mixer.music.queue(target_file)
 
     def pause(self):
         pygame.mixer.music.pause()
