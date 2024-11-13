@@ -27,6 +27,8 @@ CONSTANTS = {
         "shop": "a shop"
     },
 
+    "remove_door_percent": 0.3,
+
     "normal_trap_dmg": 3,
     "mimic_trap_ambush_dmg": 4,
 
@@ -46,11 +48,24 @@ CONSTANTS = {
 
     "music": False,
 
-    "debug": False # True: dont gray the UI map tiles
+    "directional_coord_offsets": {
+        "N": [0, -1],
+        "E": [1, 0],
+        "S": [0, 1],
+        "W": [-1, 0]
+    },
+
+    # change these when debugging
+    "debug": {
+        "gray_map_tiles": False, # default True
+        "remove_room_doors": False, # default True
+        "print_map": False # default False
+    }
 }
 
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
+from .array2d import Array2D
 from .items import Item, Inventory
 from .main import run_game
