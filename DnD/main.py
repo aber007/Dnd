@@ -11,6 +11,7 @@ from . import (
     Item,
     Inventory,
     Vector2,
+    Array2D,
     get_user_action_choice
     )
 
@@ -107,6 +108,12 @@ class Enemy(Entity):
 
 
 class Map:
+
+    class ReachableRoom:
+        def __init__(self, doors) -> None:
+            self.doors : list[str] = doors
+            self.reachable : bool = False
+
     class Room:
 
         def __init__(self, type, discovered, doors, parent_map) -> None:
@@ -215,6 +222,10 @@ class Map:
 
         
         def get_doors_for_room(x,y):
+            """Get the doors for room depending on coords while\n
+            - Removing doors facing non-existent rooms outside of the map\n
+            - Randomly removing a door CONSTANTS["remove_door_percent"] percent of the time"""
+
             doors = ["N", "E", "S", "W"]
             xy_max = self.size-1
 
@@ -224,40 +235,61 @@ class Map:
             if y == 0: doors.remove("N")
             elif y == xy_max: doors.remove("S")
             
-            # add randomization
+            if CONSTANTS["remove_door_percent"] < uniform(0,1):
+                doors.remove(choice(doors))
 
             return doors
+        
+        def recursive_check_room_reachability(rooms : Array2D, position: Vector2):
+            current_room : Map.ReachableRoom = rooms[position]
 
-        # Assign random values to each location with set probabilities
+            # if the recursive check has already been here then all rooms are already queue to be searched
+            if current_room.reachable:
+                return
+            
+            current_room.reachable = True
+
+            for door in current_room.doors:
+                next_position : Vector2
+                match door:
+                    case "N": next_position = position + [0,-1]
+                    case "E": next_position = position + [1,0]
+                    case "S": next_position = position + [0,1]
+                    case "W": next_position = position + [-1,0]
+                
+                recursive_check_room_reachability(rooms, next_position)
 
         # Initialize 2D array
-        rooms = [[0 for x in range(self.size)] for y in range(self.size)]
-        
-        # Decide room type and doors for each room
-        for y in range(self.size):
-            for x in range(self.size):
-                # starting room
-                if x == y == self.size//2:
-                    rooms[y][x] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"], parent_map=self)
-                
-                else:
-                    roomtype = choices(room_types, probabilities)[0]
-                    rooms[y][x] = Map.Room(type=roomtype, discovered=False, doors=get_doors_for_room(x, y), parent_map=self)
-        
+        self.rooms = Array2D.create_frame_by_size(width = self.size, height = self.size)
 
+        # generate new doors configurations until every single room is reachable
+        # usually 80% chance its successful on the first loop iteration
+        while True:
+            # assign doors to the rooms. theres a CONSTANTS["remove_door_percent"] percent chance a door is removed
+            for x, y, _val in self.rooms:
+                self.rooms[x,y] = Map.ReachableRoom(doors=get_doors_for_room(x, y))
+            
+            # go through each Map.ReachableRoom and set .reachable = True if its reachable
+            recursive_check_room_reachability(self.rooms, self.starting_position)
 
-        self.rooms : list[list[Map.Room]] = rooms
+            # if all rooms are reachable, break the loop
+            if all([val.reachable for _x, _y, val in self.rooms]):
+                break
+        
+        # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
+        for x, y, val in self.rooms:
+            if (x, y) == self.starting_position:
+                # what if rooms surrounding starting pos removed door facing starting pos
+                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=["N", "E", "S", "W"], parent_map=self)
+            else:
+                roomtype = choices(room_types, probabilities)[0]
+                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=val.doors, parent_map=self)
 
         self.UI_instance = Map.UI(self.size, self.rooms)
 
-
-        # ===== WIP =====
-
-        for y in self.rooms:
-            print([f"{''.join(x.doors)},{x.type}" for x in y])
-        
-        print(self.rooms[self.size//2][self.size//2].type)
-
+        # TODO
+        # update all coordinate changing things
+        # UI coord system to use x,y rather than y,x
 
 
 

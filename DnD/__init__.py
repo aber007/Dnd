@@ -27,6 +27,8 @@ CONSTANTS = {
         "shop": "a shop"
     },
 
+    "remove_door_percent": 0.3,
+
     "normal_trap_dmg": 3,
     "mimic_trap_ambush_dmg": 4,
 
@@ -52,5 +54,6 @@ CONSTANTS = {
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
+from .array2d import Array2D
 from .items import Item, Inventory
 from .main import run_game
