@@ -33,8 +33,8 @@ CONSTANTS = {
     "mimic_trap_ambush_dmg": 4,
 
     "player_inventory_size": 4,
-    "player_hp": 100,
-    "player_starting_gold": 200,
+    "player_hp": 50,
+    "player_starting_gold": 0,
     "player_starting_exp": 0,
     "player_base_defence" : 0,
     
@@ -48,7 +48,7 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": True,
+    "music": False,
 
     "directional_coord_offsets": {
         "N": [0, -1],
