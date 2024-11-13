@@ -105,22 +105,24 @@ class Inventory:
         self.slots.remove(item)
         self.slots.append(None)
 
-    def open(self) -> Item | None:
+    def open(self, player_gold, player_exp) -> Item | None:
         """If an item was used return that item to be processed by the function that called this function
         If no item was used return None"""
+
 
         return_item : Item | None = None
         items_in_inventory = self.get_items(include_emtpy=True)
 
         print(f"\n{'='*15} INVENTORY {'='*15}")
+        print(f"Gold: {player_gold} \nEXP: {player_exp}")
         # print gold/xp here
         print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
 
-        action_options = ["Use item", "CANCEL"]
+        action_options = ["Select item", "CANCEL"]
         action_idx = get_user_action_choice("Choose action: ", action_options)
 
         match action_options[action_idx]:
-            case "Use item":
+            case "Select item":
                 return_item = self.select_item_to_use()
 
             case "CANCEL":

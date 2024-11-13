@@ -24,7 +24,6 @@ except ImportError:
 
 class Entity:
     def take_damage(self, dmg : int) -> int:
-        caller = type(self).__name__
         if isinstance(self, Enemy):
             dmg -= max(0, self.defence_melee)
         elif isinstance(self, Player):
@@ -41,6 +40,7 @@ class Player(Entity):
         self.hp = CONSTANTS["player_hp"]
         self.is_alive = True
         self.gold = CONSTANTS["player_starting_gold"]
+        self.exp = CONSTANTS["player_starting_exp"]
         self.active_dice_effects : list[int] = []
         self.defence = CONSTANTS["player_base_defence"]
         
@@ -65,7 +65,7 @@ class Player(Entity):
         """If any damage was dealt, return the amount and item name_in_sentence.\n
         If no damage was dealt return None"""
 
-        selected_item : Item | None = self.inventory.open()
+        selected_item : Item | None = self.inventory.open(player_gold = self.gold, player_exp = self.exp)
         #for later   if player.in_shop: return selected_item
 
         if selected_item == None:
@@ -144,6 +144,7 @@ class Map:
                 case ("shop", True):
                     music.stop()
                     music.play("shop")
+
                     pass # decide shop's wares/prices?
 
                 case ("trap", _):
@@ -346,7 +347,6 @@ class Combat:
         print(f"{'='*15} Combat {'='*15}")
         story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
         if "enemy" in story_text_enemy:
-            story_text_enemy.replace("enemy", self.enemy.name_in_sentence)
             print(story_text_enemy.replace("enemy", self.enemy.name_in_sentence))
         else:
             print(story_text_enemy)
@@ -354,8 +354,8 @@ class Combat:
         enemyturn = choice([True, False])
 
         self.player.current_combat = self
-
-        while self.player.is_alive and self.enemy.is_alive:
+        fled = False
+        while self.player.is_alive and self.enemy.is_alive and not fled:
             self.turn += 1
 
             print(f"\n) Turn {self.turn} (")
@@ -397,14 +397,14 @@ class Combat:
                                         print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing\nPlayer hp remaining: {self.player.hp}")
                                     else:
                                         print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
-                                        self.enemy.is_alive = False
+                                        fled = True
                                 
                                 # if you escaped with coins
                                 elif roll == 20:
                                     print(choice(INTERACTION_DATA["escape_20"]))
                                     self.player.gold += self.enemy.gold // 2
                                 print(choice(INTERACTION_DATA["escape"]))
-                                self.enemy.is_alive = False
+                                fled = True
 
                             # if you didnt escape
                             else:
@@ -413,7 +413,7 @@ class Combat:
                                     print(f"You failed to flee and took {dmg_dealt_to_player} damage")
                                 else:
                                     print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
-                                    self.enemy.is_alive = False
+                                    fled = True
                             action_completed = True
             
             else:
@@ -433,7 +433,15 @@ class Combat:
         
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
+            story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
+            print()
+            print(story_text_enemy_defeated.replace("enemy", self.enemy.name))
             self.map.get_room(self.player.position).is_cleared = True
+            self.player.gold += self.enemy.gold
+            self.player.exp += self.enemy.exp
+            print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
+            print(f"You earned {self.enemy.exp} EXP from this fight")
+            
 
         self.player.current_combat = None
         music.play("ambience")

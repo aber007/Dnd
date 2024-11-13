@@ -30,9 +30,10 @@ CONSTANTS = {
     "normal_trap_dmg": 3,
     "mimic_trap_ambush_dmg": 4,
 
-    "player_inventory_size": 3,
-    "player_hp": 10,
+    "player_inventory_size": 4,
+    "player_hp": 100,
     "player_starting_gold": 0,
+    "player_starting_exp": 0,
     "player_base_defence" : 0,
     
     "dice_sides": 20,
