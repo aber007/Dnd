@@ -32,7 +32,7 @@ CONSTANTS = {
 
     "player_inventory_size": 4,
     "player_hp": 100,
-    "player_starting_gold": 0,
+    "player_starting_gold": 200,
     "player_starting_exp": 0,
     "player_base_defence" : 0,
     

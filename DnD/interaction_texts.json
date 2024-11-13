@@ -56,7 +56,7 @@
     "The enemy lies still, defeated, its presence nothing but a memory now.",
     "With a final strike, the enemy's grip on this world fades entirely.",
     "You catch your breath, looking at the spot where the enemy was last standing."
-  ],
+    ],
     "chest": [
         "You stumble upon a chest, its lid gleaming with potential treasure.",
         "A dusty chest catches your eye, waiting to be opened.",
@@ -125,7 +125,29 @@
         "You take a step forward, and the flickering light from the nearby candle illuminates a room untouched by time.",
         "With a turn of the handle, you enter a room so still it feels like you're the first to set foot in it for years.",
         "As you walk through the threshold, the room seems to hold its breath, as if watching your every move."
-    ]
+    ],
+    "shop": [
+        "You step into a dim castle chamber and find a small shop hidden away, filled with mysterious items for sale.",
+        "In a quiet corner room of the castle, a lone merchant has set up a stall with various enchanted items on display.",
+        "As you enter a castle room, you find an old shopkeeper surrounded by shelves of potions and relics.",
+        "A tucked-away chamber reveals a shop where weapons and trinkets line the walls, ready for purchase.",
+        "In a candlelit room deep within the castle, a vendor has set up a small shop, offering supplies and charms.",
+        "You find a friendly creature in a secluded castle alcove, his assortment of goods neatly arranged on ancient tables.",
+        "A hidden chamber in the castle opens up to reveal a shopkeeper with a collection of rare and useful items.",
+        "You enter a quiet room and see an old trader surrounded by scrolls, potions, and ancient tools for sale.",
+        "In a forgotten corner of the castle, a vendor offers a selection of maps, herbs, and adventuring gear.",
+        "You find a cozy nook in the castle where a peddler has laid out weapons, supplies, and curious trinkets.",
+        "A room off the main hall reveals a quaint shop filled with provisions, likely for those journeying through the castle.",
+        "In a small chamber, a mysterious merchant waits with an array of enchanted items and relics on display.",
+        "A dimly lit castle room houses a merchant who quietly offers you potions, charms, and supplies.",
+        "You come upon a castle room transformed into a shop, with armor and tools arranged for purchase.",
+        "An old guardroom now serves as a shop, its shelves lined with potions, scrolls, and enchanted artifacts.",
+        "A merchant has set up in an abandoned castle library, with items stacked between rows of dusty books.",
+        "In a narrow hallway, a vendor has laid out supplies, beckoning you to inspect his wares.",
+        "A small, firelit chamber holds a shop with potions, amulets, and other essentials for castle explorers.",
+        "You find a room near the castle's kitchen where a vendor sells provisions, herbs, and a few rare trinkets.",
+        "In a forgotten storage room, a small rat offers up everything from healing potions to sturdy travel gear."
+      ]
   
   }
   

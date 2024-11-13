@@ -1,5 +1,5 @@
 import os
-from random import randint, choices, choice, uniform
+from random import randint, choices, choice, uniform, sample
 from time import sleep
 from .UI_map_creation import openUIMap
 from .ambience import Music
@@ -123,6 +123,7 @@ class Map:
 
             self.chest_item : Item | None = None
             self.is_cleared : bool = False
+            self.shop_items : list = []
 
         def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
@@ -144,6 +145,14 @@ class Map:
                 case ("shop", True):
                     music.stop()
                     music.play("shop")
+                    print(choice(INTERACTION_DATA["shop"]))
+                    possible_items = list(ITEM_DATA.keys())
+                    item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
+                    self.shop_items = choices(possible_items, item_probabilites, k=3)
+                    self.shop_prices = []
+                    for item in self.shop_items:
+                        item_price = Item(item).gold + randint(Item(item).gold // -2, Item(item).gold // 2)
+                        self.shop_prices.append(f"{item}:{item_price}")
 
                     pass # decide shop's wares/prices?
 
@@ -180,7 +189,42 @@ class Map:
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
-                    pass # shop dialog
+                    
+                    print(f"\n{'='*15} STORE {'='*15}")
+                    while True:
+                        print("\nAvalible items:")
+                        shop_options = []
+                        for idx, item in enumerate(self.shop_items):
+                            shop_options.append(f"{Item(item).name}: {self.shop_prices[idx].split(':')[1]} gold")
+                        shop_options.append("Open Inventory")
+                        shop_options.append("Leave")
+
+                        
+                        shop_idx = get_user_action_choice("Choose item to buy: ", shop_options)
+                        match shop_options[shop_idx]:
+                            case ("Open Inventory"):
+                                player.open_inventory()
+                            case ("Leave"):
+                                
+                                break
+                            case _other:
+                                if player.gold > int(self.shop_prices[shop_idx].split(':')[1]):
+                                    player.gold -= int(self.shop_prices[shop_idx].split(':')[1])   
+                                    player.inventory.receive_item(Item(self.shop_items[shop_idx]))
+                                    self.shop_items.pop(shop_idx)
+                                    self.shop_prices.pop(shop_idx)
+                                else:
+                                    print("You do not have enough gold to buy this item")
+                        if len(self.shop_items) == 0:
+                            print("This shop is out of items")
+                            self.is_cleared = True
+                            break
+                    music.stop()
+                    music.play("ambience")
+
+                            
+
+
             
             # update the tile the player just interacted with
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -273,7 +317,7 @@ class Map:
                 return colors["discovered"] if room.is_cleared else colors["mimic_trap"]
 
             case "shop":
-                return colors["shop"]
+                return colors["discovered"] if room.is_cleared else colors["shop"]
 
 
 
