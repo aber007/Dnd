@@ -117,7 +117,7 @@ class Map:
 
     class Room:
 
-        def __init__(self, type, discovered, doors, parent_map) -> None:
+        def __init__(self, type, discovered, doors) -> None:
             self.type = type
             self.discovered = discovered
             self.doors = doors
@@ -347,10 +347,10 @@ class Map:
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
         for x, y, reachable_room in self.rooms:
             if (x, y) == self.starting_position:
-                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=reachable_room.doors, parent_map=self)
+                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=reachable_room.doors)
             else:
                 roomtype = choices(room_types, probabilities)[0]
-                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=reachable_room.doors, parent_map=self)
+                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=reachable_room.doors)
         
         if CONSTANTS["debug"]["print_map"]:
             last_y = 0
