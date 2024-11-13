@@ -1,6 +1,9 @@
 from .vector2 import Vector2
+from typing import TypeVar, Generic
 
-class Array2D:
+# Generic[TypeVar("T")] enables typehints like 'def foo(rooms : Array2D[Map.Room]): ...'
+class Array2D( Generic[TypeVar("T")] ):
+
     def __init__(self, *rows) -> None:
         """A custom 2D array class that supports item assignment and subscription with format x,y, rather than the traditional y,x\n
         To assign item use 'array_2d_instance[x,y] = new_val'\n
@@ -9,7 +12,7 @@ class Array2D:
         self.size = Vector2(len(self.rows[0]), len(self.rows))
     
     def create_frame_by_size(width : int, height : int, val : any = None):
-        """Creates an Array2D object from width and height. Every item in the array is set to val\n
+        """Creates an Array2D object from 'width' and 'height'. Every item in the array is set to 'val'\n
         This function is not meant to be used with an already established Array2D instance, but rather to create the frame of a new one"""
 
         rows = []

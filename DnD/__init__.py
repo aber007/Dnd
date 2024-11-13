@@ -55,7 +55,12 @@ CONSTANTS = {
         "W": [-1, 0]
     },
 
-    "debug": False # True: dont gray the UI map tiles
+    # change these when debugging
+    "debug": {
+        "gray_map_tiles": False, # default True
+        "remove_room_doors": False, # default True
+        "print_map": False # default False
+    }
 }
 
 from .player_actions import get_user_action_choice
