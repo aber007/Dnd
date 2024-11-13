@@ -4,6 +4,16 @@ class Array2D:
         To assign item use 'array_2d_instance[x,y] = new_val'\n
         To get/subscribe item use 'array_2d_instance[x,y]'"""
         self.rows = rows
+    
+    def create_frame_by_size(width : int, height : int, val : any):
+        """Creates an Array2D object from width and height. Every item in the array is set to val\n
+        This function is not meant to be used with an already established Array2D instance, but rather to create the frame of a new one"""
+
+        rows = []
+        for y in range(height):
+            rows.append([val for x in range(width)])
+        
+        return Array2D(*rows)
 
     def _check_idx_error(self, x, y) -> None:
         x_max = len(self.rows[0])-1
