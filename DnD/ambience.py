@@ -16,7 +16,7 @@ pygame.mixer.init()
 class Music:
 
     def __init__(self):
-        self.ambience = ["ambience1.mp3", "ambience2.mp3"]
+        self.ambience = ["ambience1.mp3", "ambience2.mp3", "ambience3maybe.mp3"]
         self.replace_ambience = []
         self.fight = "fight.mp3"
         self.shop = "Shop_music.mp3"
