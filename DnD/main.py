@@ -189,7 +189,9 @@ class Map:
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
-                    
+                    if music.get_current_song() != "shop_music.mp3":
+                        music.stop()
+                        music.play("shop")
                     print(f"\n{'='*15} STORE {'='*15}")
                     while True:
                         print("\nAvalible items:")
