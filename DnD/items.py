@@ -69,7 +69,10 @@ class Inventory:
         self.size = CONSTANTS["player_inventory_size"]
         self.chosen_weapon = None
         self.slots : list[Item | None] = [None] * self.size # this length should never change
-        self.slots[0] = Item("twig")
+        self.slots[0] = Item("sharp_twig")
+
+        self.gold = CONSTANTS["player_starting_gold"]
+        self.exp = CONSTANTS["player_starting_exp"]
     
     def is_full(self):
         """if all slots arent None, return True"""
@@ -88,15 +91,22 @@ class Inventory:
         item.parent_inventory = self
 
         if self.is_full():
-            print("Your inventory is full!", end="\n"*2)
-            action_options = self.get_items()
+            print("\nYour inventory is full!", end="\n"*2)
+            action_options = self.get_items() + [f"New item: {item}"]
             action_idx = get_user_action_choice("Choose item to throw out: ", action_options)
-            self.slots[action_idx] = item
+            selected_item = action_options[action_idx]
+
+            # if the selected item is the last option, aka the new item
+            if selected_item == action_options[-1]:
+                print(f"\n{item} was thrown out")
+                return
+            else:
+                print(f"\n{selected_item} was thrown out")
+                self.remove(selected_item)
         
-        else:
-            # set the first found empty slot to the received item
-            first_found_empty_slot_idx = self.slots.index(None)
-            self.slots[first_found_empty_slot_idx] = item
+        # set the first found empty slot to the received item
+        first_found_empty_slot_idx = self.slots.index(None)
+        self.slots[first_found_empty_slot_idx] = item
 
     def remove_item(self, item : Item) -> None:
         item.parent_inventory = None
@@ -105,53 +115,48 @@ class Inventory:
         self.slots.remove(item)
         self.slots.append(None)
 
-    def open(self, player_gold, player_exp) -> Item | None:
-        """If an item was used return that item to be processed by the function that called this function
+    def open(self) -> Item | None:
+        """If an item was used return that item to be processed by the function that called this function\n
         If no item was used return None"""
-
 
         return_item : Item | None = None
         items_in_inventory = self.get_items(include_emtpy=True)
 
-        print(f"\n{'='*15} INVENTORY {'='*15}")
-        print(f"Gold: {player_gold} \nEXP: {player_exp}")
-        # print gold/xp here
+        print(f"\n{'='*15} INVENTORY {'='*15}", end="\n"*2)
+        print(f"Gold: {self.gold}\nEXP: {self.exp}", end="\n"*2)
+
         print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
 
-        action_options = ["Select item", "CANCEL"]
+        action_options = ["Use item", "Cancel"]
         action_idx = get_user_action_choice("Choose action: ", action_options)
 
         match action_options[action_idx]:
-            case "Select item":
+            case "Use item":
                 return_item = self.select_item_to_use()
 
-            case "CANCEL":
+            case "Cancel":
                 return None
         
         # recursively call this function until the player either
         #     cancelled the at the 'show inventory' dialog or an item was selected
-        # this allows the player to: show inventory -> show use item dialog ->
-        #     cancel use item -> show inventory.
+        # this allows the player to: show inventory -> show use item dialog -> cancel use item -> show inventory.
         #     in other words, cancelling the use of an item doesnt close the inventory
         if return_item == None:
             return self.open()
         else:
             return return_item
 
-
-
-
     def select_item_to_use(self) -> Item | None:
         items_in_inventory = self.get_items()
 
-        print(f"\n{'='*15} USE ITEM {'='*15}")
+        print(f"\n{'='*15} USE ITEM {'='*15}", end="\n"*2)
 
         if len(items_in_inventory):
-            action_options = items_in_inventory + ["CANCEL"]
+            action_options = items_in_inventory + ["Cancel"]
             action_idx = get_user_action_choice("Choose item to use: ", action_options)
 
             match action_options[action_idx]:
-                case "CANCEL":
+                case "Cancel":
                     return None
                 case _item:
                     return _item
@@ -161,12 +166,10 @@ class Inventory:
             return None
     
     def __str__(self):
-        lines = [
-            "---------- [INVENTORY] ----------",
-        ]
+        lines = [f"\n{'='*15} INVENTORY {'='*15}"]
 
         for idx, item in enumerate(self.slots):
-            lines.append(f"Slot {idx+1}: " + item.name if item != None else f"Slot {idx+1}: empty")
+            lines.append(f"Slot {idx+1}: " + (item.name if item != None else ""))
         
         return "\n".join(lines)
 

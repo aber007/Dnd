@@ -43,7 +43,11 @@ CONSTANTS = {
     "flee_min_roll_to_escape": 12,
     "flee_min_roll_to_escape_unharmed": 15,
     "flee_exact_roll_to_escape_coins": 20,
+    "flee_20_coins_to_receive_divider": 2,
     
+    "shop_item_count": 3,
+    "shop_item_price_range_divider": 2,
+
     "item_config_file": "./items.json",
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
@@ -61,7 +65,8 @@ CONSTANTS = {
     "debug": {
         "gray_map_tiles": False, # default True
         "remove_room_doors": False, # default True
-        "print_map": False # default False
+        "print_map": False, # default False
+        "disable_console_clearing": False # default False
     }
 }
 
