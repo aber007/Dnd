@@ -5,7 +5,7 @@ class Array2D:
         To get/subscribe item use 'array_2d_instance[x,y]'"""
         self.rows = rows
     
-    def create_frame_by_size(width : int, height : int, val : any):
+    def create_frame_by_size(width : int, height : int, val : any = None):
         """Creates an Array2D object from width and height. Every item in the array is set to val\n
         This function is not meant to be used with an already established Array2D instance, but rather to create the frame of a new one"""
 
@@ -33,6 +33,9 @@ class Array2D:
         x,y = coords
         self._check_idx_error(x,y)
         return self.rows[y][x]
+    
+    def __iter__(self):
+        return iter([(x,y,self[x,y]) for y in range(len(self.rows)) for x in range(len(self.rows[0]))])
 
     def __str__(self) -> str:
         return "[" + "\n ".join(str(row) for row in self.rows) + "]"
