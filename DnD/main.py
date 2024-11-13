@@ -159,7 +159,8 @@ class Map:
                     self.shop_items = choices(possible_items, item_probabilites, k=3)
                     self.shop_prices = []
                     for item in self.shop_items:
-                        item_price = Item(item).gold + randint(Item(item).gold // -2, Item(item).gold // 2)
+                        item_shop = Item(item)
+                        item_price = item_shop.gold + randint(item_shop.gold // -2, item_shop.gold // 2)
                         self.shop_prices.append(f"{item}:{item_price}")
 
                     pass # decide shop's wares/prices?
