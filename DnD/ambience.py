@@ -19,8 +19,9 @@ class Music:
         self.ambience = ["ambience1.mp3", "ambience2.mp3"]
         self.replace_ambience = []
         self.fight = "fight.mp3"
-        self.shop = "Shop_music.mp3"
+        self.shop = "shop_music.mp3"
         self.file_path = ""
+        self.current_song = ""
 
 
     def play(self, type):
@@ -47,6 +48,7 @@ class Music:
             target_file = os.path.abspath(target_file)
             pygame.mixer.music.load(target_file)
             pygame.mixer.music.play(loops=-1, fade_ms=500)
+            self.current_song = self.file_path
 
     def nexttrack(self):
         global index
@@ -67,4 +69,7 @@ class Music:
 
     def fadeout(self):
         pygame.mixer.music.fadeout(200)
+    
+    def get_current_song(self):
+        return self.current_song
 
