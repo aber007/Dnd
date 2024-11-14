@@ -21,7 +21,7 @@ color_off = "\u001b[0m"
 
 
 def write(*s : str, sep="") -> None:
-    sys.stdout.write(sep.join(_s.__str__() for _s in s))
+    sys.stdout.write(sep.join(str(_s) for _s in s))
     sys.stdout.flush()
 
 class ItemSelect:
