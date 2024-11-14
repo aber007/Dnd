@@ -473,7 +473,7 @@ class Combat:
         while self.player.is_alive and self.enemy.is_alive and not fled:
             self.turn += 1
 
-            print(f"\n) Turn {self.turn} (")
+            print(f"\n--------------) Turn {self.turn} (--------------")
             print(f"Player hp: {self.player.hp}")
             print(f"{self.enemy.name} hp: {self.enemy.hp}\n")
 
@@ -546,7 +546,7 @@ class Combat:
         wait_for_key("[Press ENTER to roll dice]", "enter")
         roll = self.player.roll_dice()
         
-        print(f"You rolled {roll}")
+        print(f"\nYou rolled {roll}")
 
         # if you managed to escape
         if CONSTANTS["flee_min_roll_to_escape"] <= roll:
