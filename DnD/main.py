@@ -358,7 +358,7 @@ class Map:
             last_y = 0
             for x, y, room in self.rooms:
                 if y != last_y: print() ; last_y = y
-                print(f" [{x},{y},{room.type},{''.join(room.doors)}] ", end="")
+                print(f" [{x},{y},{room.type},{''.join(room.doors)}] ".ljust(22, " "), end="")
             print("\n")
 
         self.UI_instance = Map.UI(self.size, self.rooms)
