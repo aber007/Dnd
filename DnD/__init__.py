@@ -61,6 +61,9 @@ CONSTANTS = {
         "W": [-1, 0]
     },
 
+    "use_fancy_item_selection": True,
+    "min_desired_terminal_width": 100,
+
     # change these when debugging
     "debug": {
         "gray_map_tiles": False, # default True
@@ -70,6 +73,7 @@ CONSTANTS = {
     }
 }
 
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
