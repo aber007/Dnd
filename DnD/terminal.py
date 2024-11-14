@@ -1,3 +1,4 @@
+import typing
 import os, time, sys
 
 try:
@@ -84,11 +85,12 @@ class ItemSelect:
         keyboard.unhook_all()
 
 class Slider():
-    def __init__(self, length : int) -> None:
+    def __init__(self, length : int, on_value_changed : typing.Callable[[int], None]) -> None:
         self.length = length
         self.x = 0
         self.x_max = length-1
 
+        self.on_value_changed = on_value_changed
         self.run_loop = True
 
     def start(self) -> str:
@@ -108,6 +110,11 @@ class Slider():
 
     def set_x(self, new_x):
         new_x = min(self.x_max, max(0, new_x))
+
+        # if the slider value changed
+        if new_x != self.x:
+            self.on_value_changed(new_x)
+
         self.x = new_x
         
         write(cursor_clear_line, " - ┤", color_selected_bg, " "*self.x, color_off, " "*(self.x_max-self.x), "├ +")
