@@ -12,7 +12,9 @@ from . import (
     Inventory,
     Vector2,
     Array2D,
-    get_user_action_choice
+    get_user_action_choice,
+    ensure_terminal_width,
+    wait_for_key
     )
 
 try:
@@ -160,7 +162,7 @@ class Map:
 
                 case ("trap", _):
                     print(f"\nYou stepped in a trap! Roll at least {CONSTANTS['normal_trap_min_roll_to_escape']} to save yourself")
-                    prompt_dice_roll()
+                    wait_for_key("[Press ENTER to roll dice]\n", "enter")
                     roll = player.roll_dice()
 
                     if CONSTANTS["normal_trap_min_roll_to_escape"] <= roll:
@@ -221,7 +223,7 @@ class Map:
                                     self.shop_items.remove(selected_item)
 
                                 else:
-                                    print("You do not have enough gold to buy this item")
+                                    print("\nYou do not have enough gold to buy this item")
                         
                         if len(self.shop_items) == 0:
                             print("This shop is out of items")
@@ -480,7 +482,7 @@ class Combat:
             else:
                 self.enemy_turn()
             
-            sleep(0.5)
+            sleep(1)
             enemyturn = not enemyturn
         
         # if the combat ended and the enemy died: mark the room as cleared
@@ -541,7 +543,7 @@ class Combat:
 
         print("Attempting to flee, Roll 12 or higher to succeed")
 
-        prompt_dice_roll()
+        wait_for_key("[Press ENTER to roll dice]", "enter")
         roll = self.player.roll_dice()
         
         print(f"You rolled {roll}")
@@ -592,15 +594,6 @@ class Combat:
             # *player takes dmg from the special*
 
 
-
-
-def prompt_dice_roll():
-    """Waits for the user to press enter"""
-    input("[Press ENTER to roll dice]\n")
-
-def prompt_continue():
-    """Waits for the user to press enter"""
-    input("[Press ENTER to continue]\n")
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
     """Returns a list of strings containing the different actions the player can currently take"""
@@ -667,6 +660,8 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 
 def run_game():
+    ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
+
     map = Map()
     player = Player(map)
     music = Music()
@@ -676,7 +671,8 @@ def run_game():
 
     while player.is_alive:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
-            os.system("cls")
+            # clears entire console and sets cursor pos top left
+            print("\033[2J\033[H", end="")
         
         print(f"{'='*15} NEW ROUND {'='*15}", end="\n"*2)
 
@@ -699,10 +695,11 @@ def run_game():
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
                 map.move_player(direction=door_to_open, player=player, music=music)
 
-        print()
-        prompt_continue()
+        # print()
+        # prompt_continue()
+        wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    print("Game over")
+    print("\nGame over")
     map.close_UI_window()
 
 
