@@ -52,7 +52,9 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": False,
+    "music": True,
+    "music_max_volume_percent": 0.75,
+    "music_slider_step_volume_percent": 0.025,
 
     "directional_coord_offsets": {
         "N": [0, -1],
@@ -73,7 +75,7 @@ CONSTANTS = {
     }
 }
 
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2

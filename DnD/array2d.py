@@ -1,5 +1,5 @@
 from .vector2 import Vector2
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, Iterable, Tuple
 
 # Generic[TypeVar("T")] enables typehints like 'def foo(rooms : Array2D[Map.Room]): ...'
 class Array2D( Generic[TypeVar("T")] ):
@@ -21,7 +21,7 @@ class Array2D( Generic[TypeVar("T")] ):
         
         return Array2D(*rows)
 
-    def _check_idx_error(self, x, y) -> None:
+    def _check_idx_error(self, x : int, y : int) -> None:
         x_max = len(self.rows[0])-1
         if not (0 <= x <= x_max):
             raise IndexError(f"x ({x}) not within range 0 -> {x_max} (incl.)")
@@ -30,17 +30,20 @@ class Array2D( Generic[TypeVar("T")] ):
         if not (0 <= y <= y_max):
             raise IndexError(f"y ({y}) not within range 0 -> {y_max} (incl.)")
 
-    def __setitem__(self, coords : tuple[int] | Vector2, val : any) -> None:
+    def __setitem__(self, coords : Iterable[int], val : any) -> None:
+        # enables cases like 'array2d[x,y] = val'
         x,y = coords
         self._check_idx_error(x,y)
         self.rows[y][x] = val
 
-    def __getitem__(self, coords : tuple[int] | Vector2) -> any:
+    def __getitem__(self, coords : Iterable[int]) -> any:
+        # enables cases like 'array2d[x,y]'
         x,y = coords
         self._check_idx_error(x,y)
         return self.rows[y][x]
     
-    def __iter__(self):
+    def __iter__(self) -> Tuple[int, int, any]:
+        # enables cases like 'for x, y, val in array2d: ...'
         return iter([(x,y,self[x,y]) for y in range(len(self.rows)) for x in range(len(self.rows[0]))])
 
     def __str__(self) -> str:
