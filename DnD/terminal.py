@@ -16,6 +16,7 @@ cursor_x_0 = "\r"
 color_rgb_fg = lambda r,g,b: f"\u001b[38;2;{r};{g};{b}m"
 color_rgb_bg = lambda r,g,b: f"\u001b[48;2;{r};{g};{b}m"
 color_selected_bg = color_rgb_bg(255,255,255)
+color_selected_fg = color_rgb_fg(0,0,0)
 color_off = "\u001b[0m"
 
 
@@ -68,7 +69,7 @@ class ItemSelect:
         write(cursor_x_0, color_off, self.items[self.y], color_off)
 
     def select_current_line(self):
-        write(cursor_x_0, color_selected_bg, self.items[self.y], color_off)
+        write(cursor_x_0, color_selected_bg, color_selected_fg, self.items[self.y], color_off)
 
     def set_selected_item_var(self):
         self.selected_item = self.items[self.y]
