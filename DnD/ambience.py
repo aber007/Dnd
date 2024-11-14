@@ -1,6 +1,4 @@
-#This does not need to be in the final game, i was just bored
-
-from . import CONSTANTS
+from . import CONSTANTS, Slider
 from random import choice
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -22,6 +20,15 @@ class Music:
         self.shop = "shop_music.mp3"
         self.file_path = ""
         self.current_song = ""
+
+
+        pygame.mixer.music.set_volume(0)
+        self.play("ambience")
+
+        # the +1 adds a step where the volume is 0
+        slider_steps = round(1 / CONSTANTS["music_slider_step_volume_percent"]) + 1
+        slider_on_value_changed = lambda val : pygame.mixer.music.set_volume(max(0, val/slider_steps * CONSTANTS["music_max_volume_percent"]))
+        Slider(slider_steps, slider_on_value_changed, header="Choose music volume").start()
 
 
     def play(self, type):

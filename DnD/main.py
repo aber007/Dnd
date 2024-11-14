@@ -665,7 +665,6 @@ def run_game():
     map = Map()
     player = Player(map)
     music = Music()
-    music.play(type="ambience")
 
     map.open_UI_window(player_pos = player.position)
 
