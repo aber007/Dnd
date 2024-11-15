@@ -2,28 +2,6 @@ import time
 from typing import Callable
 from multiprocessing import Process, Manager
 
-class AnimationLibrary:
-    def __init__(self) -> None:
-        self.anims : list[Animation] = []
-    
-    def add_anim(self, anim):
-        self.anims.append(anim)
-
-    def update_anims(self):
-        for anim in self.anims:
-            if anim.is_finished:
-                print("fin")
-                self.anims.remove(anim)
-
-            elif not anim.is_started:
-                print("start")
-                anim.start()
-
-            else:
-                print("upd")
-                anim.update()
-
-
 class Animation:
     def __init__(
             self,
@@ -48,13 +26,31 @@ class Animation:
         self.is_started = True
 
     def update(self):
-        # print(f"anim update {self.start_val} {self.end_val}")
-
         percent_done = min(1, (time.time() - self.start_time)/self.duration)
-        self.on_val_update(self.val_delta * percent_done)
+        self.on_val_update(self.start_val + self.val_delta * percent_done)
 
         if percent_done == 1:
             self.is_finished = True
+
+class AnimationLibrary:
+    def __init__(self) -> None:
+        self.anims : list[Animation] = []
+    
+    def add_anim(self, anim : Animation):
+        self.anims.append(anim)
+
+    def update_anims(self):
+        for anim in self.anims:
+            if anim.is_finished:
+                self.anims.remove(anim)
+
+            elif not anim.is_started:
+                anim.start()
+
+            else:
+                anim.update()
+
+
 
 if __name__ == "__main__":
     class ee:
