@@ -91,6 +91,7 @@ class Player(Entity):
         self.hp = min(self.hp + additional_hp, CONSTANTS["player_hp"])
         print(f"The player was healed for {additional_hp}. HP: {hp_before} -> {self.hp}")
 
+        
 class Enemy(Entity):
     def __init__(self, enemy_type : str, target : Player) -> None:
         # get the attributes of the given enemy_type and make them properties of this object
@@ -495,10 +496,13 @@ class Combat:
             self.player.inventory.gold += self.enemy.gold
             self.player.inventory.exp += self.enemy.exp
 
+
+
             story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
             print("\n" + story_text_enemy_defeated.replace("enemy", self.enemy.name))
             print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
-            print(f"You earned {self.enemy.exp} EXP from this fight")
+            print(f"You earned {self.enemy.exp} EXP from this fight\n")
+            self.player.inventory.check_lvl()
             
 
         self.player.current_combat = None
@@ -671,7 +675,7 @@ def run_game():
 
     map.open_UI_window(player_pos = player.position)
 
-    while player.is_alive:
+    while player.is_alive and player.inventory.lvl < 10:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
             # clears entire console and sets cursor pos top left
             print("\033[2J\033[H", end="")
@@ -701,7 +705,14 @@ def run_game():
         # prompt_continue()
         wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    print("\nGame over")
+    if not player.is_alive:
+        print("\nGame over")
+    
+    else:
+        print("\n" + "Congratulations! You escaped the castle or something.")
+
+        #Add stats and print them here
+
     map.close_UI_window()
 
 
