@@ -304,6 +304,9 @@ class Map:
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
 
         for x, y, _ in self.rooms:
+
+            #current_walls should be accessed here
+
             # reachable_room_doors = []
             # if existing_walls[f"{x}.{y}.E"] != True:
             #     reachable_room_doors.append("E")
