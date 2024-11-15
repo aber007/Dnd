@@ -147,7 +147,6 @@ class Slider():
         keyboard.unhook_all()
 
 def ensure_terminal_width(desired_width):
-    # terminal_width = os.get_terminal_size().columns
     terminal_width = shutil.get_terminal_size((120, 55)).columns
 
     if desired_width <= terminal_width:
