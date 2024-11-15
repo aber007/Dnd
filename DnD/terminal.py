@@ -1,5 +1,5 @@
 import typing
-import os, time, sys
+import os, time, sys, shutil
 
 try:
     import keyboard
@@ -147,12 +147,13 @@ class Slider():
         keyboard.unhook_all()
 
 def ensure_terminal_width(desired_width):
-    terminal_width = os.get_terminal_size().columns
+    # terminal_width = os.get_terminal_size().columns
+    terminal_width = shutil.get_terminal_size((120, 55)).columns
 
     if desired_width <= terminal_width:
         return
     
-    while (terminal_width := os.get_terminal_size().columns) < desired_width:
+    while (terminal_width :=  shutil.get_terminal_size((120, 55)).columns) < desired_width:
         # clears the previous line and replaces the text with the below
         write(cursor_clear_line, f"Terminal {desired_width-terminal_width} characters too thin")
         time.sleep(1/20)
@@ -170,7 +171,7 @@ def wait_for_key(msg: str, key : str):
 
 
 if __name__ == "__main__":
-    # ensure_terminal_width(100)
+    ensure_terminal_width(100)
     
     # menu = ItemSelect(items=["This is item 1", "This is item 2", "This is item 3"])
     # return_val = menu.start()
@@ -178,6 +179,6 @@ if __name__ == "__main__":
 
     # wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    slider = Slider(20, header="Example header")
-    return_val = slider.start()
-    print(return_val)
+    # slider = Slider(20, header="Example header")
+    # return_val = slider.start()
+    # print(return_val)
