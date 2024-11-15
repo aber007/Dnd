@@ -90,7 +90,7 @@ class ItemSelect:
         keyboard.unhook_all()
 
 class Slider():
-    def __init__(self, length : int, on_value_changed : typing.Callable[[int], None], log_controls : bool = False, header : str = "") -> None:
+    def __init__(self, length : int, on_value_changed : typing.Callable[[int], None] | None = None, log_controls : bool = False, header : str = "") -> None:
         self.length = length
         self.x = 0
         self.x_max = length-1
@@ -121,7 +121,11 @@ class Slider():
     def write_header(self):
         # 8 is the len of " - ┤" and "├ +"
         slider_width = 8 + self.length
-        header_w_padding = " " * int(slider_width/2 - len(self.header)/2) + self.header
+        # header_w_padding = " " * int(slider_width/2 - len(self.header)/2) + self.header
+        # write(header_w_padding, "\n")
+
+        pad_len = (slider_width - len(self.header))//2
+        header_w_padding = f"{' '*pad_len}{self.header}"
         write(header_w_padding, "\n")
 
 
@@ -129,7 +133,7 @@ class Slider():
         new_x = min(self.x_max, max(0, new_x))
 
         # if the slider value changed
-        if new_x != self.x:
+        if new_x != self.x and self.on_value_changed != None:
             self.on_value_changed(new_x)
 
         self.x = new_x
@@ -174,6 +178,6 @@ if __name__ == "__main__":
 
     # wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    slider = Slider(20)
+    slider = Slider(20, header="Example header")
     return_val = slider.start()
     print(return_val)
