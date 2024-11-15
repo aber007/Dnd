@@ -1,5 +1,5 @@
 CONSTANTS = {
-    "map_base_size": 9, #Base size over 20 is not recommended
+    "map_base_size": 3, #Base size over 20 is not recommended
     "room_probabilities": {
         "empty": 0.25,
         "enemy": 0.4,
@@ -34,7 +34,7 @@ CONSTANTS = {
 
     "player_inventory_size": 4,
     "player_hp": 50,
-    "player_starting_gold": 0,
+    "player_starting_gold": 100,
     "player_starting_exp": 0,
     "player_base_defence" : 0,
     
@@ -66,8 +66,8 @@ CONSTANTS = {
 
     # change these when debugging
     "debug": {
-        "gray_map_tiles": False, # default True
-        "remove_room_doors": False, # default True
+        "gray_map_tiles": True, # default True
+        "remove_room_doors": True, # default True
         "print_map": False, # default False
         "disable_console_clearing": False # default False
     }
