@@ -113,8 +113,8 @@ class Map:
     class ReachableRoom:
         """A simple version of Map.Room that's used when generating room doors"""
 
-        def __init__(self, doors) -> None:
-            self.doors : list[str] = doors
+        def __init__(self) -> None:
+            self.doors : list[str] = []
             self.reachable : bool = False
 
     class Room:
@@ -290,7 +290,10 @@ class Map:
                 recursive_check_room_reachable(rooms, next_position)
 
         # Initialize 2D array
-        self.rooms : Array2D = Array2D.create_frame_by_size(width = self.size, height = self.size)
+        self.rooms : Array2D = Array2D.create_frame_by_size(
+            width = self.size,
+            height = self.size,
+            val_callable = lambda : Map.ReachableRoom())
 
         # generate new door configurations until every single room is reachable
         # usually takes an avrg of 2 tries to find a successful configuration

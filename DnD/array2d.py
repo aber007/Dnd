@@ -1,5 +1,5 @@
 from .vector2 import Vector2
-from typing import TypeVar, Generic, Iterable, Tuple
+from typing import TypeVar, Generic, Iterable, Tuple, Callable
 
 # Generic[TypeVar("T")] enables typehints like 'def foo(rooms : Array2D[Map.Room]): ...'
 class Array2D( Generic[TypeVar("T")] ):
@@ -11,13 +11,14 @@ class Array2D( Generic[TypeVar("T")] ):
         self.rows = rows
         self.size = Vector2(len(self.rows[0]), len(self.rows))
     
-    def create_frame_by_size(width : int, height : int, val : any = None):
-        """Creates an Array2D object from 'width' and 'height'. Every item in the array is set to 'val'\n
+    def create_frame_by_size(width : int, height : int, val : any = None, val_callable : Callable[[], None] | None = None):
+        """Creates an Array2D object from 'width' and 'height'\n
+        Every item in the array is set to 'val' or, if 'val_callable' is given, the return value of 'val_callable()'. 'val_callble' is prioritized\n
         This function is not meant to be used with an already established Array2D instance, but rather to create the frame of a new one"""
 
         rows = []
         for y in range(height):
-            rows.append([val for x in range(width)])
+            rows.append([val_callable() if val_callable != None else val for x in range(width)])
         
         return Array2D(*rows)
 
