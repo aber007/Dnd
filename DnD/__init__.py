@@ -36,6 +36,7 @@ CONSTANTS = {
     "player_hp": 50,
     "player_starting_gold": 0,
     "player_starting_exp": 0,
+    "player_starting_lvl": 1,
     "player_base_defence" : 0,
     
     "dice_sides": 20,

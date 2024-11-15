@@ -1,6 +1,6 @@
 #This does not need to be in the final game, i was just bored
 
-from . import CONSTANTS
+from . import CONSTANTS, Slider
 from random import choice
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
