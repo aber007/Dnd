@@ -8,7 +8,8 @@ class Animation:
             start_val : int | float,
             end_val : int | float,
             duration : int | float,
-            on_val_update : Callable[[int | float], None]
+            on_val_update : Callable[[int | float], None],
+            on_anim_finished : Callable[[int | float], None] | None = None
             ) -> None:
         
         self.start_val = start_val
@@ -16,6 +17,7 @@ class Animation:
         self.val_delta = end_val - start_val
         self.duration = duration
         self.on_val_update = on_val_update
+        self.on_anim_finished = on_anim_finished
 
         self.is_started = False
         self.is_finished = False
@@ -31,15 +33,20 @@ class Animation:
 
         if percent_done == 1:
             self.is_finished = True
+            if self.on_anim_finished != None:
+                self.on_anim_finished(self.end_val)
 
 class AnimationLibrary:
     def __init__(self) -> None:
         self.anims : list[Animation] = []
+        self.has_active_animations : bool = False
     
     def add_anim(self, anim : Animation):
         self.anims.append(anim)
 
     def update_anims(self):
+        self.has_active_animations = len(self.anims) and all(anim.is_started for anim in self.anims)
+
         for anim in self.anims:
             if anim.is_finished:
                 self.anims.remove(anim)

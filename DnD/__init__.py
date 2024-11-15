@@ -62,6 +62,8 @@ CONSTANTS = {
         "S": [0, 1],
         "W": [-1, 0]
     },
+    "player_movement_anim_duration": 0.2,
+    "player_movement_anim_active_update_delay": 5,
 
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 100,
@@ -75,6 +77,7 @@ CONSTANTS = {
     }
 }
 
+from .animation import AnimationLibrary, Animation
 from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
