@@ -16,6 +16,14 @@ class Vector2:
         # enables cases like: 'Vector2(...) + [x, y]'
         return Vector2(self[0] + part[0], self[1] + part[1])
     
+    def __sub__(self, part : Iterable[int | float]):
+        # enables cases like: 'Vector2(...) - [x, y]'
+        return Vector2(self[0]-part[0], self[1]-self[0])
+    
+    def __rsub__(self, part : Iterable[int | float]):
+        # enables cases like: '[x, y] - Vector2(...)'
+        return Vector2(part[0]-self[0], part[1]-self[1])
+    
     def __eq__(self, part : Iterable[int | float]):
         # enables cases like: 'Vector2(...) == [x, y]'
         return self[0] == part[0] and self[1] == part[1]
