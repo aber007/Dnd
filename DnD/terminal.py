@@ -1,3 +1,4 @@
+import typing
 import os, time, sys
 
 try:
@@ -32,10 +33,13 @@ def write(*s : str, sep="") -> None:
     sys.stdout.flush()
 
 class ItemSelect:
-    def __init__(self, items : list[str]) -> None:
+    def __init__(self, items : list[str], log_controls : bool = False, header : str = "") -> None:
         self.items = items
         self.y_max = len(self.items)-1
         self.y = 0
+
+        self.log_controls = log_controls
+        self.header = header
 
         self.run_loop = True
 
@@ -44,7 +48,9 @@ class ItemSelect:
         keyboard.on_press_key("down", lambda _ : self.set_y(self.y+1), suppress=True)
         keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
 
-        write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n", cursor_hide_cursor)
+        write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n" if self.log_controls else "", cursor_hide_cursor)
+
+        write(self.header, "\n")
         self.list_items()
         self.set_y(0)
 
@@ -84,10 +90,14 @@ class ItemSelect:
         keyboard.unhook_all()
 
 class Slider():
-    def __init__(self, length : int) -> None:
+    def __init__(self, length : int, on_value_changed : typing.Callable[[int], None], log_controls : bool = False, header : str = "") -> None:
         self.length = length
         self.x = 0
         self.x_max = length-1
+
+        self.on_value_changed = on_value_changed
+        self.log_controls = log_controls
+        self.header = header
 
         self.run_loop = True
 
@@ -98,7 +108,9 @@ class Slider():
         keyboard.on_press_key("left",  lambda _ : self.set_x(self.x-1), suppress=True)
         keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
 
-        write("[Press ENTER to confirm and arrow UP/DOWN/LEFT/RIGHT to navigate]\n", cursor_hide_cursor)
+        write("[Press ENTER to confirm and arrow UP/DOWN/LEFT/RIGHT to navigate]\n" if self.log_controls else "", cursor_hide_cursor)
+
+        self.write_header()
         self.set_x(0)
 
         self.loop()
@@ -106,8 +118,20 @@ class Slider():
         write(cursor_show_cursor, cursor_x_0, "\n")
         return self.x
 
+    def write_header(self):
+        # 8 is the len of " - ┤" and "├ +"
+        slider_width = 8 + self.length
+        header_w_padding = " " * int(slider_width/2 - len(self.header)/2) + self.header
+        write(header_w_padding, "\n")
+
+
     def set_x(self, new_x):
         new_x = min(self.x_max, max(0, new_x))
+
+        # if the slider value changed
+        if new_x != self.x:
+            self.on_value_changed(new_x)
+
         self.x = new_x
         
         write(cursor_clear_line, " - ┤", color_selected_bg, " "*self.x, color_off, " "*(self.x_max-self.x), "├ +")
