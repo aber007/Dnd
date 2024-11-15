@@ -19,8 +19,18 @@ class Music:
         self.ambience = ["ambience1.mp3", "ambience2.mp3", "ambience3maybe.mp3", "ambience4.mp3", "ambience5.mp3"]
         self.replace_ambience = []
         self.fight = "fight.mp3"
-        self.shop = "Shop_music.mp3"
+        self.shop = "shop_music.mp3"
         self.file_path = ""
+        self.current_song = ""
+
+
+        pygame.mixer.music.set_volume(0)
+        self.play("ambience")
+
+        # the +1 adds a step where the volume is 0
+        slider_steps = round(1 / CONSTANTS["music_slider_step_volume_percent"]) + 1
+        slider_on_value_changed = lambda val : pygame.mixer.music.set_volume(max(0, val/slider_steps * CONSTANTS["music_max_volume_percent"]))
+        Slider(slider_steps, slider_on_value_changed, header="Choose music volume").start()
 
 
     def play(self, type):
@@ -51,7 +61,7 @@ class Music:
                 self.nexttrack()
             else:
                 pygame.mixer.music.play(loops=-1, fade_ms=500)
-
+            self.current_song = self.file_path
 
     def nexttrack(self):
         if len(self.ambience) != 0:
@@ -82,4 +92,7 @@ class Music:
 
     def fadeout(self):
         pygame.mixer.music.fadeout(200)
+
+    def get_current_song(self):
+        return self.current_song
 
