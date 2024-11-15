@@ -3,7 +3,7 @@ import random
 import time
 from . import Array2D, Vector2, CONSTANTS
 
-def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_queue):
+def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_queue, existing_walls : dict):
     # Setup parameters
     windowsize = 300
     size = Vector2(double=size)
@@ -11,7 +11,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
     tile_height = windowsize / size.y
 
     # Initial configurations
-    global algorithm_status, live_update, possible_moves, current_location, backtrack_status, existing_walls
+    global algorithm_status, live_update, possible_moves, current_location, backtrack_status
     current_location = [0, 0]
     algorithm_status = True
     live_update = True

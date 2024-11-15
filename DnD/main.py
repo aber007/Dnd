@@ -240,15 +240,18 @@ class Map:
             # to be set by the parent Map object
             self.size : int = size
             self.rooms : Array2D[Map.Room] = rooms
-            self.active_walls : {bool} = {}
+            self.existing_walls : {bool} = {}
 
             self.manager = Manager()
             self.command_queue = self.manager.Queue(maxsize=100)
             self.UI_thread : Process | None = None
         
         def open(self, player_pos : Vector2):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, self.active_walls))
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, self.existing_walls))
             self.UI_thread.start()
+
+        def get_existing_walls(self) -> dict:
+            return self.existing_walls
         
         def send_command(self, type : str, position : Vector2, *args : str):
             """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of a tile\n
@@ -295,16 +298,23 @@ class Map:
             height = self.size,
             val_callable = lambda : Map.ReachableRoom())
 
-        # generate new door configurations until every single room is reachable
-        # usually takes an avrg of 2 tries to find a successful configuration
-        # during testing the mean time for 10000 successful map generations was 1.5 ms with remove_door_percent = 0.3 (time isnt an issue)
-            
+         
             
 
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
-        
 
         for x, y, _ in self.rooms:
+            # reachable_room_doors = []
+            # if existing_walls[f"{x}.{y}.E"] != True:
+            #     reachable_room_doors.append("E")
+            # if existing_walls[f"{x}.{y}.S"] != True:
+            #     reachable_room_doors.append("S")
+            # if existing_walls[f"{x-1}.{y}.E"] != True:
+            #     reachable_room_doors.append("W")
+            # if existing_walls[f"{x}.{y-1}.S"] != True:
+            #     reachable_room_doors.append("N")
+            # self.rooms[x,y] = reachable_room_doors
+
             if (x, y) == self.starting_position:
                 self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=[])
             else:
