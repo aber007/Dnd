@@ -491,17 +491,15 @@ class Combat:
         
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
-            self.map.get_room(self.player.position).is_cleared = True
-
-            self.player.inventory.gold += self.enemy.gold
-            self.player.inventory.exp += self.enemy.exp
-
-
-
             story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
             print("\n" + story_text_enemy_defeated.replace("enemy", self.enemy.name))
             print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
             print(f"You earned {self.enemy.exp} EXP from this fight\n")
+
+            self.map.get_room(self.player.position).is_cleared = True
+
+            self.player.inventory.gold += self.enemy.gold
+            self.player.inventory.exp += self.enemy.exp
             self.player.inventory.check_lvl()
             
 

@@ -117,27 +117,17 @@ class Inventory:
         self.slots.append(None)
 
     def check_lvl(self):
+        new_lvl = CONSTANTS["player_exp_to_lvl_func"](self.exp)
+        lvl_delta = new_lvl - self.lvl
+        self.lvl = new_lvl
 
-        # balance exp & lvl later to make it actually playable
-        # make this actually good later maybe?
+        if 0 < lvl_delta:
+            print((f"{lvl_delta}x " if 1 < lvl_delta else "") + f"Level Up! Player is now level {self.lvl}")
+        else:
+            print(f"Current lvl: {self.lvl}")
         
-        # check lvl
-        lvl_before = self.lvl
-        for check_lvl in range(11, 0, -1):
-            exp_required = round(5 * check_lvl) - 15
-
-            if exp_required <= self.exp:
-                self.lvl = check_lvl
-                
-                if self.lvl > lvl_before:
-                    print(f"Level up! Player is now level {self.lvl}.")
-                    print(f"Exp required for next lvl: {(exp_required + 15) - self.exp}")
-                    break
-
-                else:
-                    print(f"Current lvl: {self.lvl}")
-                    print(f"Exp required for next lvl: {round(15 * check_lvl) - self.exp}")
-                    break
+        exp_til_next_lvl = CONSTANTS["player_lvl_to_exp_func"](self.lvl + 1) - self.exp
+        print(f"Exp til next lvl: {exp_til_next_lvl}")
 
 
     def open(self) -> Item | None:

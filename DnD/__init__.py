@@ -34,10 +34,16 @@ CONSTANTS = {
 
     "player_inventory_size": 4,
     "player_hp": 50,
+    "player_base_defence" : 0,
     "player_starting_gold": 0,
     "player_starting_exp": 0,
-    "player_starting_lvl": 1,
-    "player_base_defence" : 0,
+    "player_starting_lvl": 0,
+    
+    "player_exp_to_lvl_func": lambda exp: int(exp**0.5),
+    "player_lvl_to_exp_func": lambda lvl: int(lvl**2),
+    
+    "player_movement_anim_duration": 0.2,
+    "player_movement_anim_active_update_delay": 5,
     
     "dice_sides": 20,
     "normal_trap_min_roll_to_escape": 10,
@@ -63,6 +69,7 @@ CONSTANTS = {
         "S": [0, 1],
         "W": [-1, 0]
     },
+
 
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 100,
