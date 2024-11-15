@@ -6,12 +6,12 @@ from . import Array2D, Vector2, CONSTANTS
 def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_queue):
     # Setup parameters
     windowsize = 300
-    size_x = 10  # Adjust grid dimensions as needed
-    size_y = 10
-    tile_width = windowsize / size_x
-    tile_height = windowsize / size_y
+    size = Vector2(double=size)
+    tile_width = windowsize / size.x
+    tile_height = windowsize / size.y
 
     # Initial configurations
+    global algorithm_status, live_update, possible_moves, current_location, backtrack_status, existing_walls
     current_location = [0, 0]
     algorithm_status = True
     live_update = True
@@ -29,36 +29,40 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
     main.attributes("-topmost", True)
     main.overrideredirect(True)
 
-    for x in range(size_x):
-        for y in range(size_y):
+    for x in range(size.x):
+        for y in range(size.y):
             locations_to_avoid[f"{x}.{y}"] = False
     locations_to_avoid["0.0"] = True
 
-    debug = False
+    debug = True
 
             
 
     # Grid and player setup
-    grid = [[tk.Frame(main, bg="white", width=tile_width, height=tile_height) for _ in range(size_x+1)] for _ in range(size_y+1)]
-    for x in range(size_x):
-        for y in range(size_y):
-            grid[x][y].place(x=x * tile_width, y=y * tile_height)
+
+    bg_Canvas = tk.Canvas(main, bg="gray", width=300, height=300)
+    bg_Canvas.place(relheight=1, relwidth=1)
+
+    grid = Array2D.create_frame_by_size(width=size.x, height=size.y)
+    for x, y, _ in grid:
+        grid[x,y] = tk.Frame(bg_Canvas, bg="gray", width=tile_width, height=tile_height, border=None)
+        grid[x,y].place(x=x * tile_width, y=y * tile_height)
 
     walls : tk.Frame = {}
     wall_thickness = tile_height/20
 
-    for x in range(size_x):
-        for y in range(size_y):
-            if y < size_y and x != size_x-1:  # Vertical wall on the right side of each cell
+    for x in range(size.x):
+        for y in range(size.y):
+            if y < size.y and x != size.x-1:  # Vertical wall on the right side of each cell
                 walls[(x, y, 'E')] = tk.Frame(
-                    grid[x][y], bg="black", width=wall_thickness, height=tile_height
+                    grid[x,y], bg="black", width=wall_thickness, height=tile_height
                 )
                 walls[(x, y, 'E')].place(relx=1.0, y=0, anchor='ne')
                 existing_walls[f"{x}.{y}.E"] = True
             
-            if x < size_x and y != size_y-1:  # Horizontal wall on the bottom side of each cell
+            if x < size.x and y != size.y-1:  # Horizontal wall on the bottom side of each cell
                 walls[(x, y, 'S')] = tk.Frame(
-                    grid[x][y], bg="black", width=tile_width, height=wall_thickness
+                    grid[x,y], bg="black", width=tile_width, height=wall_thickness
                 )
                 walls[(x, y, 'S')].place(x=0, rely=1.0, anchor='sw')
                 existing_walls[f"{x}.{y}.S"] = True
@@ -127,7 +131,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
                 if not locations_to_avoid.get(f"{current_location[0] - 1}.{current_location[1]}"):
                     possible_moves.append("NORTH")
             
-            if current_location[0] < size_y - 1:  # SOUTH
+            if current_location[0] < size.y - 1:  # SOUTH
                 if not locations_to_avoid.get(f"{current_location[0] + 1}.{current_location[1]}"):
                     possible_moves.append("SOUTH")
             
@@ -135,7 +139,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
                 if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] - 1}"):
                     possible_moves.append("WEST")
             
-            if current_location[1] < size_x - 1:  # EAST
+            if current_location[1] < size.x - 1:  # EAST
                 if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] + 1}"):
                     possible_moves.append("EAST")
             
@@ -144,7 +148,6 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
 
             if not possible_moves:
                 if current_location == [0, 0]:  # Maze completed
-                    print("Maze Finished")
                     for key in existing_walls.keys():
                         if random.randint(1,5) == 1:
                             existing_walls[key] = False
@@ -154,7 +157,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
                             main.update()
                     algorithm_status = False
                     main.update()
-                    return
+                    return existing_walls
 
                 backtrack_status = True
                 if backtrack:
@@ -178,6 +181,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
             if live_update:
                 main.update_idletasks()
                 main.update()
+
     def handle_command_queue():
         # not optimal but the other methods didnt work as expected 
         try:
@@ -224,7 +228,10 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
         main.quit()
         main.destroy()
 
+
     main.bind("<Escape>", destroy)
+    active_walls = algorithm()
     main.after(100, handle_command_queue)
     main.after(100, lambda : update_player_pos(player_pos))
     main.mainloop()
+

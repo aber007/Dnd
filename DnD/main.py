@@ -240,13 +240,14 @@ class Map:
             # to be set by the parent Map object
             self.size : int = size
             self.rooms : Array2D[Map.Room] = rooms
+            self.active_walls : {bool} = {}
 
             self.manager = Manager()
             self.command_queue = self.manager.Queue(maxsize=100)
             self.UI_thread : Process | None = None
         
         def open(self, player_pos : Vector2):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, self.active_walls))
             self.UI_thread.start()
         
         def send_command(self, type : str, position : Vector2, *args : str):
@@ -274,19 +275,6 @@ class Map:
         probabilities = list(CONSTANTS["room_probabilities"].values())
 
         
-        def get_doors_for_room(x,y):
-            """Get the doors for room depending on coords. Doors facing non-existant rooms outside the map are removed"""
-
-            doors = ["N", "E", "S", "W"]
-            xy_max = self.size-1
-
-            if x == 0: doors.remove("W")
-            elif x == xy_max: doors.remove("E")
-
-            if y == 0: doors.remove("N")
-            elif y == xy_max: doors.remove("S")
-
-            return doors
         
         def recursive_check_room_reachable(rooms : Array2D[Map.ReachableRoom], current_position: Vector2):
             current_room : Map.ReachableRoom = rooms[current_position]
@@ -306,53 +294,19 @@ class Map:
 
         # generate new door configurations until every single room is reachable
         # usually takes an avrg of 2 tries to find a successful configuration
-        #     during testing the mean time for 10000 successful map generations was 1.5 ms with remove_door_percent = 0.3 (time isnt an issue)
-        while True:
-            # set the doors for each room. take into account wether the room is on the edge of the map or not
-            for x, y, _ in self.rooms:
-                self.rooms[x,y] = Map.ReachableRoom(doors=get_doors_for_room(x, y))
+        # during testing the mean time for 10000 successful map generations was 1.5 ms with remove_door_percent = 0.3 (time isnt an issue)
             
-            # if debug is enabled dont remove any doors
-            if not CONSTANTS["debug"]["remove_room_doors"]:
-                break
-
-            # removes 1 door from remove_door_percent% of all rooms
-            # also removes the corresponding door in the room behind the door which was deleted
-            remove_door_count = int(self.size**2 * CONSTANTS["remove_door_percent"])
-            for _ in range(remove_door_count):
-                x = randint(0, self.rooms.size.x-1)
-                y = randint(0, self.rooms.size.y-1)
-
-                selected_room = self.rooms[x,y]
-
-                # if a room has 0 doors, which can happen if many doors are removed from
-                # the same area, redo the map gen
-                if len(selected_room.doors) == 0:
-                    break
-
-                door_to_remove = choice(selected_room.doors)
-                
-                # removing the opposite facing door in the room behind door_to_remove. this ensures all doors are bi-directional
-                room_behind_door_to_remove = self.rooms[Vector2(x,y) + CONSTANTS["directional_coord_offsets"][door_to_remove]]
-                opposite_door_to_remove = {"N": "S", "E": "W", "S": "N", "W": "E"}[door_to_remove]
-
-                selected_room.doors.remove(door_to_remove)
-                room_behind_door_to_remove.doors.remove(opposite_door_to_remove)
             
-            # go through each room and set .reachable = True if its reachable
-            recursive_check_room_reachable(self.rooms, self.starting_position)
-
-            # if all rooms are reachable, break the loop
-            if all([val.reachable for _, _, val in self.rooms]):
-                break
 
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
-        for x, y, reachable_room in self.rooms:
+        
+
+        for x, y, _ in self.rooms:
             if (x, y) == self.starting_position:
-                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=reachable_room.doors)
+                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=[])
             else:
                 roomtype = choices(room_types, probabilities)[0]
-                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=reachable_room.doors)
+                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=[])
         
         if CONSTANTS["debug"]["print_map"]:
             last_y = 0
@@ -369,6 +323,7 @@ class Map:
 
         # Press the map and then escape to close the window
         self.UI_instance.open(player_pos)
+        
     
     def close_UI_window(self) -> None:
         self.UI_instance.close()
