@@ -3,7 +3,7 @@ import random
 import time
 from . import Array2D, Vector2, CONSTANTS
 
-def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_queue, existing_walls : dict):
+def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_queue):
     # Setup parameters
     windowsize = 300
     size = Vector2(double=size)
@@ -71,117 +71,6 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
     player_icon = tk.Frame(main, bg="magenta2", width=tile_width / 3, height=tile_height / 3)
     player_icon.place(x=current_location[1] * tile_width, y=current_location[0] * tile_height)
 
-    # Define movement functions
-    def move_north():
-        global current_location
-        last_location = current_location.copy()
-        current_location[0] -= 1
-        update_player_position(last_location)
-
-    def move_south():
-        global current_location
-        last_location = current_location.copy()
-        current_location[0] += 1
-        update_player_position(last_location)
-
-    def move_west():
-        global current_location
-        last_location = current_location.copy()
-        current_location[1] -= 1
-        update_player_position(last_location)
-
-    def move_east():
-        global current_location
-        last_location = current_location.copy()
-        current_location[1] += 1
-        update_player_position(last_location)
-
-    def update_player_position(last_location):
-        player_icon.place(x=current_location[1] * tile_width, y=current_location[0] * tile_height)
-        locations_to_avoid[str(current_location[0])+"."+str(current_location[1])] = True
-        if backtrack_status == False:
-            if last_location != current_location:
-                if last_location[0] == current_location[0]:
-                    if last_location[1] > current_location[1]:
-                        if debug:
-                            walls[(current_location[1], current_location[0], 'E')].place_forget()
-                        existing_walls[f"{current_location[1]}.{current_location[0]}.E"] = False
-                    else:
-                        if debug:
-                            walls[(current_location[1]-1, (current_location[0]), 'E')].place_forget()
-                        existing_walls[f"{current_location[1]-1}.{current_location[0]}.E"] = False
-                if last_location[1] == current_location[1]:
-                    if last_location[0] > current_location[0]:
-                        if debug:
-                            walls[(current_location[1], current_location[0], 'S')].place_forget()
-                        existing_walls[f"{current_location[1]}.{current_location[0]}.S"] = False
-                    else:
-                        if debug:
-                            walls[((current_location[1]), current_location[0]-1, 'S')].place_forget()
-                        existing_walls[f"{current_location[1]}.{current_location[0]-1}.S"] = False
-    # Algorithm function
-    def algorithm():
-        global algorithm_status, live_update, backtrack_status, possible_moves, current_location
-
-        while algorithm_status:
-            possible_moves.clear()
-            
-            # Check each direction for possible moves
-            if current_location[0] > 0:  # NORTH
-                if not locations_to_avoid.get(f"{current_location[0] - 1}.{current_location[1]}"):
-                    possible_moves.append("NORTH")
-            
-            if current_location[0] < size.y - 1:  # SOUTH
-                if not locations_to_avoid.get(f"{current_location[0] + 1}.{current_location[1]}"):
-                    possible_moves.append("SOUTH")
-            
-            if current_location[1] > 0:  # WEST
-                if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] - 1}"):
-                    possible_moves.append("WEST")
-            
-            if current_location[1] < size.x - 1:  # EAST
-                if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] + 1}"):
-                    possible_moves.append("EAST")
-            
-            if not backtrack_status:
-                backtrack.append(f"{current_location[0]}.{current_location[1]}")
-
-            if not possible_moves:
-                if current_location == [0, 0]:  # Maze completed
-                    for key in existing_walls.keys():
-                        if random.randint(1,5) == 1:
-                            existing_walls[key] = False
-                            key = key.split(".")
-                            if debug:
-                                walls[(int(key[0]), int(key[1]), key[2])].place_forget()
-                            main.update()
-                    algorithm_status = False
-                    main.update()
-                    return existing_walls
-
-                backtrack_status = True
-                if backtrack:
-                    last_position = backtrack.pop()
-                    x_val, y_val = map(int, last_position.split('.'))
-                    current_location = [x_val, y_val]
-            else:
-                rand_index = random.randint(0, len(possible_moves) - 1)
-                direction_to_move = possible_moves[rand_index]
-                backtrack_status = False
-
-                if direction_to_move == "NORTH":
-                    move_north()
-                elif direction_to_move == "SOUTH":
-                    move_south()
-                elif direction_to_move == "WEST":
-                    move_west()
-                elif direction_to_move == "EAST":
-                    move_east()
-
-            if live_update:
-                main.update_idletasks()
-                main.update()
-
     def handle_command_queue():
         # not optimal but the other methods didnt work as expected 
         try:
@@ -230,7 +119,6 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
 
 
     main.bind("<Escape>", destroy)
-    active_walls = algorithm()
     main.after(100, handle_command_queue)
     main.after(100, lambda : update_player_pos(player_pos))
     main.mainloop()

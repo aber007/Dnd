@@ -240,14 +240,13 @@ class Map:
             # to be set by the parent Map object
             self.size : int = size
             self.rooms : Array2D[Map.Room] = rooms
-            self.existing_walls : {bool} = {}
 
             self.manager = Manager()
             self.command_queue = self.manager.Queue(maxsize=100)
             self.UI_thread : Process | None = None
         
         def open(self, player_pos : Vector2):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, self.existing_walls))
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
             self.UI_thread.start()
 
         def get_existing_walls(self) -> dict:
@@ -302,9 +301,8 @@ class Map:
             
 
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
-
+        print(self.create_walls_algorithm())
         for x, y, _ in self.rooms:
-
             #current_walls should be accessed here
 
             # reachable_room_doors = []
@@ -332,6 +330,7 @@ class Map:
             print("\n")
 
         self.UI_instance = Map.UI(self.size, self.rooms)
+        print(self.UI_instance.get_existing_walls())
 
     
     def open_UI_window(self, player_pos : Vector2) -> None:
@@ -386,6 +385,114 @@ class Map:
         self.UI_instance.send_command("pp", player.position)
 
         new_current_room.on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room, music=music)
+
+    def create_walls_algorithm(self):
+        global algorithm_status, live_update, possible_moves, current_location, backtrack_status
+        current_location = [0, 0]
+        algorithm_status = True
+        live_update = True
+        backtrack_status = False
+        backtrack = []
+        possible_moves = []
+        locations_to_avoid = {}  # Define this as per the maze walls
+        existing_walls = {}
+
+        # Define movement functions
+        def move_north():
+            global current_location
+            last_location = current_location.copy()
+            current_location[0] -= 1
+            update_player_position(last_location)
+
+        def move_south():
+            global current_location
+            last_location = current_location.copy()
+            current_location[0] += 1
+            update_player_position(last_location)
+
+        def move_west():
+            global current_location
+            last_location = current_location.copy()
+            current_location[1] -= 1
+            update_player_position(last_location)
+
+        def move_east():
+            global current_location
+            last_location = current_location.copy()
+            current_location[1] += 1
+            update_player_position(last_location)
+
+        def update_player_position(last_location):
+            locations_to_avoid[str(current_location[0])+"."+str(current_location[1])] = True
+            if backtrack_status == False:
+                if last_location != current_location:
+                    if last_location[0] == current_location[0]:
+                        if last_location[1] > current_location[1]:
+                            existing_walls[f"{current_location[1]}.{current_location[0]}.E"] = False
+                        else:
+                            existing_walls[f"{current_location[1]-1}.{current_location[0]}.E"] = False
+                    if last_location[1] == current_location[1]:
+                        if last_location[0] > current_location[0]:
+                            existing_walls[f"{current_location[1]}.{current_location[0]}.S"] = False
+                        else:
+                            existing_walls[f"{current_location[1]}.{current_location[0]-1}.S"] = False
+        # Algorithm function
+        def algorithm():
+            global algorithm_status, live_update, backtrack_status, possible_moves, current_location
+
+            while algorithm_status:
+                possible_moves.clear()
+                
+                # Check each direction for possible moves
+                if current_location[0] > 0:  # NORTH
+                    if not locations_to_avoid.get(f"{current_location[0] - 1}.{current_location[1]}"):
+                        possible_moves.append("NORTH")
+                
+                if current_location[0] < self.size:  # SOUTH
+                    if not locations_to_avoid.get(f"{current_location[0] + 1}.{current_location[1]}"):
+                        possible_moves.append("SOUTH")
+                
+                if current_location[1] > 0:  # WEST
+                    if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] - 1}"):
+                        possible_moves.append("WEST")
+                
+                if current_location[1] < self.size - 1:  # EAST
+                    if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] + 1}"):
+                        possible_moves.append("EAST")
+                
+                if not backtrack_status:
+                    backtrack.append(f"{current_location[0]}.{current_location[1]}")
+
+                if not possible_moves:
+                    if current_location == [0, 0]:  # Maze completed
+                        for key in existing_walls.keys():
+                            if randint(1,5) == 1:
+                                existing_walls[key] = False
+                                key = key.split(".")
+                        algorithm_status = False
+                        return existing_walls
+
+                    backtrack_status = True
+                    if backtrack:
+                        last_position = backtrack.pop()
+                        x_val, y_val = map(int, last_position.split('.'))
+                        current_location = [x_val, y_val]
+                else:
+                    rand_index = randint(0, len(possible_moves) - 1)
+                    direction_to_move = possible_moves[rand_index]
+                    backtrack_status = False
+
+                    if direction_to_move == "NORTH":
+                        move_north()
+                    elif direction_to_move == "SOUTH":
+                        move_south()
+                    elif direction_to_move == "WEST":
+                        move_west()
+                    elif direction_to_move == "EAST":
+                        move_east()
+        active_walls = algorithm()
+        print(active_walls)
+        return active_walls
 
 
 class Combat:
