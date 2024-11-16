@@ -72,6 +72,9 @@ CONSTANTS = {
     "player_movement_anim_duration": 0.2,
     "player_movement_anim_active_update_delay": 5,
 
+    "hp_bar_length": 30,
+    "hp_bar_fill_color": [242,13,13],
+
 
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 100,
@@ -86,7 +89,7 @@ CONSTANTS = {
 }
 
 from .animation import AnimationLibrary, Animation
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
