@@ -219,7 +219,7 @@ class Map:
                                 selected_item = self.shop_items[shop_option_idx]
 
                                 # if the player can afford the item
-                                if selected_item.current_price < player.inventory.gold:
+                                if selected_item.current_price <= player.inventory.gold:
                                     player.inventory.gold -= selected_item.current_price
                                     player.inventory.receive_item(selected_item)
                                     self.shop_items.remove(selected_item)
