@@ -132,6 +132,11 @@ class Map:
         def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
+            match self.type:
+                case "shop":  music.play("shop")
+                case "enemy": music.play("fight")
+                case _:       music.play("ambience")
+
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
@@ -148,8 +153,6 @@ class Map:
                     print("\n" + choice(INTERACTION_DATA["chest"]))
 
                 case ("shop", True):
-                    music.stop()
-                    music.play("shop")
                     print("\n" + choice(INTERACTION_DATA["shop"]))
 
                     possible_items = list(ITEM_DATA.keys())
@@ -193,11 +196,7 @@ class Map:
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
-                    if music.get_current_song() != "shop_music.mp3":
-                        music.stop()
-                        music.play("shop")
-                    
-                    # stay in the shop menu unitl the player explicitly chooses to Leave
+                    # stay in the shop menu until the player explicitly chooses to Leave
                     while True:
                         print(f"\n{'='*15} SHOP {'='*15}")
                         print(f"\nCurrent gold: {player.inventory.gold}")
@@ -230,8 +229,6 @@ class Map:
                             print("This shop is out of items")
                             self.is_cleared = True
                             break
-                    music.stop()
-                    music.play("ambience")
             
             # update the tile the player just interacted with
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -458,9 +455,6 @@ class Combat:
     def start(self, music : Music) -> None:
         self.player.current_combat = self
 
-        music.fadeout()
-        music.play(type="fight")
-
         print(f"\n{'='*15} COMBAT {'='*15}")
         
         story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
@@ -491,17 +485,15 @@ class Combat:
         
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
-            self.map.get_room(self.player.position).is_cleared = True
-
-            self.player.inventory.gold += self.enemy.gold
-            self.player.inventory.exp += self.enemy.exp
-
-
-
             story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
             print("\n" + story_text_enemy_defeated.replace("enemy", self.enemy.name))
             print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
             print(f"You earned {self.enemy.exp} EXP from this fight\n")
+
+            self.map.get_room(self.player.position).is_cleared = True
+
+            self.player.inventory.gold += self.enemy.gold
+            self.player.inventory.exp += self.enemy.exp
             self.player.inventory.check_lvl()
             
 
