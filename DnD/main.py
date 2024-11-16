@@ -248,9 +248,6 @@ class Map:
         def open(self, player_pos : Vector2):
             self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
             self.UI_thread.start()
-
-        def get_existing_walls(self) -> dict:
-            return self.existing_walls
         
         def send_command(self, type : str, position : Vector2, *args : str):
             """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of a tile\n
@@ -301,26 +298,24 @@ class Map:
             
 
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
-        print(self.create_walls_algorithm())
+        existing_walls = self.create_walls_algorithm()
         for x, y, _ in self.rooms:
-            #current_walls should be accessed here
 
-            # reachable_room_doors = []
-            # if existing_walls[f"{x}.{y}.E"] != True:
-            #     reachable_room_doors.append("E")
-            # if existing_walls[f"{x}.{y}.S"] != True:
-            #     reachable_room_doors.append("S")
-            # if existing_walls[f"{x-1}.{y}.E"] != True:
-            #     reachable_room_doors.append("W")
-            # if existing_walls[f"{x}.{y-1}.S"] != True:
-            #     reachable_room_doors.append("N")
-            # self.rooms[x,y] = reachable_room_doors
+            reachable_room_doors = ""
+            if y > 0 and existing_walls[f"{x}.{y-1}.S"] != True:
+                reachable_room_doors += "N"
+            if x < self.size and existing_walls[f"{x}.{y}.E"] != True:
+                reachable_room_doors += "E"
+            if y < self.size and existing_walls[f"{x}.{y}.S"] != True:
+                reachable_room_doors += "S"
+            if x > 0 and existing_walls[f"{x-1}.{y}.E"] != True:
+                reachable_room_doors += "W"
 
             if (x, y) == self.starting_position:
-                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=[])
+                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=reachable_room_doors)
             else:
                 roomtype = choices(room_types, probabilities)[0]
-                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=[])
+                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=reachable_room_doors)
         
         if CONSTANTS["debug"]["print_map"]:
             last_y = 0
@@ -330,8 +325,6 @@ class Map:
             print("\n")
 
         self.UI_instance = Map.UI(self.size, self.rooms)
-        print(self.UI_instance.get_existing_walls())
-
     
     def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
@@ -396,6 +389,16 @@ class Map:
         possible_moves = []
         locations_to_avoid = {}  # Define this as per the maze walls
         existing_walls = {}
+
+        for x in range(self.size):
+            for y in range(self.size):
+                locations_to_avoid[f"{x}.{y}"] = False
+        locations_to_avoid["0.0"] = True
+
+        for x in range(self.size):
+            for y in range(self.size):
+                existing_walls[f"{x}.{y}.E"] = True
+                existing_walls[f"{x}.{y}.S"] = True
 
         # Define movement functions
         def move_north():
@@ -491,7 +494,6 @@ class Map:
                     elif direction_to_move == "EAST":
                         move_east()
         active_walls = algorithm()
-        print(active_walls)
         return active_walls
 
 
