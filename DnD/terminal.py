@@ -27,6 +27,18 @@ color_selected_fg = color_rgb_fg(0,0,0)
 color_off = "\u001b[0m"
 
 
+class RGB:
+    def __init__(self, r : int, g : int, b : int, ground : str) -> None:
+        """ground is either 'fg' or 'bg'"""
+
+        self.r, self.g, self.b = r, g, b
+        self.ground = ground
+
+        self.ansi = color_rgb_bg(self.r, self.g, self.b) if ground == "bg" else color_rgb_fg(self.r, self.g, self.b)
+    
+    def __str__(self):
+        return self.ansi
+
 
 def write(*s : str, sep="") -> None:
     sys.stdout.write(sep.join(str(_s) for _s in s))
@@ -89,7 +101,7 @@ class ItemSelect:
         
         keyboard.unhook_all()
 
-class Slider():
+class Slider:
     def __init__(self, length : int, on_value_changed : typing.Callable[[int], None] | None = None, log_controls : bool = False, header : str = "") -> None:
         self.length = length
         self.x = 0
@@ -121,13 +133,10 @@ class Slider():
     def write_header(self):
         # 8 is the len of " - ┤" and "├ +"
         slider_width = 8 + self.length
-        # header_w_padding = " " * int(slider_width/2 - len(self.header)/2) + self.header
-        # write(header_w_padding, "\n")
 
         pad_len = (slider_width - len(self.header))//2
         header_w_padding = f"{' '*pad_len}{self.header}"
         write(header_w_padding, "\n")
-
 
     def set_x(self, new_x):
         new_x = min(self.x_max, max(0, new_x))
@@ -145,6 +154,15 @@ class Slider():
             time.sleep(1/20)
         
         keyboard.unhook_all()
+
+
+class Bar:
+    def __init__(self, length : int, val : int | float, min_val : int | float, max_val : int | float, fill_color : RGB, prefix : str = " ") -> None:
+        percent_done = (val-min_val)/(max_val-min_val)
+        bars_to_fill = int(length * percent_done) + 1 #round up = round down + 1
+
+        write(prefix + f"{min_val} ┤", fill_color, " "*bars_to_fill, color_off, " "*(length-bars_to_fill), f"├ {max_val}", "\n")
+
 
 def ensure_terminal_width(desired_width):
     terminal_width = shutil.get_terminal_size((120, 55)).columns
@@ -181,3 +199,5 @@ if __name__ == "__main__":
     # slider = Slider(20, header="Example header")
     # return_val = slider.start()
     # print(return_val)
+
+    Bar(30, 3, 0, 15, RGB(242,13,13,"bg"), "Player health: ")

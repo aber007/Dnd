@@ -14,7 +14,9 @@ from . import (
     Array2D,
     get_user_action_choice,
     ensure_terminal_width,
-    wait_for_key
+    wait_for_key,
+    Bar,
+    RGB
     )
 
 try:
@@ -472,8 +474,8 @@ class Combat:
             self.turn += 1
 
             print(f"\n--------------) Turn {self.turn} (--------------")
-            print(f"Player hp: {self.player.hp}")
-            print(f"{self.enemy.name} hp: {self.enemy.hp}\n")
+
+            self.write_hp_bars()
 
             if not enemyturn:
                 fled = self.player_turn()
@@ -499,6 +501,31 @@ class Combat:
 
         self.player.current_combat = None
         music.play("ambience")
+
+    def write_hp_bars(self):
+        enemy_bar_prefix = f"{self.enemy.name} hp: {self.enemy.hp}   "
+        player_bar_prefix = f"Player hp: {self.player.hp}   "
+        longer_prefix = sorted([enemy_bar_prefix, player_bar_prefix], key=lambda i : len(i), reverse=True)[0]
+
+        enemy_bar_prefix = enemy_bar_prefix.ljust(len(longer_prefix), " ")
+        player_bar_prefix = player_bar_prefix.ljust(len(longer_prefix), " ")
+
+        Bar(
+            length=CONSTANTS["hp_bar_length"],
+            val=self.enemy.hp,
+            min_val=0,
+            max_val=ENEMY_DATA[self.enemy.name]["hp"],
+            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            prefix=enemy_bar_prefix
+        )
+        Bar(
+            length=CONSTANTS["hp_bar_length"],
+            val=self.player.hp,
+            min_val=0,
+            max_val=CONSTANTS["player_hp"],
+            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            prefix=player_bar_prefix
+        )
 
     def player_turn(self) -> bool:
         """If the player attempted to flee: return the result, otherwise False"""
