@@ -245,8 +245,8 @@ class Map:
             self.command_queue = self.manager.Queue(maxsize=100)
             self.UI_thread : Process | None = None
         
-        def open(self, player_pos : Vector2):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
+        def open(self, player_pos : Vector2, existing_walls):
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, existing_walls))
             self.UI_thread.start()
         
         def send_command(self, type : str, position : Vector2, *args : str):
@@ -265,10 +265,10 @@ class Map:
 
     def __init__(self, size : int = CONSTANTS["map_base_size"]) -> None:
         """Generates the playable map"""
-        self.size = size
- 
+        self.size = size 
         if self.size % 2 == 0:
             self.size += 1
+        self.existing_walls = self.create_walls_algorithm()
         self.starting_position = Vector2(double=self.size//2)
         room_types = list(CONSTANTS["room_probabilities"].keys())
         probabilities = list(CONSTANTS["room_probabilities"].values())
@@ -298,19 +298,9 @@ class Map:
             
 
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
-        existing_walls = self.create_walls_algorithm()
+        
         for x, y, _ in self.rooms:
-
-            reachable_room_doors = ""
-            if y > 0 and existing_walls[f"{x}.{y-1}.S"] != True:
-                reachable_room_doors += "N"
-            if x < self.size and existing_walls[f"{x}.{y}.E"] != True:
-                reachable_room_doors += "E"
-            if y < self.size and existing_walls[f"{x}.{y}.S"] != True:
-                reachable_room_doors += "S"
-            if x > 0 and existing_walls[f"{x-1}.{y}.E"] != True:
-                reachable_room_doors += "W"
-
+            reachable_room_doors = self.get_doors_in_room(x,y)
             if (x, y) == self.starting_position:
                 self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=reachable_room_doors)
             else:
@@ -326,11 +316,23 @@ class Map:
 
         self.UI_instance = Map.UI(self.size, self.rooms)
     
+    def get_doors_in_room(self, x, y) -> str:
+        reachable_room_doors = ""
+        if y > 0 and self.existing_walls[f"{x}.{y-1}.S"] != True:
+            reachable_room_doors += "N"
+        if x < self.size and self.existing_walls[f"{x}.{y}.E"] != True:
+            reachable_room_doors += "E"
+        if y < self.size and self.existing_walls[f"{x}.{y}.S"] != True:
+            reachable_room_doors += "S"
+        if x > 0 and self.existing_walls[f"{x-1}.{y}.E"] != True:
+            reachable_room_doors += "W"
+        return reachable_room_doors
+    
     def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
-        self.UI_instance.open(player_pos)
+        self.UI_instance.open(player_pos, self.existing_walls)
         
     
     def close_UI_window(self) -> None:
