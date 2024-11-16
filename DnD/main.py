@@ -245,8 +245,8 @@ class Map:
             self.command_queue = self.manager.Queue(maxsize=100)
             self.UI_thread : Process | None = None
         
-        def open(self, player_pos : Vector2):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue))
+        def open(self, player_pos : Vector2, existing_walls):
+            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, existing_walls))
             self.UI_thread.start()
         
         def send_command(self, type : str, position : Vector2, *args : str):
@@ -265,28 +265,15 @@ class Map:
 
     def __init__(self, size : int = CONSTANTS["map_base_size"]) -> None:
         """Generates the playable map"""
-        self.size = size
- 
+        self.size = size 
         if self.size % 2 == 0:
             self.size += 1
+        self.existing_walls = self.create_walls_algorithm()
         self.starting_position = Vector2(double=self.size//2)
         room_types = list(CONSTANTS["room_probabilities"].keys())
         probabilities = list(CONSTANTS["room_probabilities"].values())
 
         
-        def get_doors_for_room(x,y):
-            """Get the doors for room depending on coords. Doors facing non-existant rooms outside the map are removed"""
-
-            doors = ["N", "E", "S", "W"]
-            xy_max = self.size-1
-
-            if x == 0: doors.remove("W")
-            elif x == xy_max: doors.remove("E")
-
-            if y == 0: doors.remove("N")
-            elif y == xy_max: doors.remove("S")
-
-            return doors
         
         def recursive_check_room_reachable(rooms : Array2D[Map.ReachableRoom], current_position: Vector2):
             current_room : Map.ReachableRoom = rooms[current_position]
@@ -307,55 +294,18 @@ class Map:
             height = self.size,
             val_callable = lambda : Map.ReachableRoom())
 
-        # generate new door configurations until every single room is reachable
-        # usually takes an avrg of 2 tries to find a successful configuration
-        #     during testing the mean time for 10000 successful map generations was 1.5 ms with remove_door_percent = 0.3 (time isnt an issue)
-        while True:
-            # set the doors for each room. take into account wether the room is on the edge of the map or not
-            for x, y, _ in self.rooms:
-                self.rooms[x,y].doors = get_doors_for_room(x, y)
+         
             
-            # if debug is enabled dont remove any doors
-            if not CONSTANTS["debug"]["remove_room_doors"]:
-                break
-
-            # removes 1 door from remove_door_percent% of all rooms
-            # also removes the corresponding door in the room behind the door which was deleted
-            remove_door_count = int(self.size**2 * CONSTANTS["remove_door_percent"])
-            for _ in range(remove_door_count):
-                x = randint(0, self.rooms.size.x-1)
-                y = randint(0, self.rooms.size.y-1)
-
-                selected_room = self.rooms[x,y]
-
-                # if a room has 0 doors, which can happen if many doors are removed from
-                # the same area, redo the map gen
-                if len(selected_room.doors) == 0:
-                    break
-
-                door_to_remove = choice(selected_room.doors)
-                
-                # removing the opposite facing door in the room behind door_to_remove. this ensures all doors are bi-directional
-                room_behind_door_to_remove = self.rooms[Vector2(x,y) + CONSTANTS["directional_coord_offsets"][door_to_remove]]
-                opposite_door_to_remove = {"N": "S", "E": "W", "S": "N", "W": "E"}[door_to_remove]
-
-                selected_room.doors.remove(door_to_remove)
-                room_behind_door_to_remove.doors.remove(opposite_door_to_remove)
-            
-            # go through each room and set .reachable = True if its reachable
-            recursive_check_room_reachable(self.rooms, self.starting_position)
-
-            # if all rooms are reachable, break the loop
-            if all([val.reachable for _, _, val in self.rooms]):
-                break
 
         # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
-        for x, y, reachable_room in self.rooms:
+        
+        for x, y, _ in self.rooms:
+            reachable_room_doors = self.get_doors_in_room(x,y)
             if (x, y) == self.starting_position:
-                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=reachable_room.doors)
+                self.rooms[x,y] = Map.Room(type="empty", discovered=True, doors=reachable_room_doors)
             else:
                 roomtype = choices(room_types, probabilities)[0]
-                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=reachable_room.doors)
+                self.rooms[x,y] = Map.Room(type=roomtype, discovered=False, doors=reachable_room_doors)
         
         if CONSTANTS["debug"]["print_map"]:
             last_y = 0
@@ -365,13 +315,25 @@ class Map:
             print("\n")
 
         self.UI_instance = Map.UI(self.size, self.rooms)
-
+    
+    def get_doors_in_room(self, x, y) -> str:
+        reachable_room_doors = ""
+        if y > 0 and self.existing_walls[f"{x}.{y-1}.S"] != True:
+            reachable_room_doors += "N"
+        if x < self.size and self.existing_walls[f"{x}.{y}.E"] != True:
+            reachable_room_doors += "E"
+        if y < self.size and self.existing_walls[f"{x}.{y}.S"] != True:
+            reachable_room_doors += "S"
+        if x > 0 and self.existing_walls[f"{x-1}.{y}.E"] != True:
+            reachable_room_doors += "W"
+        return reachable_room_doors
     
     def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
-        self.UI_instance.open(player_pos)
+        self.UI_instance.open(player_pos, self.existing_walls)
+        
     
     def close_UI_window(self) -> None:
         self.UI_instance.close()
@@ -418,6 +380,123 @@ class Map:
         self.UI_instance.send_command("pp", player.position)
 
         new_current_room.on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room, music=music)
+
+    def create_walls_algorithm(self):
+        global algorithm_status, live_update, possible_moves, current_location, backtrack_status
+        current_location = [0, 0]
+        algorithm_status = True
+        live_update = True
+        backtrack_status = False
+        backtrack = []
+        possible_moves = []
+        locations_to_avoid = {}  # Define this as per the maze walls
+        existing_walls = {}
+
+        for x in range(self.size):
+            for y in range(self.size):
+                locations_to_avoid[f"{x}.{y}"] = False
+        locations_to_avoid["0.0"] = True
+
+        for x in range(self.size):
+            for y in range(self.size):
+                existing_walls[f"{x}.{y}.E"] = True
+                existing_walls[f"{x}.{y}.S"] = True
+
+        # Define movement functions
+        def move_north():
+            global current_location
+            last_location = current_location.copy()
+            current_location[0] -= 1
+            update_player_position(last_location)
+
+        def move_south():
+            global current_location
+            last_location = current_location.copy()
+            current_location[0] += 1
+            update_player_position(last_location)
+
+        def move_west():
+            global current_location
+            last_location = current_location.copy()
+            current_location[1] -= 1
+            update_player_position(last_location)
+
+        def move_east():
+            global current_location
+            last_location = current_location.copy()
+            current_location[1] += 1
+            update_player_position(last_location)
+
+        def update_player_position(last_location):
+            locations_to_avoid[str(current_location[0])+"."+str(current_location[1])] = True
+            if backtrack_status == False:
+                if last_location != current_location:
+                    if last_location[0] == current_location[0]:
+                        if last_location[1] > current_location[1]:
+                            existing_walls[f"{current_location[1]}.{current_location[0]}.E"] = False
+                        else:
+                            existing_walls[f"{current_location[1]-1}.{current_location[0]}.E"] = False
+                    if last_location[1] == current_location[1]:
+                        if last_location[0] > current_location[0]:
+                            existing_walls[f"{current_location[1]}.{current_location[0]}.S"] = False
+                        else:
+                            existing_walls[f"{current_location[1]}.{current_location[0]-1}.S"] = False
+        # Algorithm function
+        def algorithm():
+            global algorithm_status, live_update, backtrack_status, possible_moves, current_location
+
+            while algorithm_status:
+                possible_moves.clear()
+                
+                # Check each direction for possible moves
+                if current_location[0] > 0:  # NORTH
+                    if not locations_to_avoid.get(f"{current_location[0] - 1}.{current_location[1]}"):
+                        possible_moves.append("NORTH")
+                
+                if current_location[0] < self.size:  # SOUTH
+                    if not locations_to_avoid.get(f"{current_location[0] + 1}.{current_location[1]}"):
+                        possible_moves.append("SOUTH")
+                
+                if current_location[1] > 0:  # WEST
+                    if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] - 1}"):
+                        possible_moves.append("WEST")
+                
+                if current_location[1] < self.size - 1:  # EAST
+                    if not locations_to_avoid.get(f"{current_location[0]}.{current_location[1] + 1}"):
+                        possible_moves.append("EAST")
+                
+                if not backtrack_status:
+                    backtrack.append(f"{current_location[0]}.{current_location[1]}")
+
+                if not possible_moves:
+                    if current_location == [0, 0]:  # Maze completed
+                        for key in existing_walls.keys():
+                            if randint(1,5) == 1:
+                                existing_walls[key] = False
+                                key = key.split(".")
+                        algorithm_status = False
+                        return existing_walls
+
+                    backtrack_status = True
+                    if backtrack:
+                        last_position = backtrack.pop()
+                        x_val, y_val = map(int, last_position.split('.'))
+                        current_location = [x_val, y_val]
+                else:
+                    rand_index = randint(0, len(possible_moves) - 1)
+                    direction_to_move = possible_moves[rand_index]
+                    backtrack_status = False
+
+                    if direction_to_move == "NORTH":
+                        move_north()
+                    elif direction_to_move == "SOUTH":
+                        move_south()
+                    elif direction_to_move == "WEST":
+                        move_west()
+                    elif direction_to_move == "EAST":
+                        move_east()
+        active_walls = algorithm()
+        return active_walls
 
 
 class Combat:
