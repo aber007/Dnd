@@ -27,7 +27,7 @@ CONSTANTS = {
         "shop": "a shop"
     },
 
-    "remove_door_percent": 0.3,
+    "remove_door_percent": 0.2,
 
     "normal_trap_dmg": 3,
     "mimic_trap_ambush_dmg": 4,
@@ -82,7 +82,7 @@ CONSTANTS = {
     # change these when debugging
     "debug": {
         "gray_map_tiles": True, # default True
-        "remove_room_doors": False, # default True
+        "display_all_walls": False, # default False
         "print_map": False, # default False
         "disable_console_clearing": False # default False
     }
@@ -95,4 +95,5 @@ from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
 from .array2d import Array2D
 from .items import Item, Inventory
+from .create_walls_algorithm import CreateWallsAlgorithm
 from .main import run_game

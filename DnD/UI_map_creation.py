@@ -25,15 +25,6 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
     tile_width = windowsize / size.x
     tile_height = windowsize / size.y
 
-    # Initial configurations
-    global algorithm_status, live_update, possible_moves, current_location, backtrack_status
-    current_location = [0, 0]
-    algorithm_status = True
-    live_update = True
-    backtrack_status = False
-    possible_moves = []
-    locations_to_avoid = {}  # Define this as per the maze walls
-    walls = {}
 
     # Tkinter setup
     main = tk.Tk()
@@ -43,16 +34,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
     main.attributes("-topmost", True)
     main.overrideredirect(True)
 
-    for x in range(size.x):
-        for y in range(size.y):
-            locations_to_avoid[f"{x}.{y}"] = False
-    locations_to_avoid["0.0"] = True
-
-    
-            
-
-    # Grid and player setup
-
+    # Grid setup
     bg_Canvas = tk.Canvas(main, bg="gray", width=300, height=300)
     bg_Canvas.place(relheight=1, relwidth=1)
 
@@ -60,19 +42,22 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
     for x, y, _ in grid:
         grid[x,y] = tk.Frame(bg_Canvas, bg="gray", width=tile_width, height=tile_height, border=None)
         grid[x,y].place(x=x * tile_width, y=y * tile_height)
+    
 
+    # Walls setup
     wall_thickness = tile_height/10
+    walls = Array2D.create_frame_by_size(width=size.x, height=size.y, val_callable=lambda : {"E": None, "S": None})
+    
+    for x, y, _ in walls:
+        walls[x,y]["S"] = tk.Frame(grid[x,y], bg="black", width=tile_width, height=wall_thickness)
+        walls[x,y]["E"] = tk.Frame(grid[x,y], bg="black", width=wall_thickness, height=tile_width)
+    
 
-    for x in range(size.x):
-        for y in range(size.y):
-            walls[f"{x}.{y}.S"] = tk.Frame(grid[x,y], bg="black", width=tile_width, height=wall_thickness)
-            walls[f"{x}.{y}.E"] = tk.Frame(grid[x,y], bg="black", width=wall_thickness, height=tile_width)
-
-
-    # Setup player icon
+    # Player icon setup
     player_icon = tk.Frame(main, bg="magenta2", width=tile_width/3, height=tile_height/3)
     player_icon.grid_position = player_pos
 
+    
     # Initial grid color update
     for x, y, room in rooms:
         if not room.discovered and CONSTANTS["debug"]["gray_map_tiles"]:
@@ -81,27 +66,29 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
         else:
             grid[x,y].configure(bg=CONSTANTS["room_ui_colors"][room.type])
 
-    # Player icon setup
-    player_icon = tk.Frame(main, bg="magenta2", width=tile_width / 3, height=tile_height / 3)
-    player_icon.place(x=current_location[1] * tile_width, y=current_location[0] * tile_height)
-
     
-    def create_doors_in_room(location : Vector2) -> None:
-        door_x = int(location.x)
-        door_y = int(location.y)
-        if door_y > 0 and existing_walls[f"{door_x}.{door_y-1}.S"] == True:
-            walls[f"{door_x}.{door_y-1}.S"].place(x=0, rely=1.0, anchor='sw')
+    def place_doors_in_room(room_position : Vector2) -> None:
+        x, y = room_position
+        if y > 0 and existing_walls[x, y-1]["S"] == True:
+            walls[x, y-1]["S"].place(x=0, rely=1.0, anchor='sw')
 
-        if door_x < size.x and existing_walls[f"{door_x}.{door_y}.E"] == True:
-            walls[f"{door_x}.{door_y}.E"].place(relx=1.0, y=0, anchor='ne')
+        if x+1 < size.x and existing_walls[x, y]["E"] == True:
+            walls[x, y]["E"].place(relx=1.0, y=0, anchor='ne')
 
-        if door_y < size.y and existing_walls[f"{door_x}.{door_y}.S"] == True:
-            walls[f"{door_x}.{door_y}.S"].place(x=0, rely=1.0, anchor='sw')
+        if y+1 < size.y and existing_walls[x, y]["S"] == True:
+            walls[x, y]["S"].place(x=0, rely=1.0, anchor='sw')
 
-        if door_x > 0 and existing_walls[f"{door_x-1}.{door_y}.E"] == True:
-            walls[f"{door_x-1}.{door_y}.E"].place(relx=1.0, y=0, anchor='ne')
-    create_doors_in_room(Vector2(double=size.x//2))
+        if x > 0 and existing_walls[x-1, y]["E"] == True:
+            walls[x-1, y]["E"].place(relx=1.0, y=0, anchor='ne')
     
+    # Progressively place walls as the player enters new rooms
+    place_doors_in_room(Vector2(double=int(size.x//2)))
+    
+    if CONSTANTS["debug"]["display_all_walls"]:
+        for x, y, _ in walls:
+            place_doors_in_room(Vector2(x,y))
+    
+
     def handle_command_queue():
         # not optimal but the other methods didnt work as expected 
         try:
@@ -130,11 +117,11 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
                     new_player_position = eval(f"Vector2({command})")
                     position_delta = new_player_position - player_icon.grid_position
 
-                    create_doors_in_room(new_player_position)
+                    place_doors_in_room(new_player_position)
 
                     # NOTE: the below code doesnt not work for diagonal movement
-                    # run an animation where the player position rectangle's x OR y value is progressively changed from start_val to end_val a set duration
-                    # the updating of these animations is handled by function 'update_anims' thats located near the end of this file
+                    # run an animation where the player position rectangle's x OR y value is progressively changed from start_val to end_val over a set duration
+                    # the updating of these animations is handled by function 'update_anims', which is located near the end of this file
                     if position_delta.x != 0:
                         anim = Animation(
                             start_val=        player_icon.winfo_x(),
@@ -165,7 +152,6 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
         main.after(100, handle_command_queue)
 
     def update_player_pos_tile(coords : Vector2) -> None:
-
         player_pos_grid_tile : tk.Frame = grid[*coords]
         player_icon.place(
             x=player_pos_grid_tile.winfo_x() + player_pos_grid_tile.winfo_reqwidth()/2 - player_icon.winfo_reqwidth()/2,
