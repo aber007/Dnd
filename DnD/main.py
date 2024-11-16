@@ -195,6 +195,7 @@ class Map:
                     print(choice(INTERACTION_DATA["mimic"]))
                     dmg_taken = player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"])
                     print(f"The player took {dmg_taken} damage from the Mimic ambush. {player.hp} HP remaining", end="\n"*2)
+                    music.play("fight")
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":

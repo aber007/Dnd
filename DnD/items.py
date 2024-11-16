@@ -15,7 +15,7 @@ def eye_of_horus(player):
     selected_room = map.get_room(selected_room_coords)
 
     map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][selected_room.type])
-    print(f"\nThe Eye of Horus shows you that the room behind the door facing {selected_direction} is {CONSTANTS['room_contains_text'][selected_room.type]}")
+    print(f"\nThe Eye of Horus shows you that the room behind the door facing {selected_direction} contains {CONSTANTS['room_contains_text'][selected_room.type]}")
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -103,7 +103,7 @@ class Inventory:
                 return
             else:
                 print(f"\n{selected_item} was thrown out")
-                self.remove(selected_item)
+                self.remove_item(selected_item)
         
         # set the first found empty slot to the received item
         first_found_empty_slot_idx = self.slots.index(None)
