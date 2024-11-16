@@ -73,6 +73,7 @@ class Inventory:
 
         self.gold = CONSTANTS["player_starting_gold"]
         self.exp = CONSTANTS["player_starting_exp"]
+        self.lvl = CONSTANTS["player_starting_lvl"]
     
     def is_full(self):
         """if all slots arent None, return True"""
@@ -115,6 +116,20 @@ class Inventory:
         self.slots.remove(item)
         self.slots.append(None)
 
+    def check_lvl(self):
+        new_lvl = CONSTANTS["player_exp_to_lvl_func"](self.exp)
+        lvl_delta = new_lvl - self.lvl
+        self.lvl = new_lvl
+
+        if 0 < lvl_delta:
+            print((f"{lvl_delta}x " if 1 < lvl_delta else "") + f"Level Up! Player is now level {self.lvl}")
+        else:
+            print(f"Current lvl: {self.lvl}")
+        
+        exp_til_next_lvl = CONSTANTS["player_lvl_to_exp_func"](self.lvl + 1) - self.exp
+        print(f"Exp til next lvl: {exp_til_next_lvl}")
+
+
     def open(self) -> Item | None:
         """If an item was used return that item to be processed by the function that called this function\n
         If no item was used return None"""
@@ -123,7 +138,7 @@ class Inventory:
         items_in_inventory = self.get_items(include_emtpy=True)
 
         print(f"\n{'='*15} INVENTORY {'='*15}", end="\n"*2)
-        print(f"Gold: {self.gold}\nEXP: {self.exp}", end="\n"*2)
+        print(f"Gold: {self.gold}\nEXP: {self.exp}\nLvl: {self.lvl}", end="\n"*2)
 
         print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
 

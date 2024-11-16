@@ -14,7 +14,9 @@ from . import (
     Array2D,
     get_user_action_choice,
     ensure_terminal_width,
-    wait_for_key
+    wait_for_key,
+    Bar,
+    RGB
     )
 
 try:
@@ -91,6 +93,7 @@ class Player(Entity):
         self.hp = min(self.hp + additional_hp, CONSTANTS["player_hp"])
         print(f"The player was healed for {additional_hp}. HP: {hp_before} -> {self.hp}")
 
+        
 class Enemy(Entity):
     def __init__(self, enemy_type : str, target : Player) -> None:
         # get the attributes of the given enemy_type and make them properties of this object
@@ -131,6 +134,11 @@ class Map:
         def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
+            match self.type:
+                case "shop":  music.play("shop")
+                case "enemy": music.play("fight")
+                case _:       music.play("ambience")
+
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
@@ -147,8 +155,6 @@ class Map:
                     print("\n" + choice(INTERACTION_DATA["chest"]))
 
                 case ("shop", True):
-                    music.stop()
-                    music.play("shop")
                     print("\n" + choice(INTERACTION_DATA["shop"]))
 
                     possible_items = list(ITEM_DATA.keys())
@@ -192,11 +198,7 @@ class Map:
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
-                    if music.get_current_song() != "shop_music.mp3":
-                        music.stop()
-                        music.play("shop")
-                    
-                    # stay in the shop menu unitl the player explicitly chooses to Leave
+                    # stay in the shop menu until the player explicitly chooses to Leave
                     while True:
                         print(f"\n{'='*15} SHOP {'='*15}")
                         print(f"\nCurrent gold: {player.inventory.gold}")
@@ -229,8 +231,6 @@ class Map:
                             print("This shop is out of items")
                             self.is_cleared = True
                             break
-                    music.stop()
-                    music.play("ambience")
             
             # update the tile the player just interacted with
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -532,9 +532,6 @@ class Combat:
     def start(self, music : Music) -> None:
         self.player.current_combat = self
 
-        music.fadeout()
-        music.play(type="fight")
-
         print(f"\n{'='*15} COMBAT {'='*15}")
         
         story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
@@ -552,8 +549,8 @@ class Combat:
             self.turn += 1
 
             print(f"\n--------------) Turn {self.turn} (--------------")
-            print(f"Player hp: {self.player.hp}")
-            print(f"{self.enemy.name} hp: {self.enemy.hp}\n")
+
+            self.write_hp_bars()
 
             if not enemyturn:
                 fled = self.player_turn()
@@ -565,19 +562,45 @@ class Combat:
         
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
+            story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
+            print("\n" + story_text_enemy_defeated.replace("enemy", self.enemy.name))
+            print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
+            print(f"You earned {self.enemy.exp} EXP from this fight\n")
+
             self.map.get_room(self.player.position).is_cleared = True
 
             self.player.inventory.gold += self.enemy.gold
             self.player.inventory.exp += self.enemy.exp
-
-            story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
-            print("\n" + story_text_enemy_defeated.replace("enemy", self.enemy.name))
-            print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
-            print(f"You earned {self.enemy.exp} EXP from this fight")
+            self.player.inventory.check_lvl()
             
 
         self.player.current_combat = None
         music.play("ambience")
+
+    def write_hp_bars(self):
+        enemy_bar_prefix = f"{self.enemy.name} hp: {self.enemy.hp}   "
+        player_bar_prefix = f"Player hp: {self.player.hp}   "
+        longer_prefix = sorted([enemy_bar_prefix, player_bar_prefix], key=lambda i : len(i), reverse=True)[0]
+
+        enemy_bar_prefix = enemy_bar_prefix.ljust(len(longer_prefix), " ")
+        player_bar_prefix = player_bar_prefix.ljust(len(longer_prefix), " ")
+
+        Bar(
+            length=CONSTANTS["hp_bar_length"],
+            val=self.enemy.hp,
+            min_val=0,
+            max_val=ENEMY_DATA[self.enemy.name]["hp"],
+            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            prefix=enemy_bar_prefix
+        )
+        Bar(
+            length=CONSTANTS["hp_bar_length"],
+            val=self.player.hp,
+            min_val=0,
+            max_val=CONSTANTS["player_hp"],
+            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            prefix=player_bar_prefix
+        )
 
     def player_turn(self) -> bool:
         """If the player attempted to flee: return the result, otherwise False"""
@@ -746,7 +769,7 @@ def run_game():
 
     map.open_UI_window(player_pos = player.position)
 
-    while player.is_alive:
+    while player.is_alive and player.inventory.lvl < 10:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
             # clears entire console and sets cursor pos top left
             print("\033[2J\033[H", end="")
@@ -776,7 +799,14 @@ def run_game():
         # prompt_continue()
         wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    print("\nGame over")
+    if not player.is_alive:
+        print("\nGame over")
+    
+    else:
+        print("\n" + "Congratulations! You escaped the castle or something.")
+
+        #Add stats and print them here
+
     map.close_UI_window()
 
 

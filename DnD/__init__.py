@@ -34,9 +34,16 @@ CONSTANTS = {
 
     "player_inventory_size": 4,
     "player_hp": 50,
-    "player_starting_gold": 100,
-    "player_starting_exp": 0,
     "player_base_defence" : 0,
+    "player_starting_gold": 0,
+    "player_starting_exp": 0,
+    "player_starting_lvl": 0,
+    
+    "player_exp_to_lvl_func": lambda exp: int(exp**0.5),
+    "player_lvl_to_exp_func": lambda lvl: int(lvl**2),
+    
+    "player_movement_anim_duration": 0.2,
+    "player_movement_anim_active_update_delay": 5,
     
     "dice_sides": 20,
     "normal_trap_min_roll_to_escape": 10,
@@ -52,9 +59,9 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": True,
+    "music_enabled": True,
     "music_max_volume_percent": 0.75,
-    "music_slider_step_volume_percent": 0.025,
+    "music_slider_step_volume_percent": 0.015,
 
     "directional_coord_offsets": {
         "N": [0, -1],
@@ -62,6 +69,12 @@ CONSTANTS = {
         "S": [0, 1],
         "W": [-1, 0]
     },
+    "player_movement_anim_duration": 0.2,
+    "player_movement_anim_active_update_delay": 5,
+
+    "hp_bar_length": 30,
+    "hp_bar_fill_color": [242,13,13],
+
 
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 100,
@@ -75,7 +88,8 @@ CONSTANTS = {
     }
 }
 
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider
+from .animation import AnimationLibrary, Animation
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
