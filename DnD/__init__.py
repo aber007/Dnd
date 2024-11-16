@@ -59,9 +59,9 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
 
-    "music": True,
+    "music_enabled": True,
     "music_max_volume_percent": 0.75,
-    "music_slider_step_volume_percent": 0.025,
+    "music_slider_step_volume_percent": 0.015,
 
     "directional_coord_offsets": {
         "N": [0, -1],
