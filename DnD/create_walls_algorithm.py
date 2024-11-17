@@ -18,7 +18,7 @@ class CreateWallsAlgorithm:
         self.map_frame : Array2D[bool] = Array2D.create_frame_by_size(self.size, self.size, val=False)
 
         self.locations_to_avoid : Array2D[bool] = self.map_frame.copy()
-        self.locations_to_avoid[int(starting_location.x), int(starting_location.y)] = True # Define this as per the maze walls
+        self.locations_to_avoid[self.starting_location] = True # Define this as per the maze walls
 
         # visualization of why only the East and South walls are definied:
         #    https://postimg.cc/tZXy3j5H

@@ -39,13 +39,13 @@ class Array2D( Generic[TypeVar("T")] ):
         return False
 
     def __setitem__(self, coords : Iterable[int], val : any) -> None:
-        # enables cases like 'array2d[x,y] = val'
+        # enables cases like 'array2d[x,y] = val' and 'array2d[vector2] = val'
         x,y = coords
         self._check_idx_error(x,y)
         self.rows[y][x] = val
 
     def __getitem__(self, coords : Iterable[int]) -> any:
-        # enables cases like 'array2d[x,y]'
+        # enables cases like 'array2d[x,y]' and 'array2d[vector2]'
         x,y = coords
         self._check_idx_error(x,y)
         return self.rows[y][x]
