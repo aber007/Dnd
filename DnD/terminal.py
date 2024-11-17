@@ -237,19 +237,18 @@ def combat_bar():
                     right_empty = length - left_empty - box_fill
 
                     line_with_box += (
-                        f"{color}{' ' * left_empty}"  # Spaces before the box
-                        f"{RGB(0, 0, 0, 'bg')}{'█' * box_fill}{color_off}"  # The box
+                        f"{color}{' ' * left_empty}{color_off}"  # Spaces before the box
+                        f"{RGB(255, 255, 255, 'bg')}{' ' * box_fill}{color_off}"  # The box
                         f"{color}{' ' * right_empty}{color_off}"  # Spaces after the box
                     )
 
 
                 position += length
 
-            write(cursor_x_0, line_with_box, "\n")
+            write(cursor_x_0, line_with_box)
             if i==0:
                 time.sleep(1)
             time.sleep(1/(2.5*(1+i)))
-            write(cursor_move_up)
 
             # Check if ENTER was pressed
             if enter_pressed["status"]:
@@ -257,8 +256,9 @@ def combat_bar():
 
     # Attach the ENTER key listener
     print("\nPress Enter on the indication to Attack")
-    keyboard.on_press_key("enter", on_enter)
+    keyboard.on_press_key("enter", on_enter, suppress=True)
 
+    write(cursor_hide_cursor)
 
     # Animate the box over the line
     animate_box()
@@ -268,13 +268,17 @@ def combat_bar():
     if enter_pressed["status"]:
         keyboard.unhook_all()
         time.sleep(1)
-        print()
+        write(cursor_show_cursor, "\n")
         if box_position["start"] >= red_length and box_position["start"] < red_length+orange_length:
             return("hit")
         elif box_position["start"] >= red_length+orange_length and box_position["start"] < red_length+orange_length+green_length:
             return("hit_x2")
         else:
             return("miss")
+    
+    else:
+        write(cursor_show_cursor, "\n")
+        return "miss"
 
 
 
@@ -295,4 +299,6 @@ if __name__ == "__main__":
     # return_val = slider.start()
     # print(return_val)
 
-    Bar(30, 3, 0, 15, RGB(242,13,13,"bg"), "Player health: ")
+    # Bar(30, 3, 0, 15, RGB(242,13,13,"bg"), "Player health: ")
+
+    combat_bar()
