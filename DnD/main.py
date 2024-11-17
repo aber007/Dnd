@@ -47,6 +47,7 @@ class Player(Entity):
         # combat related attributes
         self.is_alive = True
         self.hp = CONSTANTS["player_hp"]
+        self.max_hp = CONSTANTS["player_max_hp"]
         self.defence = CONSTANTS["player_base_defence"]
         self.current_combat : Combat | None = None
 
@@ -391,7 +392,6 @@ class Combat:
                 spawn_probabilities[enemy_type] = enemy_probability
 
         distace_from_spawn = ((abs(self.map.starting_position.x - self.player.position.x)**2) + (abs(self.map.starting_position.y - self.player.position.y)**2))**0.5
-        # """Adjust probabilites depending on distance away from spawn and difficulty of enemy""" Should be changed later
         for enemy_type in enemy_types:
             if ENEMY_DATA[enemy_type]["probability"] == 0:
                 new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
@@ -450,6 +450,7 @@ class Combat:
         music.play("ambience")
 
     def write_hp_bars(self):
+        # Figure out which prefix is longer then make sure the shorter one gets padding to compensate
         enemy_bar_prefix = f"{self.enemy.name} hp: {self.enemy.hp}   "
         player_bar_prefix = f"Player hp: {self.player.hp}   "
         longer_prefix = sorted([enemy_bar_prefix, player_bar_prefix], key=lambda i : len(i), reverse=True)[0]
@@ -457,22 +458,36 @@ class Combat:
         enemy_bar_prefix = enemy_bar_prefix.ljust(len(longer_prefix), " ")
         player_bar_prefix = player_bar_prefix.ljust(len(longer_prefix), " ")
 
+        # Make sure the side with more hp has the longest health bar allowed
+        #   and that the side with less hp has a health bar proportionate to the hp ratio
+        #   eg. player hp 10, enemy hp 1 -> player bar length = max, enemy bar length = max * 0.1
+        max_hp_ratio = self.enemy.max_hp / self.player.max_hp
+        if max_hp_ratio <= 1:
+            # player has more hp or equal
+            player_bar_length = CONSTANTS["hp_bar_max_length"]
+            enemy_bar_length = round(CONSTANTS["hp_bar_max_length"] * max_hp_ratio)
+        else:
+            enemy_bar_length = CONSTANTS["hp_bar_max_length"]
+            player_bar_length = round(CONSTANTS["hp_bar_max_length"] * max_hp_ratio)
+
+        # Write the health bars to terminal
         Bar(
-            length=CONSTANTS["hp_bar_length"],
-            val=self.enemy.hp,
-            min_val=0,
-            max_val=ENEMY_DATA[self.enemy.name]["hp"],
-            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
-            prefix=enemy_bar_prefix
-        )
-        Bar(
-            length=CONSTANTS["hp_bar_length"],
+            length=player_bar_length,
             val=self.player.hp,
             min_val=0,
-            max_val=CONSTANTS["player_hp"],
+            max_val=self.player.max_hp,
             fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
             prefix=player_bar_prefix
         )
+        Bar(
+            length=enemy_bar_length,
+            val=self.enemy.hp,
+            min_val=0,
+            max_val=self.enemy.max_hp,
+            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            prefix=enemy_bar_prefix
+        )
+        print()
 
     def player_turn(self) -> bool:
         """If the player attempted to flee: return the result, otherwise False"""
@@ -542,7 +557,7 @@ class Combat:
                 dmg_dealt_to_player = self.enemy.attack(target=self.player)
                 
                 if self.player.is_alive:
-                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing\nPlayer hp remaining: {self.player.hp}")
+                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing")
                 else:
                     print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
             
@@ -559,7 +574,7 @@ class Combat:
             dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
 
             if self.player.is_alive:
-                print(f"You failed to flee and took {dmg_dealt_to_player} damage\nPlayer hp remaining: {self.player.hp}")
+                print(f"You failed to flee and took {dmg_dealt_to_player} damage")
             else:
                 print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
         
@@ -569,7 +584,7 @@ class Combat:
         dmg_dealt_to_player = self.enemy.attack(target=self.player)
 
         if self.player.is_alive:
-            print(f"The {self.enemy.name} attacked you for {dmg_dealt_to_player} damage\nPlayer hp remaining: {self.player.hp}")
+            print(f"The {self.enemy.name} attacked you for {dmg_dealt_to_player} damage")
         else:
             print(f"The {self.enemy.name} attacked you for {dmg_dealt_to_player} damage, killing you in the process")
             return

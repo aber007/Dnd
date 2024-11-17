@@ -34,6 +34,7 @@ CONSTANTS = {
 
     "player_inventory_size": 4,
     "player_hp": 50,
+    "player_max_hp": 50,
     "player_base_defence" : 0,
     "player_starting_gold": 0,
     "player_starting_exp": 0,
@@ -72,7 +73,7 @@ CONSTANTS = {
     "player_movement_anim_duration": 0.2,
     "player_movement_anim_active_update_delay": 5,
 
-    "hp_bar_length": 30,
+    "hp_bar_max_length": 50,
     "hp_bar_fill_color": [242,13,13],
 
 
