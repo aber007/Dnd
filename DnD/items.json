@@ -5,7 +5,7 @@
         "probability": 0.01,
         "type": "weapon",
         "offensive": true,
-        "effect": 7,
+        "effect": 4,
         "durability": -1,
         "description": "Your most reliable defense. Use it to defend yourself against monsters",
         "base_price": 3
@@ -16,7 +16,7 @@
         "name_in_sentence": "a simple knife",
         "type": "weapon",
         "offensive": true,
-        "effect": 3,
+        "effect": 7,
         "durability": 5,
         "description": "Use it to defend yourself against monsters",
         "base_price": 5
@@ -27,10 +27,32 @@
         "name_in_sentence": "a steel sword",
         "type": "weapon",
         "offensive": true,
-        "effect": 5,
+        "effect": 10,
         "durability": 15,
         "description": "Use it to defend yourself against monsters",
         "base_price": 20
+    },
+    "hammer": {
+        "name": "Stone Hammer",
+        "probability": 0.1,
+        "name_in_sentence": "a stone hammer",
+        "type": "weapon",
+        "offensive": true,
+        "effect": 8,
+        "durability": 10,
+        "description": "Use it to defend yourself against monsters",
+        "base_price": 18
+    },
+    "valkyrie": {
+        "name": "The Valkyrie",
+        "probability": 0.03,
+        "name_in_sentence": "the Valkyrie",
+        "type": "weapon",
+        "offensive": true,
+        "effect": 40,
+        "durability": 2,
+        "description": "A strong but fragile sword",
+        "base_price": 35
     },
     "good_luck_potion": {
         "name": "Potion of Good Luck",
@@ -46,7 +68,7 @@
     },
     "the_eye_of_horus":{
         "name": "the Eye of Horus",
-        "probability": 0.1,
+        "probability": 0.05,
         "name_in_sentence": "the Eye of Horus",
         "type": "spell",
         "offensive": false,
@@ -56,7 +78,7 @@
     },
     "breath_of_life":{
         "name": "Breath of Life",
-        "probability": 0.1,
+        "probability": 0.15,
         "name_in_sentence": "a Breath of Life",
         "type": "spell",
         "offensive": false,
@@ -71,7 +93,7 @@
         "name_in_sentence": "a Breath of Fire",
         "type": "spell",
         "offensive": true,
-        "effect": 6,
+        "effect": 13,
         "durability": 3,
         "description": "Use it to burn your enemies",
         "base_price" : 25

@@ -371,10 +371,10 @@ class Combat:
     def __init__(self, player : Player, map : Map, force_enemy_type : str | None = None) -> None:
         self.player : Player = player
         self.map : Map = map
-        self.enemy : Enemy = self.create_enemy(force_enemy_type)
+        self.enemy : Enemy = self.create_enemy(force_enemy_type, player)
         self.turn = 0
 
-    def create_enemy(self, force_enemy_type : str | None) -> Enemy:
+    def create_enemy(self, force_enemy_type : str | None, player) -> Enemy:
         """Decide enemy type to spawn, then return enemy object with the attributes of said enemy type"""
 
         # needed for mimic traps
@@ -394,7 +394,7 @@ class Combat:
         # """Adjust probabilites depending on distance away from spawn and difficulty of enemy""" Should be changed later
         for enemy_type in enemy_types:
             if ENEMY_DATA[enemy_type]["probability"] == 0:
-                new_probability = distace_from_spawn * ((100-ENEMY_DATA[enemy_type]["exp"])/1000)
+                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
                 spawn_probabilities[enemy_type] += new_probability
 
         enemy_type_to_spawn = choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))[0]

@@ -45,7 +45,7 @@ class Item:
                         return_val = eye_of_horus
                     
                     case "breath_of_life":
-                        return_val = lambda player: player.heal(self.effect)
+                        return_val = lambda player: player.heal(self.effect + (player.hp//10))
                     
                     case "breath_of_fire":
                         return_val = self.effect
@@ -128,6 +128,9 @@ class Inventory:
         
         exp_til_next_lvl = CONSTANTS["player_lvl_to_exp_func"](self.lvl + 1) - self.exp
         print(f"Exp til next lvl: {exp_til_next_lvl}")
+
+    def get_lvl(self) -> int:
+        return int(self.lvl)
 
 
     def open(self) -> Item | None:
