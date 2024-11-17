@@ -137,7 +137,8 @@ class Map:
 
             match self.type:
                 case "shop":  music.play("shop")
-                case "enemy": music.play("fight")
+                case "enemy": 
+                    if not self.is_cleared: music.play("fight")
                 case _:       music.play("ambience")
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
