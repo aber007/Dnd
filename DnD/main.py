@@ -3,6 +3,7 @@ from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
 from .ambience import Music
+from .terminal import combat_bar
 from . import (
     CONSTANTS,
     ITEM_DATA,
@@ -500,9 +501,23 @@ class Combat:
         item_return = self.player.open_inventory()
         if item_return is not None:
             dmg, item_name_in_sentence = item_return
-            dmg_dealt = self.enemy.take_damage(dmg)
 
-            print(f"\nThe {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
+            dmg_mod = combat_bar()
+
+            match dmg_mod:
+                case "hit":
+                    dmg_mod=1
+                    print(f"\nThe {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
+                case "hit_x2":
+                    dmg_mod=2
+                    print(f"\nThe {self.enemy.name} was hurt by the player for 2x damage using {item_name_in_sentence}")
+                case "miss":
+                    print(f"\nYou missed the {self.enemy.name}")
+                    action_completed = True
+                    return action_completed
+
+            dmg *= dmg_mod
+            dmg_dealt = self.enemy.take_damage(dmg)
             print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
 
             action_completed = True
