@@ -255,7 +255,7 @@ def combat_bar():
                 break
 
     # Attach the ENTER key listener
-    print("\nPress Enter on the indication to Attack")
+    print("\nPress ENTER on the indication to Attack")
     keyboard.on_press_key("enter", on_enter, suppress=True)
 
     write(cursor_hide_cursor)
