@@ -65,7 +65,8 @@ class Item:
 
 
 class Inventory:
-    def __init__(self) -> None:
+    def __init__(self, parent) -> None:
+        self.parent = parent
         self.size = CONSTANTS["player_inventory_size"]
         self.chosen_weapon = None
         self.slots : list[Item | None] = [None] * self.size # this length should never change
@@ -116,7 +117,7 @@ class Inventory:
         self.slots.remove(item)
         self.slots.append(None)
 
-    def check_lvl(self):
+    def update_lvl(self):
         new_lvl = CONSTANTS["player_exp_to_lvl_func"](self.exp)
         lvl_delta = new_lvl - self.lvl
         self.lvl = new_lvl
@@ -127,7 +128,11 @@ class Inventory:
             print(f"Current lvl: {self.lvl}")
         
         exp_til_next_lvl = CONSTANTS["player_lvl_to_exp_func"](self.lvl + 1) - self.exp
-        print(f"Exp til next lvl: {exp_til_next_lvl}")
+        print(f"EXP til next lvl: {exp_til_next_lvl}")
+
+        # since on_lvl_up prints stuff to console: do it down here 
+        if 0 < lvl_delta:
+            self.parent.on_lvl_up()
 
     def get_lvl(self) -> int:
         return int(self.lvl)

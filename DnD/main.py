@@ -53,7 +53,8 @@ class Player(Entity):
         self.current_combat : Combat | None = None
 
         # progression related attributes
-        self.inventory = Inventory()
+        self.inventory = Inventory(parent=self)
+        self.current_dmg_bonus = 0
 
         self.active_dice_effects : list[int] = []
     
@@ -94,8 +95,26 @@ class Player(Entity):
     def heal(self, additional_hp : int):
         # cap the hp to player_hp
         hp_before = self.hp
-        self.hp = min(self.hp + additional_hp, CONSTANTS["player_hp"])
-        print(f"The player was healed for {additional_hp}. HP: {hp_before} -> {self.hp}")
+        self.hp = min(self.hp + additional_hp, self.max_hp)
+        print(f"The player was healed for {additional_hp} HP. HP: {hp_before} -> {self.hp}")
+    
+    def on_lvl_up(self):
+        """Set the players bonus health and dmg based on the current lvl"""
+
+        print()
+
+        # health
+        previous_max_hp = self.max_hp
+        self.max_hp = CONSTANTS["player_max_hp"] + math.floor(CONSTANTS["player_lvl_to_bonus_hp_func"](self.inventory.lvl))
+        max_hp_delta = self.max_hp - previous_max_hp
+        print(f"The player's max HP has increased! Max HP: {previous_max_hp} -> {self.max_hp}")
+
+        self.heal(max_hp_delta) # heal the player for the new max hp
+
+        # dmg
+        previous_dmg_bonus = self.current_dmg_bonus
+        self.current_dmg_bonus = CONSTANTS["player_lvl_to_bonus_dmg_func"](self.inventory.lvl)
+        print(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {self.current_dmg_bonus}")
 
         
 class Enemy(Entity):
@@ -435,8 +454,10 @@ class Combat:
         
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
+            print(f"\n{'='*15} COMBAT COMPLETED {'='*15}\n")
+
             story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
-            print("\n" + story_text_enemy_defeated.replace("enemy", self.enemy.name))
+            print(story_text_enemy_defeated.replace("enemy", self.enemy.name))
             print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
             print(f"You earned {self.enemy.exp} EXP from this fight\n")
 
@@ -444,7 +465,7 @@ class Combat:
 
             self.player.inventory.gold += self.enemy.gold
             self.player.inventory.exp += self.enemy.exp
-            self.player.inventory.check_lvl()
+            self.player.inventory.update_lvl()
             
 
         self.player.current_combat = None
@@ -517,6 +538,7 @@ class Combat:
         item_return = self.player.open_inventory()
         if item_return is not None:
             dmg, item_name_in_sentence = item_return
+            dmg += self.player.current_dmg_bonus
 
             dmg_mod = combat_bar()
 
