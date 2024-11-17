@@ -187,9 +187,104 @@ def wait_for_key(msg: str, key : str):
     keyboard.wait(key, suppress=True)
 
 
+def combat_bar():
+    red_length = 10
+    orange_length = 6
+    green_length = 2
+
+    line_segments = [
+        (RGB(255, 0, 0, "bg"), red_length),
+        (RGB(255, 165, 0, "bg"), orange_length),    
+        (RGB(0, 255, 0, "bg"), green_length),      
+        (RGB(255, 0, 0, "bg"), 30-red_length-green_length-orange_length)
+    ]
+    line_length = sum(segment[1] for segment in line_segments)
+    box_length = 1
+
+
+    # Shared variable to track box position
+    box_position = {"start": 0}
+    enter_pressed = {"status": False}  # Shared variable for ENTER detection
+
+    def on_enter(event):
+        """Callback to capture ENTER key press."""
+        enter_pressed["status"] = True
+
+    # Function to animate the moving box
+    def animate_box():
+        for i in range(line_length - box_length + 1):
+            # Update box position
+            box_position["start"] = i
+
+            # Generate the box overlay
+            box_start = i
+            box_end = i + box_length
+            line_with_box = ""
+            position = 0
+
+            for color, length in line_segments:
+                segment_start = position
+                segment_end = position + length
+
+                # Determine overlap with the box
+                if box_end <= segment_start or box_start >= segment_end:
+                    # No overlap
+                    line_with_box += f"{color}{' ' * length}{color_off}"
+                else:
+                    # Partial or full overlap
+                    left_empty = max(0, box_start - segment_start)
+                    box_fill = max(0, min(box_end, segment_end) - max(box_start, segment_start))
+                    right_empty = length - left_empty - box_fill
+
+                    line_with_box += (
+                        f"{color}{' ' * left_empty}"  # Spaces before the box
+                        f"{RGB(0, 0, 0, 'bg')}{'█' * box_fill}{color_off}"  # The box
+                        f"{color}{' ' * right_empty}{color_off}"  # Spaces after the box
+                    )
+
+
+                position += length
+
+            write(cursor_x_0, line_with_box, "\n")
+            if i==0:
+                time.sleep(1)
+            time.sleep(1/(2.5*(1+i)))
+            write(cursor_move_up)
+
+            # Check if ENTER was pressed
+            if enter_pressed["status"]:
+                break
+
+    # Attach the ENTER key listener
+    print("\nPress Enter on the indication to Attack")
+    keyboard.on_press_key("enter", on_enter)
+
+
+    # Animate the box over the line
+    animate_box()
+
+    # Return the current box position if ENTER was pressed
+
+    if enter_pressed["status"]:
+        keyboard.unhook_all()
+        time.sleep(1)
+        print()
+        if box_position["start"] >= red_length and box_position["start"] < red_length+orange_length:
+            return("hit")
+        elif box_position["start"] >= red_length+orange_length and box_position["start"] < red_length+orange_length+green_length:
+            return("hit_x2")
+        else:
+            return("miss")
+
+
+
+
+    
+    
+
 if __name__ == "__main__":
     ensure_terminal_width(100)
-    
+    #combat_bar()
     # menu = ItemSelect(items=["This is item 1", "This is item 2", "This is item 3"])
     # return_val = menu.start()
     # print(return_val)
