@@ -114,13 +114,6 @@ class Enemy(Entity):
 
 class Map:
 
-    class ReachableRoom:
-        """A simple version of Map.Room that's used when generating room doors"""
-
-        def __init__(self) -> None:
-            self.doors : list[str] = []
-            self.reachable : bool = False
-
     class Room:
 
         def __init__(self, type, discovered, doors) -> None:
@@ -239,7 +232,6 @@ class Map:
 
     class UI:
         def __init__(self, size, rooms) -> None:
-            # to be set by the parent Map object
             self.size : int = size
             self.rooms : Array2D[Map.Room] = rooms
 
@@ -274,13 +266,14 @@ class Map:
 
         self.starting_position = Vector2(double=self.size//2)
         self.existing_walls : Array2D[dict[str,bool]] = CreateWallsAlgorithm(self.size, self.starting_position).start()
+
+
+        # Create the rooms Array2D
         room_types = list(CONSTANTS["room_probabilities"].keys())
         probabilities = list(CONSTANTS["room_probabilities"].values())
 
-        # Initialize 2D array
         self.rooms : Array2D = Array2D.create_frame_by_size(width = self.size, height = self.size)
 
-        # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
         for x, y, _ in self.rooms:
             room_doors = self.get_doors_in_room(x,y)
             if (x, y) == self.starting_position:
@@ -324,7 +317,6 @@ class Map:
 
         # Press the map and then escape to close the window
         self.UI_instance.open(player_pos, self.existing_walls)
-        
     
     def close_UI_window(self) -> None:
         self.UI_instance.close()
