@@ -27,7 +27,7 @@ class CreateWallsAlgorithm:
         self.existing_walls : Array2D[dict[str,bool]] = Array2D.create_frame_by_size(self.size, self.size, val_callable=lambda : {"E": True, "S": True})
 
 
-    def start(self) -> Array2D[dict[str,bool]]:
+    def start(self):
         while True:
             possible_moves = self.get_possible_moves()
             
@@ -55,12 +55,6 @@ class CreateWallsAlgorithm:
                 if 0 < len(self.previous_locations):
                     previous_location = self.previous_locations.pop()
                     self.current_location = previous_location
-                else:
-                    # if we are here then the algorithm is trying to backtrack
-                    #    but there are no previous moves to use, which happens ~5% of the time
-                    #    this can happen if the algorithm walk path completely surrounds the starting_position
-                    #    solve this by simply redoing the algorithm and exiting the broken one once the new algorithms has finished
-                    return CreateWallsAlgorithm(self.size, self.starting_location).start()
 
         return self.existing_walls
 
