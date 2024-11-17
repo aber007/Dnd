@@ -37,7 +37,7 @@ class CreateWallsAlgorithm:
 
             # if there are any possible moves
             if 0 < len(possible_moves):
-                self.backtrack_status = False
+                self.currently_backtracking = False
                 direction_to_move = choice(possible_moves)
                 self.move(direction_to_move)
 
@@ -80,7 +80,7 @@ class CreateWallsAlgorithm:
         self.locations_to_avoid[self.current_location] = True
 
         # if we're currently backtracking OR the position hasnt changed: return
-        if self.backtrack_status != False or self.last_location == self.current_location:
+        if self.currently_backtracking != False or self.last_location == self.current_location:
             return
 
         position_delta = self.current_location - self.last_location
