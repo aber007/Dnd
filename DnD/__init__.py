@@ -76,6 +76,23 @@ CONSTANTS = {
     "hp_bar_max_length": 50,
     "hp_bar_fill_color": [242,13,13],
 
+    "dodge_bar_length": 30,
+    "dodge_bar_colors": {
+        "red": [255, 0, 0],
+        "orange": [255, 165, 0],
+        "green": [0, 255, 0]
+    },
+    "dodge_bar_times": {
+        "waiting": 5000,
+        "waiting_range": 1500,
+        "perfect_dodge": 260,
+        "partial_dodge": 550
+    },
+    "dodge_bar_dmg_factors": {
+        "red": 1,
+        "orange": 0.5,
+        "green": 0
+    },
 
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 100,
@@ -90,7 +107,7 @@ CONSTANTS = {
 }
 
 from .animation import AnimationLibrary, Animation
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack
 from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2

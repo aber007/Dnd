@@ -1,5 +1,8 @@
+from . import CONSTANTS
+
 import typing
 import os, time, sys, shutil
+from random import randint
 
 try:
     import keyboard
@@ -282,6 +285,67 @@ def combat_bar():
 
 
 
+class DodgeEnemyAttack:
+    def __init__(self) -> None:
+        self.length = CONSTANTS["dodge_bar_length"]
+        self.colors = {name : RGB(*color_values, "bg") for name,color_values in CONSTANTS["dodge_bar_colors"].items()}
+        self.times = CONSTANTS["dodge_bar_times"]
+        self.dmg_factors = CONSTANTS["dodge_bar_dmg_factors"]
+
+        self.enter_pressed = False
+    
+    def start(self):
+        """Returns the enemy's damage factor"""
+
+        keyboard.on_press_key("enter", lambda _ : setattr(self, "enter_pressed", True), suppress=True)
+
+        # Decide the time before the bar turns green
+        wait_time = self.times["waiting"] + randint(-self.times["waiting_range"], self.times["waiting_range"])
+
+        write(cursor_hide_cursor, "Press ENTER when the bar is green or orange to dodge\n")
+
+        # make the bar red and wait for wait_time or enter_pressed
+        write(self.colors["red"], " "*self.length, color_off)
+        self.wait(wait_time)
+        if self.enter_pressed:
+            write("\nYou failed to dodge the attack\n")
+            self.on_finished()
+            return self.dmg_factors["red"]
+
+        # make the bar green and wait until the perfect_dodge zone has passed or enter_pressed
+        write(cursor_clear_line, self.colors["green"], " "*self.length, color_off)
+        self.wait(self.times["perfect_dodge"])
+        if self.enter_pressed:
+            write("\nYou perfectly dodged the attack\n")
+            self.on_finished()
+            return self.dmg_factors["green"]
+        
+        # make the bar orange and wait until the partial_dodge zone has passed or enter_pressed
+        write(cursor_clear_line, self.colors["orange"], " "*self.length, color_off)
+        self.wait(self.times["partial_dodge"] - self.times["perfect_dodge"])
+        if self.enter_pressed:
+            write("\nYou partially dodged the attack\n")
+            self.on_finished()
+            return self.dmg_factors["orange"]
+        
+        # at this point the user has missed both opportunities to dodge
+        #    therefore display the red bar and return red
+        write(cursor_clear_line, self.colors["red"], " "*self.length, color_off, "\nYou failed to dodge the attack\n")
+        self.on_finished()
+        return self.dmg_factors["red"]
+    
+    def wait(self, ms) -> None:
+        """Wait for ms or enter_pressed"""
+        start_time = time.time()
+        seconds_to_wait = ms/1000
+
+        while time.time() - start_time < seconds_to_wait and not self.enter_pressed:
+            time.sleep(1/20)
+
+    def on_finished(self):
+        keyboard.unhook_all()
+        time.sleep(1)
+        write(cursor_show_cursor)
 
     
     

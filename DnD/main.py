@@ -1,4 +1,4 @@
-import os
+import os, math
 from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
@@ -18,7 +18,8 @@ from . import (
     wait_for_key,
     Bar,
     RGB,
-    CreateWallsAlgorithm
+    CreateWallsAlgorithm,
+    DodgeEnemyAttack
     )
 
 try:
@@ -107,7 +108,7 @@ class Enemy(Entity):
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
-        return target.take_damage(self.dmg * dmg_multiplier)
+        return target.take_damage(math.ceil(self.dmg * dmg_multiplier))
     
     def use_special(self, special : str) -> None:
         """Runs the code for special abilities which can be used during combat"""
@@ -581,12 +582,13 @@ class Combat:
         return fled
     
     def enemy_turn(self):
-        dmg_dealt_to_player = self.enemy.attack(target=self.player)
+        dmg_factor = DodgeEnemyAttack().start()
+        dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=dmg_factor)
 
         if self.player.is_alive:
-            print(f"The {self.enemy.name} attacked you for {dmg_dealt_to_player} damage")
+            print(f"\nThe {self.enemy.name} attacked you for {dmg_dealt_to_player} damage")
         else:
-            print(f"The {self.enemy.name} attacked you for {dmg_dealt_to_player} damage, killing you in the process")
+            print(f"\nThe {self.enemy.name} attacked you for {dmg_dealt_to_player} damage, killing you in the process")
             return
         
         if uniform(0, 1) < self.enemy.special_chance:
