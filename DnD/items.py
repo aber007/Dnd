@@ -133,6 +133,7 @@ class Inventory:
         # since on_lvl_up prints stuff to console: do it down here 
         if 0 < lvl_delta:
             self.parent.on_lvl_up()
+            self.parent.receive_skill_point(lvl_delta)
 
     def get_lvl(self) -> int:
         return int(self.lvl)

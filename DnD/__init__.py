@@ -61,6 +61,7 @@ CONSTANTS = {
     "item_config_file": "./items.json",
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
+    "skill_tree_config_file": "./skill_tree.json",
 
     "music_enabled": True,
     "music_max_volume_percent": 0.75,
@@ -111,7 +112,7 @@ CONSTANTS = {
 from .animation import AnimationLibrary, Animation
 from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack
 from .player_actions import get_user_action_choice
-from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
+from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
 from .vector2 import Vector2
 from .array2d import Array2D
 from .items import Item, Inventory

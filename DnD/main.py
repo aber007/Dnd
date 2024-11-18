@@ -9,6 +9,7 @@ from . import (
     ITEM_DATA,
     ENEMY_DATA,
     INTERACTION_DATA,
+    SKILL_TREE_DATA,
     Item,
     Inventory,
     Vector2,
@@ -55,6 +56,7 @@ class Player(Entity):
         # progression related attributes
         self.inventory = Inventory(parent=self)
         self.current_dmg_bonus = 0
+        self.skill_tree_progression = {"special": 0, "hp": 0, "dmg": 0}
 
         self.active_dice_effects : list[int] = []
     
@@ -101,13 +103,11 @@ class Player(Entity):
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""
 
-        print()
-
         # health
         previous_max_hp = self.max_hp
         self.max_hp = CONSTANTS["player_max_hp"] + math.floor(CONSTANTS["player_lvl_to_bonus_hp_func"](self.inventory.lvl))
         max_hp_delta = self.max_hp - previous_max_hp
-        print(f"The player's max HP has increased! Max HP: {previous_max_hp} -> {self.max_hp}")
+        print(f"\nThe player's max HP has increased! Max HP: {previous_max_hp} -> {self.max_hp}")
 
         self.heal(max_hp_delta) # heal the player for the new max hp
 
@@ -115,6 +115,9 @@ class Player(Entity):
         previous_dmg_bonus = self.current_dmg_bonus
         self.current_dmg_bonus = CONSTANTS["player_lvl_to_bonus_dmg_func"](self.inventory.lvl)
         print(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {self.current_dmg_bonus}")
+    
+    def receive_skill_point(self, new_skill_points : int):
+        get_user_action_choice("\nChoose branch to progress in", list(SKILL_TREE_DATA.keys()))
 
         
 class Enemy(Entity):
