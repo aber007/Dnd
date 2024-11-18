@@ -1,4 +1,4 @@
-# from . import CONSTANTS
+from . import CONSTANTS
 
 import typing
 import os, time, sys, shutil
@@ -48,16 +48,18 @@ def write(*s : str, sep="") -> None:
     sys.stdout.flush()
 
 class ItemSelect:
-    def __init__(self, items : list[str], subtext : list[str] | None = None, log_controls : bool = False, header : str = "") -> None:
+    def __init__(self, items : list[str], subtexts : list[str] | None = None, log_controls : bool = False, header : str = "") -> None:
         """A fancy item selection function in the terminal.\n
         DO NOT use newlines in items or subtext as it will break the ItemSelect functionality.\n
         Tabs are allowed.\n
         Use the subtext param to write extra information about an item right below it in the terminal"""
 
-        if subtext != None:
-            self.items = [{"text": item, "subtext": subtext[idx]} for idx,item in enumerate(items)]
+        if subtexts != None:
+            self.items = [{"text": str(item), "subtext": str(subtexts[idx]), "raw_value": item} for idx,item in enumerate(items)]
+            self.subtext_enabled = True
         else:
-            self.items = [{"text": item} for item in items]
+            self.items = [{"text": str(item), "raw_value": item} for item in items]
+            self.subtext_enabled = False
         
         self.y_max = len(self.items)-1
         self.y = 0
@@ -68,38 +70,42 @@ class ItemSelect:
         self.run_loop = True
 
     def start(self) -> str:
-        keyboard.on_press_key("up", lambda _ : self.set_y(self.y-1), suppress=True)
-        keyboard.on_press_key("down", lambda _ : self.set_y(self.y+1), suppress=True)
+        keyboard.on_press_key("up", lambda _ : self.set_y_relative(-1), suppress=True)
+        keyboard.on_press_key("down", lambda _ : self.set_y_relative(+1), suppress=True)
         keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
 
         write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n" if self.log_controls else "", cursor_hide_cursor)
 
         write(self.header, "\n")
         self.list_items()
-        self.set_y(0)
 
         self.loop()
 
-        write(cursor_show_cursor, cursor_move_down * (self.y_max - self.y + 1), cursor_x_0, "\n")
-        # return self.items[self.y]
+        write(cursor_show_cursor, cursor_move_down * (self.y_max - self.y + 1) * (2 if self.subtext_enabled else 1), cursor_x_0, "\n")
+        return self.items[self.y]["raw_value"]
 
     def list_items(self):
-        write(*[item["text"] for item in self.items], sep="\n")
-        self.y = self.y_max
+        # write out all items and their subtexts
+        write(*[item["text"] + ("\n" + item["subtext"] if "subtext" in item else "") for item in self.items], sep="\n")
+
+        # reposition the cursor to y = 0 and mark that item as selected
+        write(cursor_x_0, cursor_move_up * (len(self.items) * (2 if self.subtext_enabled else 1) - 1))
+        self.select_current_line()
     
-    def set_y(self, new_y):
+    def set_y_relative(self, y_delta):
+        # make sure we're not moving out of range
+        if not (0 <= self.y + y_delta <= self.y_max):
+            return
+
         self.deselect_current_line()
 
-        new_y = min(self.y_max, max(0, new_y))
-
-        delta = new_y - self.y
-        if delta < 0:
-            write(cursor_move_up * abs(delta) * 2 if self.items[new_y].get("subtext", None) != None else 1)
-        else:
-            write(cursor_move_down * abs(delta) * 2 if self.items[new_y].get("subtext", None) != None else 1)
+        if y_delta < 0:
+            write(cursor_x_0, cursor_move_up * abs(y_delta) * (2 if self.subtext_enabled else 1))
+        elif 0 < y_delta:
+            write(cursor_x_0, cursor_move_down * abs(y_delta) * (2 if self.subtext_enabled else 1))
         
-        self.y = new_y
-        # self.select_current_line()
+        self.y += y_delta
+        self.select_current_line()
 
     def deselect_current_line(self):
         write(cursor_x_0, color_off, self.items[self.y]["text"], color_off)
@@ -312,6 +318,7 @@ class DodgeEnemyAttack:
         wait_time = self.times["waiting"] + randint(-self.times["waiting_range"], self.times["waiting_range"])
 
         write(cursor_hide_cursor, "Press ENTER when the bar is green or orange to dodge\n")
+        time.sleep(1)
 
         # make the bar red and wait for wait_time or enter_pressed
         write(self.colors["red"], " "*self.length, color_off)
@@ -364,7 +371,7 @@ if __name__ == "__main__":
     
     action_options = ["this is option 1", "this is option 2", "this is option 3"]
     subtexts = ["\tthis is subtext 1", "\tthis is subtext 2", "\tthis is subtext 3"]
-    menu = ItemSelect(items=action_options)
+    menu = ItemSelect(items=action_options, subtexts=subtexts)
     return_val = menu.start()
     print(return_val)
 
