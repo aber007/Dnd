@@ -1,4 +1,4 @@
-from . import CONSTANTS
+# from . import CONSTANTS
 
 import typing
 import os, time, sys, shutil
@@ -48,8 +48,17 @@ def write(*s : str, sep="") -> None:
     sys.stdout.flush()
 
 class ItemSelect:
-    def __init__(self, items : list[str], log_controls : bool = False, header : str = "") -> None:
-        self.items = items
+    def __init__(self, items : list[str], subtext : list[str] | None = None, log_controls : bool = False, header : str = "") -> None:
+        """A fancy item selection function in the terminal.\n
+        DO NOT use newlines in items or subtext as it will break the ItemSelect functionality.\n
+        Tabs are allowed.\n
+        Use the subtext param to write extra information about an item right below it in the terminal"""
+
+        if subtext != None:
+            self.items = [{"text": item, "subtext": subtext[idx]} for idx,item in enumerate(items)]
+        else:
+            self.items = [{"text": item} for item in items]
+        
         self.y_max = len(self.items)-1
         self.y = 0
 
@@ -72,10 +81,10 @@ class ItemSelect:
         self.loop()
 
         write(cursor_show_cursor, cursor_move_down * (self.y_max - self.y + 1), cursor_x_0, "\n")
-        return self.items[self.y]
+        # return self.items[self.y]
 
     def list_items(self):
-        write(*self.items, sep="\n")
+        write(*[item["text"] for item in self.items], sep="\n")
         self.y = self.y_max
     
     def set_y(self, new_y):
@@ -85,18 +94,18 @@ class ItemSelect:
 
         delta = new_y - self.y
         if delta < 0:
-            write(cursor_move_up * abs(delta))
+            write(cursor_move_up * abs(delta) * 2 if self.items[new_y].get("subtext", None) != None else 1)
         else:
-            write(cursor_move_down * abs(delta))
+            write(cursor_move_down * abs(delta) * 2 if self.items[new_y].get("subtext", None) != None else 1)
         
         self.y = new_y
-        self.select_current_line()
+        # self.select_current_line()
 
     def deselect_current_line(self):
-        write(cursor_x_0, color_off, self.items[self.y], color_off)
+        write(cursor_x_0, color_off, self.items[self.y]["text"], color_off)
 
     def select_current_line(self):
-        write(cursor_x_0, color_selected_bg, color_selected_fg, self.items[self.y], color_off)
+        write(cursor_x_0, color_selected_bg, color_selected_fg, self.items[self.y]["text"], color_off)
 
     def loop(self):
         while self.run_loop:
@@ -352,10 +361,12 @@ class DodgeEnemyAttack:
 
 if __name__ == "__main__":
     ensure_terminal_width(100)
-    #combat_bar()
-    # menu = ItemSelect(items=["This is item 1", "This is item 2", "This is item 3"])
-    # return_val = menu.start()
-    # print(return_val)
+    
+    action_options = ["this is option 1", "this is option 2", "this is option 3"]
+    subtexts = ["\tthis is subtext 1", "\tthis is subtext 2", "\tthis is subtext 3"]
+    menu = ItemSelect(items=action_options)
+    return_val = menu.start()
+    print(return_val)
 
     # wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
@@ -365,4 +376,4 @@ if __name__ == "__main__":
 
     # Bar(30, 3, 0, 15, RGB(242,13,13,"bg"), "Player health: ")
 
-    combat_bar()
+    # combat_bar()
