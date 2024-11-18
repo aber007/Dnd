@@ -1,0 +1,114 @@
+{
+    "special": {
+        "1": {
+            "name": "",
+            "description": "Have a 10% chance to deal double dmg when attacking an enemy",
+            "type": "dmg_factor",
+            "trigger_chance": 0.1,
+            "trigger_when": "on_attack",
+            "target": "player",
+            "affects": "dmg",
+            "effect": 2,
+            "effect_type": "factor"
+        },
+        "2": {
+            "name": "",
+            "description": "When attacking an enemy, have a 20% chance to poison your enemy for 1 DMG for 2 rounds",
+            "type": "effect",
+            "trigger_chance": 0.2,
+            "trigger_when": "on_attack",
+            "target": "enemy",
+            "affects": "poison",
+            "effect": 1,
+            "duration": 2
+        },
+        "3": {
+            "name": "Syphon",
+            "description": "When attacking an enemy using a melee weapon, heal for 5% of your HP",
+            "type": "effect",
+            "trigger_chance": 1,
+            "trigger_when": "on_attack",
+            "target": "player",
+            "affects": "hp",
+            "effect": 0.05,
+            "effect_type": "factor"
+        }
+    },
+    "hp": {
+        "1": {
+            "name": "",
+            "description": "Permanently gain +5 max HP",
+            "type": "single",
+            "affects": "max_hp",
+            "effect": 5,
+            "effect_type": "value"
+        },
+        "2": {
+            "name": "",
+            "description": "Permanently gain +10% max HP",
+            "type": "single",
+            "affects": "max_hp",
+            "effect": 0.1,
+            "effect_type": "factor"
+
+        },
+        "3": {
+            "name": "",
+            "description": "Permanently regenerate 10% of your max HP at the start of every non-combat round",
+            "type": "effect",
+            "trigger_chance": 1,
+            "trigger_when": "round_start",
+            "target": "player",
+            "affects": "hp",
+            "effect": 0.1,
+            "effect_type": "factor"
+        }
+    },
+    "dmg": {
+        "1": {
+            "name": "",
+            "description": "Permanently deal 4 more DMG",
+            "type": "single",
+            "affects": "dmg_bonus",
+            "effect": 4,
+            "effect_type": "value"
+        },
+        "2": {
+            "name": "",
+            "description": "Permanently deal +10% more DMG",
+            "type": "single",
+            "affects": "dmg_bonus",
+            "effect": 0.1,
+            "effect_type": "factor"
+        },
+        "3": {
+            "name": "",
+            "description": "For every time you hit an enemy, deal 3% more DMG during that combat",
+            "type": "effect",
+            "trigger_chance": 1,
+            "trigger_when": "on_attack",
+            "target": "enemy",
+            "affects": "temp_dmg_bonus",
+            "effect": 0.03,
+            "effect_type": "factor"
+        }
+    },
+    "single_use": {
+        "hp": {
+            "name": "",
+            "description": "Heal 10% of your max HP",
+            "type": "single",
+            "affects": "hp",
+            "effect": 0.1,
+            "effect_type": "factor"
+        },
+        "dmg": {
+            "name": "",
+            "description": "Gain 10% bonus attack for the next combat",
+            "type": "single",
+            "affects": "temp_dmg_bonus",
+            "effect": 0.1,
+            "effect_type": "factor"
+        }
+    }
+}
