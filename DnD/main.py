@@ -20,7 +20,8 @@ from . import (
     Bar,
     RGB,
     CreateWallsAlgorithm,
-    DodgeEnemyAttack
+    DodgeEnemyAttack,
+    Effect
     )
 
 try:
@@ -32,9 +33,9 @@ except ImportError:
 
 
 class Entity:
-    def take_damage(self, dmg : int) -> int:
-        if isinstance(self, Enemy):    dmg -= max(0, self.defence_melee)
-        elif isinstance(self, Player): dmg -= max(0, self.defence)
+    def take_damage(self, dmg : int, dmg_type = "melee") -> int:
+        if isinstance(self, Enemy) and dmg_type == "melee": dmg = max(0, dmg - self.defence_melee)
+        elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence)
         
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
@@ -53,10 +54,13 @@ class Player(Entity):
         self.defence = CONSTANTS["player_base_defence"]
         self.current_combat : Combat | None = None
 
+        self.permanent_dmg_bonus = 0
+        self.temp_dmg_factor = 1
+
         # progression related attributes
         self.inventory = Inventory(parent=self)
-        self.current_dmg_bonus = 0
-        self.skill_tree_progression = {"special": 0, "hp": 0, "dmg": 0}
+        self.skill_tree_progression = {"Special": 0, "HP": 0, "DMG": 0}
+        self.skill_functions = {"before_attack": [], "after_attack": [], "new_non_combat_round": []}
 
         self.active_dice_effects : list[int] = []
     
@@ -98,7 +102,8 @@ class Player(Entity):
         # cap the hp to player_hp
         hp_before = self.hp
         self.hp = min(self.hp + additional_hp, self.max_hp)
-        print(f"The player was healed for {additional_hp} HP. HP: {hp_before} -> {self.hp}")
+        hp_delta = self.hp - hp_before
+        print(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {self.hp}")
     
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""
@@ -112,12 +117,77 @@ class Player(Entity):
         self.heal(max_hp_delta) # heal the player for the new max hp
 
         # dmg
-        previous_dmg_bonus = self.current_dmg_bonus
-        self.current_dmg_bonus = CONSTANTS["player_lvl_to_bonus_dmg_func"](self.inventory.lvl)
-        print(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {self.current_dmg_bonus}")
+        previous_dmg_bonus = self.permanent_dmg_bonus
+        self.permanent_dmg_bonus = CONSTANTS["player_lvl_to_bonus_dmg_func"](self.inventory.lvl)
+        print(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {self.permanent_dmg_bonus}")
     
+    def _get_skill_tree_progression_options(self) -> tuple[list[int]]:
+        branch_options = []
+        subtexts = []
+
+        # go through all branches and add them as an option if available
+        for branch_name, stages in SKILL_TREE_DATA.items():
+            # handle Impermanent perks separately
+            if branch_name == "Impermanent": continue
+
+            lvls_in_branch : int = len(stages)
+            player_progression_in_branch : int = self.skill_tree_progression[branch_name]
+
+            # if the branch isnt already completed
+            if player_progression_in_branch + 1 <= lvls_in_branch:
+                next_lvl_dict = stages[str(player_progression_in_branch+1)]
+
+                branch_options.append(f"{branch_name} - {next_lvl_dict['name']}")
+                subtexts.append(f"{' '*4}{next_lvl_dict['description']}")
+        
+        # add the Impermanent perks
+        for skill_name, skill_dict in SKILL_TREE_DATA["Impermanent"].items():
+            branch_options.append(f"Impermanent - {skill_name}")
+            subtexts.append(f"{' '*4}{skill_dict['description']}")
+        
+        return branch_options, subtexts
+
     def receive_skill_point(self, new_skill_points : int):
-        get_user_action_choice("\nChoose branch to progress in", list(SKILL_TREE_DATA.keys()))
+        wait_for_key(f"\nYou have {new_skill_points} unspent skill points!\n\n[Press ENTER to progress the skill tree]", "enter")
+
+        for idx in range(new_skill_points):
+            if not CONSTANTS["debug"]["disable_console_clearing"]:
+                clear_console()
+            
+            print(f"{'='*15} SPEND SKILL POINTS {'='*15}", end="\n"*2)
+
+            branch_options, subtexts = self._get_skill_tree_progression_options()
+            branch_option_idx = get_user_action_choice("\nChoose branch to progress in: ", action_options=branch_options, subtexts=subtexts)
+
+            # "Special - Syphon" -> "Special", "Syphon"
+            branch_name, skill_name = branch_options[branch_option_idx].split(" - ", 1)
+            match branch_name:
+                case "Impermanent":
+                    skill_func = eval(SKILL_TREE_DATA[branch_name][skill_name]["func"])
+                    skill_func({"player": self})
+
+                case _:
+                    branch_progression = self.skill_tree_progression[branch_name]
+                    skill_dict = SKILL_TREE_DATA[branch_name][str(branch_progression+1)]
+                    skill_func = eval(skill_dict["func"])
+                    
+                    if skill_dict["trigger_when"] == "now":
+                        skill_func({"player": self})
+                    else:
+                        self.skill_functions[skill_dict["trigger_when"]].append(skill_func)
+                    
+                    self.skill_tree_progression[branch_name] += 1
+
+            if idx+1 != new_skill_points:
+                wait_for_key("\n[Press ENTER to continue]", "enter")
+    
+    def call_skill_functions(self, when : str, variables : dict[str,any]) -> list[any]:
+        return_vars = []
+        for func in self.skill_functions[when]:
+            return_vars.append( func(variables) )
+        
+        return return_vars
+
 
         
 class Enemy(Entity):
@@ -127,6 +197,7 @@ class Enemy(Entity):
         [setattr(self, k, v) for k,v in ENEMY_DATA[enemy_type].items() if k != "probability"]
 
         self.is_alive = True
+        self.active_effects = []
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
@@ -135,6 +206,16 @@ class Enemy(Entity):
     def use_special(self, special : str) -> None:
         """Runs the code for special abilities which can be used during combat"""
         pass
+
+    def add_effect(self, type : str, effect : int, duration : int):
+        self.active_effects.append(Effect(type=type, effect=effect, duration=duration, target=self))
+        print(f"The {self.name} has been hit by a {type} effect, dealing {effect} DMG for {duration} rounds")
+    
+    def update_effects(self):
+        # instance the self.active_effects list since effect.tick() might remove itself from the list
+        for effect in list(self.active_effects):
+            effect.tick()
+
 
 
 class Map:
@@ -445,6 +526,8 @@ class Combat:
 
             print(f"\n--------------) Turn {self.turn} (--------------")
 
+            self.enemy.update_effects()
+
             self.write_hp_bars()
 
             if not enemyturn:
@@ -471,6 +554,7 @@ class Combat:
             self.player.inventory.update_lvl()
             
 
+        self.player.temp_dmg_factor = CONSTANTS["player_default_temp_dmg_factor"]
         self.player.current_combat = None
         music.play("ambience")
 
@@ -541,7 +625,7 @@ class Combat:
         item_return = self.player.open_inventory()
         if item_return is not None:
             dmg, item_name_in_sentence = item_return
-            dmg += self.player.current_dmg_bonus
+            dmg += self.player.permanent_dmg_bonus
 
             dmg_mod = combat_bar()
 
@@ -557,9 +641,23 @@ class Combat:
                     action_completed = True
                     return action_completed
 
-            dmg *= dmg_mod
+            # activate all the skills that are supposed to be ran before the attack fires
+            # NOTE: at the moment theres only one function in before_attack, which returns a modified version of the dmg variable
+            return_vars = self.player.call_skill_functions(
+                when="before_attack",
+                variables={"player": self.player, "enemy": self.enemy, "dmg": dmg}
+                )
+            dmg = sum(return_vars) if 0 < len(return_vars) else dmg
+
+            dmg *= dmg_mod * self.player.temp_dmg_factor
             dmg_dealt = self.enemy.take_damage(dmg)
             print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
+
+            # activate all the skills that are supposed to be ran after the attack fires
+            self.player.call_skill_functions(
+                when="after_attack",
+                variables={"player": self.player, "enemy": self.enemy, "dmg": dmg}
+                )
 
             action_completed = True
         
@@ -685,6 +783,9 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     return player_action_options
 
+def clear_console():
+    """Clears the entire console and sets cursor pos top left"""
+    print("\033[2J" + "\033[H", end="")
 
 
 
@@ -693,16 +794,22 @@ def run_game():
 
     map = Map()
     player = Player(map)
-    music = Music()
 
     map.open_UI_window(player_pos = player.position)
 
+    music = Music()
+
     while player.is_alive and player.inventory.lvl < 10:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
-            # clears entire console and sets cursor pos top left
-            print("\033[2J\033[H", end="")
+            clear_console()
         
         print(f"{'='*15} NEW ROUND {'='*15}", end="\n"*2)
+
+        # activate all the skills that are supposed to be ran right when a new non-combat round starts
+        player.call_skill_functions(
+                when="new_non_combat_round",
+                variables={"player": player}
+                )
 
         # Get a list of the players currently available options and ask user to choose
         # Retry until a valid answer has been given
@@ -720,11 +827,9 @@ def run_game():
 
             case _other: # all other cases, aka Open door ...
                 assert _other.startswith("Open door facing")
-                door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing north" -> door_to_open = "north"
+                door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
                 map.move_player(direction=door_to_open, player=player, music=music)
 
-        # print()
-        # prompt_continue()
         wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
     if not player.is_alive:

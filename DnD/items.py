@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice
+from . import CONSTANTS, ITEM_DATA, get_user_action_choice, view_skill_tree
 
 
 def eye_of_horus(player):
@@ -151,12 +151,15 @@ class Inventory:
 
         print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
 
-        action_options = ["Use item", "Cancel"]
+        action_options = ["Use item", "View skill tree", "Cancel"]
         action_idx = get_user_action_choice("Choose action: ", action_options)
 
         match action_options[action_idx]:
             case "Use item":
                 return_item = self.select_item_to_use()
+            
+            case "View skill tree":
+                view_skill_tree(self.parent)
 
             case "Cancel":
                 return None

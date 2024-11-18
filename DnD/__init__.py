@@ -39,6 +39,7 @@ CONSTANTS = {
     "player_starting_gold": 0,
     "player_starting_exp": 0,
     "player_starting_lvl": 0,
+    "player_default_temp_dmg_factor": 1,
     
     "player_exp_to_lvl_func": lambda exp: int(exp**0.5),
     "player_lvl_to_exp_func": lambda lvl: int(lvl**2),
@@ -97,6 +98,9 @@ CONSTANTS = {
         "green": 0
     },
 
+    "skill_tree_check_color": [0,255,0],
+    "skill_tree_cross_color": [255,0,0],
+
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 100,
 
@@ -109,12 +113,13 @@ CONSTANTS = {
     }
 }
 
-from .animation import AnimationLibrary, Animation
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack
-from .player_actions import get_user_action_choice
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
+from .animation import AnimationLibrary, Animation
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack, view_skill_tree
+from .player_actions import get_user_action_choice
 from .vector2 import Vector2
 from .array2d import Array2D
 from .items import Item, Inventory
+from .effects import Effect
 from .create_walls_algorithm import CreateWallsAlgorithm
 from .main import run_game

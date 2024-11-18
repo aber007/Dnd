@@ -1,4 +1,4 @@
-from . import CONSTANTS
+from . import CONSTANTS, SKILL_TREE_DATA
 
 import typing
 import os, time, sys, shutil
@@ -201,8 +201,9 @@ def ensure_terminal_width(desired_width):
     write(cursor_clear_terminal, cursor_set_xy_top_left)
 
 def wait_for_key(msg: str, key : str):
-    write(msg)
+    write(cursor_hide_cursor, msg)
     keyboard.wait(key, suppress=True)
+    write(cursor_show_cursor)
 
 
 def combat_bar():
@@ -363,7 +364,33 @@ class DodgeEnemyAttack:
         time.sleep(1)
         write(cursor_show_cursor)
 
+
+def view_skill_tree(player):
+    check_color = RGB(*CONSTANTS["skill_tree_check_color"], "fg")
+    check_str = f"{check_color}✔{color_off}"
+    cross_color = RGB(*CONSTANTS["skill_tree_cross_color"], "fg")
+    cross_str = f"{cross_color}✖{color_off}"
+
+    formatted_branch_strings = []
+
+    for branch_name, branch_dict in SKILL_TREE_DATA.items():
+        # dont show the Impermanent branch
+        if branch_name == "Impermanent": continue
+
+        branch_string_parts = [branch_name]
+
+        for lvl_nr_str, lvl_dict in branch_dict.items():
+            lvl_achieved = int(lvl_nr_str) <= player.skill_tree_progression[branch_name]
+
+            lvl_str = f"{check_str if lvl_achieved else cross_str} {lvl_dict['name']}: {lvl_dict['description']}"
+            branch_string_parts.append(lvl_str)
+        
+        formatted_branch_strings.append("\n".join(branch_string_parts))
     
+    write(f"\n{'='*15} SKILL TREE {'='*15}\n\n")
+    write("\n\n".join(formatted_branch_strings), "\n"*2)
+
+    wait_for_key("\n[Press ENTER to continue]", "enter")
     
 
 if __name__ == "__main__":
