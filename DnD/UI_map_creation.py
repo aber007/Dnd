@@ -8,7 +8,7 @@ except ImportError:
 
 def grid_coords_to_real_coords(grid : Array2D[tk.Frame], coords : Vector2):
     """Takes coords and gets the tile at that position in grids. Returns the 'real' coords relative to the tk window"""
-    grid_tile : tk.Frame = grid[*coords]
+    grid_tile : tk.Frame = grid[list(coords)]
     return Vector2(
         grid_tile.winfo_x() + grid_tile.winfo_reqwidth()/2,
         grid_tile.winfo_y() + grid_tile.winfo_reqheight()/2
@@ -152,7 +152,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
         main.after(100, handle_command_queue)
 
     def update_player_pos_tile(coords : Vector2) -> None:
-        player_pos_grid_tile : tk.Frame = grid[*coords]
+        player_pos_grid_tile : tk.Frame = grid[list(coords)]
         player_icon.place(
             x=player_pos_grid_tile.winfo_x() + player_pos_grid_tile.winfo_reqwidth()/2 - player_icon.winfo_reqwidth()/2,
             y=player_pos_grid_tile.winfo_y() + player_pos_grid_tile.winfo_reqheight()/2 - player_icon.winfo_reqheight()/2

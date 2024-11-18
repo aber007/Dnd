@@ -83,9 +83,9 @@ CONSTANTS = {
         "green": [0, 255, 0]
     },
     "dodge_bar_times": {
-        "waiting": 5000,
+        "waiting": 3000,
         "waiting_range": 1500,
-        "perfect_dodge": 260,
+        "perfect_dodge": 240,
         "partial_dodge": 550
     },
     "dodge_bar_dmg_factors": {
