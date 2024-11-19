@@ -122,6 +122,7 @@ class Player(Entity):
         print(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {self.permanent_dmg_bonus}")
     
     def _get_skill_tree_progression_options(self) -> tuple[list[int]]:
+        branch_options_prefixes = []
         branch_options = []
         subtexts = []
 
@@ -142,20 +143,19 @@ class Player(Entity):
                 next_lvl_dict = stages[str(player_progression_in_branch+1)]
 
                 # branch_progression_str is a comprised of a few colored boxes representing the players progression in this branch
-                branch_progression_str = f"{color_off} "
-                branch_progression_str += f"{color_green} {color_off} "*player_progression_in_branch
-                branch_progression_str += f"{color_red} {color_off} "*(lvls_in_branch-player_progression_in_branch)
-                branch_progression_str = branch_progression_str.strip()
+                branch_progression_str = color_off + str(f"{color_green} {color_off}"*player_progression_in_branch) + str(f"{color_red} {color_off}"*(lvls_in_branch-player_progression_in_branch)) + color_off + " "
 
-                branch_options.append(f"{branch_name}{branch_progression_str} - {next_lvl_dict['name']}")
-                subtexts.append(f"{' '*4}{next_lvl_dict['description']}")
+                branch_options_prefixes.append(branch_progression_str)
+                branch_options.append(f"{branch_name} - {next_lvl_dict['name']}")
+                subtexts.append(f"{' '*6}{next_lvl_dict['description']}")
         
         # add the Impermanent perks
         for skill_name, skill_dict in SKILL_TREE_DATA["Impermanent"].items():
+            branch_options_prefixes.append("")
             branch_options.append(f"Impermanent - {skill_name}")
-            subtexts.append(f"{' '*4}{skill_dict['description']}")
+            subtexts.append(f"{' '*6}{skill_dict['description']}")
         
-        return branch_options, subtexts
+        return branch_options_prefixes, branch_options, subtexts
 
     def receive_skill_point(self, new_skill_points : int):
         wait_for_key(f"\nYou have {new_skill_points} unspent skill points!\n\n[Press ENTER to progress the skill tree]", "enter")
@@ -166,8 +166,8 @@ class Player(Entity):
             
             print(f"{'='*15} SPEND SKILL POINTS {'='*15}", end="\n"*2)
 
-            branch_options, subtexts = self._get_skill_tree_progression_options()
-            branch_option_idx = get_user_action_choice("Choose branch to progress in: ", action_options=branch_options, subtexts=subtexts)
+            branch_options_prefixes, branch_options, subtexts = self._get_skill_tree_progression_options()
+            branch_option_idx = get_user_action_choice("Choose branch to progress in: ", action_options=branch_options, action_options_prefixes=branch_options_prefixes, subtexts=subtexts)
 
             # "Special - Syphon" -> "Special", "Syphon"
             branch_name_w_colored_bars, skill_name = branch_options[branch_option_idx].split(" - ", 1)
