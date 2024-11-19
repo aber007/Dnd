@@ -47,18 +47,23 @@ def write(*s : str, sep="") -> None:
     sys.stdout.flush()
 
 class ItemSelect:
-    def __init__(self, items : list[str], subtexts : list[str] | None = None, log_controls : bool = False, header : str = "") -> None:
+    def __init__(self, items : list[str], action_options_prefixes : list[str] | None = None, subtexts : list[str] | None = None, log_controls : bool = False, header : str = "") -> None:
         """A fancy item selection function in the terminal.\n
         DO NOT use newlines in items or subtext as it will break the ItemSelect functionality.\n
         Tabs are allowed.\n
         Use the subtext param to write extra information about an item right below it in the terminal"""
 
+        # create a list containing information about each action_option
+        # if prefixes or subtexts were submitted: add them to the dict
+        self.items = [{"text": str(item), "raw_value": item} for item in items]
+        self.subtext_enabled = False
+        
+        if action_options_prefixes != None:
+            [item_dict.update({"prefix": action_options_prefixes[idx]}) for idx,item_dict in enumerate(self.items)]
         if subtexts != None:
-            self.items = [{"text": str(item), "subtext": str(subtexts[idx]), "raw_value": item} for idx,item in enumerate(items)]
+            [item_dict.update({"subtext": "\n" + subtexts[idx]}) for idx,item_dict in enumerate(self.items)]
             self.subtext_enabled = True
-        else:
-            self.items = [{"text": str(item), "raw_value": item} for item in items]
-            self.subtext_enabled = False
+        
         
         self.y_max = len(self.items)-1
         self.y = 0
@@ -85,7 +90,8 @@ class ItemSelect:
 
     def list_items(self):
         # write out all items and their subtexts
-        write(*[item["text"] + ("\n" + item["subtext"] if "subtext" in item else "") for item in self.items], sep="\n")
+        
+        write(*[item.get("prefix", "") + item["text"] + item.get("subtext", "") for item in self.items], sep="\n")
 
         # reposition the cursor to y = 0 and mark that item as selected
         write(cursor_x_0, cursor_move_up * (len(self.items) * (2 if self.subtext_enabled else 1) - 1))
@@ -107,10 +113,10 @@ class ItemSelect:
         self.select_current_line()
 
     def deselect_current_line(self):
-        write(cursor_x_0, color_off, self.items[self.y]["text"], color_off)
+        write(cursor_x_0, color_off, self.items[self.y].get("prefix", ""), color_off, self.items[self.y]["text"], color_off)
 
     def select_current_line(self):
-        write(cursor_x_0, color_selected_bg, color_selected_fg, self.items[self.y]["text"], color_off)
+        write(cursor_x_0, color_off, self.items[self.y].get("prefix", ""), color_off, color_selected_bg, color_selected_fg, self.items[self.y]["text"], color_off)
 
     def loop(self):
         while self.run_loop:
@@ -174,11 +180,12 @@ class Slider:
 
 
 class Bar:
-    def __init__(self, length : int, val : int | float, min_val : int | float, max_val : int | float, fill_color : RGB, prefix : str = " ") -> None:
+    def __init__(self, length : int, val : int | float, min_val : int | float, max_val : int | float, fill_color : RGB, prefix : str = " ", min_val_min_width : int | None = None) -> None:
         percent_done = (val-min_val)/(max_val-min_val)
         bars_to_fill = math.ceil(length * percent_done) 
+        min_val_str = str(min_val).rjust(min_val_min_width, " ")
 
-        write(prefix + f"{min_val} ┤", fill_color, " "*bars_to_fill, color_off, " "*(length-bars_to_fill), f"├ {max_val}", "\n")
+        write(prefix + f"{min_val_str} ┤", fill_color, " "*bars_to_fill, color_off, " "*(length-bars_to_fill), f"├ {max_val}", "\n")
 
 
 def ensure_terminal_width(desired_width):

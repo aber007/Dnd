@@ -67,7 +67,7 @@
     "Dragon": {
         "name": "Dragon",
         "name_in_sentence": "a Dragon",
-        "max_hp":  10,
+        "max_hp":  100,
         "hp": 100,
         "dmg": 5,
         "special": "fire breath",
