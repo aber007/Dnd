@@ -39,9 +39,12 @@ CONSTANTS = {
     "player_starting_gold": 0,
     "player_starting_exp": 0,
     "player_starting_lvl": 0,
+    "player_default_temp_dmg_factor": 1,
     
     "player_exp_to_lvl_func": lambda exp: int(exp**0.5),
     "player_lvl_to_exp_func": lambda lvl: int(lvl**2),
+    "player_lvl_to_bonus_hp_func": lambda lvl: int(lvl**1.7),
+    "player_lvl_to_bonus_dmg_func": lambda lvl: lvl,
     
     "player_movement_anim_duration": 0.2,
     "player_movement_anim_active_update_delay": 5,
@@ -59,6 +62,7 @@ CONSTANTS = {
     "item_config_file": "./items.json",
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
+    "skill_tree_config_file": "./skill_tree.json",
 
     "music_enabled": True,
     "music_max_volume_percent": 0.75,
@@ -75,6 +79,8 @@ CONSTANTS = {
 
     "hp_bar_max_length": 50,
     "hp_bar_fill_color": [242,13,13],
+    "exp_bar_max_length": 50,
+    "exp_bar_fill_color": [48, 219, 0],
 
     "dodge_bar_length": 30,
     "dodge_bar_colors": {
@@ -94,24 +100,30 @@ CONSTANTS = {
         "green": 0
     },
 
+    "skill_tree_check_color": [0,255,0],
+    "skill_tree_cross_color": [255,0,0],
+    "color_off": "\u001b[0m",
+
     "use_fancy_item_selection": True,
-    "min_desired_terminal_width": 100,
+    "min_desired_terminal_width": 110,
 
     # change these when debugging
     "debug": {
-        "gray_map_tiles": True, # default True
+        "set_all_map_tiles_discovered": False, # default False
         "display_all_walls": False, # default False
         "print_map": False, # default False
-        "disable_console_clearing": False # default False
+        "disable_console_clearing": False, # default False
+        "player_infinite_dmg": False # default False
     }
 }
 
+from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
 from .animation import AnimationLibrary, Animation
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack, view_skill_tree
 from .player_actions import get_user_action_choice
-from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA
 from .vector2 import Vector2
 from .array2d import Array2D
 from .items import Item, Inventory
+from .effects import Effect
 from .create_walls_algorithm import CreateWallsAlgorithm
 from .main import run_game

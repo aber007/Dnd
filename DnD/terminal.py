@@ -1,7 +1,6 @@
-from . import CONSTANTS
+from . import CONSTANTS, SKILL_TREE_DATA
 
-import typing
-import os, time, sys, shutil
+import os, time, sys, shutil, typing, math
 from random import randint
 
 try:
@@ -48,8 +47,19 @@ def write(*s : str, sep="") -> None:
     sys.stdout.flush()
 
 class ItemSelect:
-    def __init__(self, items : list[str], log_controls : bool = False, header : str = "") -> None:
-        self.items = items
+    def __init__(self, items : list[str], subtexts : list[str] | None = None, log_controls : bool = False, header : str = "") -> None:
+        """A fancy item selection function in the terminal.\n
+        DO NOT use newlines in items or subtext as it will break the ItemSelect functionality.\n
+        Tabs are allowed.\n
+        Use the subtext param to write extra information about an item right below it in the terminal"""
+
+        if subtexts != None:
+            self.items = [{"text": str(item), "subtext": str(subtexts[idx]), "raw_value": item} for idx,item in enumerate(items)]
+            self.subtext_enabled = True
+        else:
+            self.items = [{"text": str(item), "raw_value": item} for item in items]
+            self.subtext_enabled = False
+        
         self.y_max = len(self.items)-1
         self.y = 0
 
@@ -59,44 +69,48 @@ class ItemSelect:
         self.run_loop = True
 
     def start(self) -> str:
-        keyboard.on_press_key("up", lambda _ : self.set_y(self.y-1), suppress=True)
-        keyboard.on_press_key("down", lambda _ : self.set_y(self.y+1), suppress=True)
+        keyboard.on_press_key("up", lambda _ : self.set_y_relative(-1), suppress=True)
+        keyboard.on_press_key("down", lambda _ : self.set_y_relative(+1), suppress=True)
         keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
 
         write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n" if self.log_controls else "", cursor_hide_cursor)
 
         write(self.header, "\n")
         self.list_items()
-        self.set_y(0)
 
         self.loop()
 
-        write(cursor_show_cursor, cursor_move_down * (self.y_max - self.y + 1), cursor_x_0, "\n")
-        return self.items[self.y]
+        write(cursor_show_cursor, cursor_move_down * (self.y_max - self.y + 1) * (2 if self.subtext_enabled else 1), cursor_x_0, "\n")
+        return self.items[self.y]["raw_value"]
 
     def list_items(self):
-        write(*self.items, sep="\n")
-        self.y = self.y_max
+        # write out all items and their subtexts
+        write(*[item["text"] + ("\n" + item["subtext"] if "subtext" in item else "") for item in self.items], sep="\n")
+
+        # reposition the cursor to y = 0 and mark that item as selected
+        write(cursor_x_0, cursor_move_up * (len(self.items) * (2 if self.subtext_enabled else 1) - 1))
+        self.select_current_line()
     
-    def set_y(self, new_y):
+    def set_y_relative(self, y_delta):
+        # make sure we're not moving out of range
+        if not (0 <= self.y + y_delta <= self.y_max):
+            return
+
         self.deselect_current_line()
 
-        new_y = min(self.y_max, max(0, new_y))
-
-        delta = new_y - self.y
-        if delta < 0:
-            write(cursor_move_up * abs(delta))
-        else:
-            write(cursor_move_down * abs(delta))
+        if y_delta < 0:
+            write(cursor_x_0, cursor_move_up * abs(y_delta) * (2 if self.subtext_enabled else 1))
+        elif 0 < y_delta:
+            write(cursor_x_0, cursor_move_down * abs(y_delta) * (2 if self.subtext_enabled else 1))
         
-        self.y = new_y
+        self.y += y_delta
         self.select_current_line()
 
     def deselect_current_line(self):
-        write(cursor_x_0, color_off, self.items[self.y], color_off)
+        write(cursor_x_0, color_off, self.items[self.y]["text"], color_off)
 
     def select_current_line(self):
-        write(cursor_x_0, color_selected_bg, color_selected_fg, self.items[self.y], color_off)
+        write(cursor_x_0, color_selected_bg, color_selected_fg, self.items[self.y]["text"], color_off)
 
     def loop(self):
         while self.run_loop:
@@ -162,7 +176,7 @@ class Slider:
 class Bar:
     def __init__(self, length : int, val : int | float, min_val : int | float, max_val : int | float, fill_color : RGB, prefix : str = " ") -> None:
         percent_done = (val-min_val)/(max_val-min_val)
-        bars_to_fill = int(length * percent_done) + 1 #round up = round down + 1
+        bars_to_fill = math.ceil(length * percent_done) 
 
         write(prefix + f"{min_val} ┤", fill_color, " "*bars_to_fill, color_off, " "*(length-bars_to_fill), f"├ {max_val}", "\n")
 
@@ -186,8 +200,9 @@ def ensure_terminal_width(desired_width):
     write(cursor_clear_terminal, cursor_set_xy_top_left)
 
 def wait_for_key(msg: str, key : str):
-    write(msg)
+    write(cursor_hide_cursor, msg)
     keyboard.wait(key, suppress=True)
+    write(cursor_show_cursor)
 
 
 def combat_bar():
@@ -297,12 +312,13 @@ class DodgeEnemyAttack:
     def start(self):
         """Returns the enemy's damage factor"""
 
-        keyboard.on_press_key("enter", lambda _ : setattr(self, "enter_pressed", True), suppress=True)
 
         # Decide the time before the bar turns green
         wait_time = self.times["waiting"] + randint(-self.times["waiting_range"], self.times["waiting_range"])
 
         write(cursor_hide_cursor, "Press ENTER when the bar is green or orange to dodge\n")
+        time.sleep(1)
+        keyboard.on_press_key("enter", lambda _ : setattr(self, "enter_pressed", True), suppress=True)
 
         # make the bar red and wait for wait_time or enter_pressed
         write(self.colors["red"], " "*self.length, color_off)
@@ -347,15 +363,46 @@ class DodgeEnemyAttack:
         time.sleep(1)
         write(cursor_show_cursor)
 
+
+def view_skill_tree(player):
+    check_color = RGB(*CONSTANTS["skill_tree_check_color"], "fg")
+    check_str = f"{check_color}✔{color_off}"
+    cross_color = RGB(*CONSTANTS["skill_tree_cross_color"], "fg")
+    cross_str = f"{cross_color}✖{color_off}"
+
+    formatted_branch_strings = []
+
+    for branch_name, branch_dict in SKILL_TREE_DATA.items():
+        # dont show the Impermanent branch
+        if branch_name == "Impermanent": continue
+
+        branch_string_parts = [branch_name]
+
+        for lvl_nr_str, lvl_dict in branch_dict.items():
+            lvl_achieved = int(lvl_nr_str) <= player.skill_tree_progression[branch_name]
+
+            if lvl_achieved:
+                lvl_str = f"{check_str} {lvl_dict['name']}: {lvl_dict['description']}"
+            else:
+                lvl_str = f"{cross_str} ???: ???"
+            branch_string_parts.append(lvl_str)
+        
+        formatted_branch_strings.append("\n".join(branch_string_parts))
     
+    write(f"\n{'='*15} SKILL TREE {'='*15}\n\n")
+    write("\n\n".join(formatted_branch_strings), "\n"*2)
+
+    wait_for_key("\n[Press ENTER to continue]", "enter")
     
 
 if __name__ == "__main__":
     ensure_terminal_width(100)
-    #combat_bar()
-    # menu = ItemSelect(items=["This is item 1", "This is item 2", "This is item 3"])
-    # return_val = menu.start()
-    # print(return_val)
+    
+    action_options = ["this is option 1", "this is option 2", "this is option 3"]
+    subtexts = ["\tthis is subtext 1", "\tthis is subtext 2", "\tthis is subtext 3"]
+    menu = ItemSelect(items=action_options, subtexts=subtexts)
+    return_val = menu.start()
+    print(return_val)
 
     # wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
@@ -365,4 +412,4 @@ if __name__ == "__main__":
 
     # Bar(30, 3, 0, 15, RGB(242,13,13,"bg"), "Player health: ")
 
-    combat_bar()
+    # combat_bar()

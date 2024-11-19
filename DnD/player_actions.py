@@ -1,6 +1,6 @@
 from . import CONSTANTS, ItemSelect
 
-def get_user_action_choice(choose_message : str, action_options : list[str]) -> str:
+def get_user_action_choice(choose_message : str, action_options : list[str], subtexts : list[str] | None = None) -> str:
     """Have the user select an action for a list of actions\n
     Choose message is the string the player will see when prompted to choose. Recomended example: 'Choose action: '\n
     The index of the selected action in action_options is returned\n
@@ -14,10 +14,10 @@ def get_user_action_choice(choose_message : str, action_options : list[str]) -> 
 
     if CONSTANTS["use_fancy_item_selection"]:
         print(choose_message)
-        selected_item = ItemSelect(action_options).start()
+        selected_item = ItemSelect(action_options, subtexts).start()
         return action_options.index(selected_item)
     else:
-        print("\n".join(f"{idx+1}) {action}" for idx,action in enumerate(action_options)))
+        print("\n".join(f"{idx+1}) {action}\n{subtexts[idx] if subtexts != None else ''}" for idx,action in enumerate(action_options)))
         
         while True:
             action_nr : str[int] = input(choose_message)
