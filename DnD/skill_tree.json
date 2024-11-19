@@ -1,15 +1,15 @@
 {
     "Special": {
         "1": {
-            "name": "temp name",
+            "name": "Critical Hit",
             "description": "Have a 10% chance to deal double dmg when attacking an enemy",
             "trigger_when": "before_attack",
             "return_val": "dmg",
-            "func": "lambda locals: (locals[\"dmg\"]*2) if uniform(0,1) < 0.1 else (locals[\"dmg\"])"
+            "func": "lambda locals: (locals[\"dmg\"]*2) if uniform(0,1) <= 0.1 else (locals[\"dmg\"])"
         },
         "2": {
-            "name": "temp name",
-            "description": "When attacking an enemy, have a 20% chance to poison your enemy for 1 DMG for 2 rounds",
+            "name": "Venomous Touch",
+            "description": "When attacking an enemy, have a 20% chance to poison them for 1 DMG for 2 rounds",
             "trigger_when": "after_attack",
             "return_val": null,
             "func": "lambda locals: locals[\"enemy\"].add_effect(type=\"poison\", effect=1, duration=2) if uniform(0, 1) < 0.2 and len(locals[\"enemy\"].active_effects) == 0 else None"
@@ -20,25 +20,32 @@
             "trigger_when": "after_attack",
             "return_val": null,
             "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.05))"
+        },
+        "4": {
+            "name": "Relentless Onslaught",
+            "description": "When attacking an enemy, have a 20% chance to hit them 5 more times, each time for 15-45% DMG",
+            "trigger_when": "after_attack",
+            "return_val": "dmg_done",
+            "func": "lambda locals: locals[\"enemy\"].take_damage(dmg = round(sum([locals[\"dmg\"]*uniform(0.15, 0.45) for _ in range(5)]))) if uniform(0,1) <= 0.2 else None"
         }
     },
     "HP": {
         "1": {
-            "name": "temp name",
+            "name": "An apple a day-",
             "description": "Permanently gain +5 max HP",
             "trigger_when": "now",
             "return_val": null,
             "func": "lambda locals: [ setattr(locals[\"player\"], \"max_hp\", locals[\"player\"].max_hp+5), locals[\"player\"].heal(round(locals[\"player\"].max_hp/1.1)) ]"
         },
         "2": {
-            "name": "temp name",
+            "name": "Radiant Vitality",
             "description": "Permanently gain +10% max HP",
             "trigger_when": "now",
             "return_val": null,
             "func": "lambda locals: [ setattr(locals[\"player\"], \"max_hp\", locals[\"player\"].max_hp + round(locals[\"player\"].max_hp*0.1)), locals[\"player\"].heal(round(locals[\"player\"].max_hp/11)) ]"
         },
         "3": {
-            "name": "temp name",
+            "name": "Leyline Attunement",
             "description": "Permanently regenerate 10% of your max HP at the start of every non-combat round",
             "trigger_when": "new_non_combat_round",
             "return_val": null,
@@ -47,22 +54,22 @@
     },
     "DMG": {
         "1": {
-            "name": "temp name",
+            "name": "Precise Aim",
             "description": "Permanently deal 4 more DMG",
             "trigger_when": "now",
             "return_val": null,
             "func": "lambda locals: setattr(locals[\"player\"], \"permanent_dmg_bonus\", locals[\"player\"].permanent_dmg_bonus + 4)"
         },
         "2": {
-            "name": "temp name",
+            "name": "Honed Instincts",
             "description": "Permanently deal 8 more DMG",
             "trigger_when": "now",
             "return_val": null,
             "func": "lambda locals: setattr(locals[\"player\"], \"permanent_dmg_bonus\", locals[\"player\"].permanent_dmg_bonus + 8)"
         },
         "3": {
-            "name": "temp name",
-            "description": "For every time you hit an enemy, deal 3% more DMG during that combat (exponential)",
+            "name": "Bloodlust",
+            "description": "For every time you attack an enemy, deal 3% more DMG during that combat (exponential)",
             "trigger_when": "after_attack",
             "return_val": null,
             "func": "lambda locals: setattr(locals[\"player\"], \"temp_dmg_factor\", locals[\"player\"].temp_dmg_factor*1.03)"
@@ -70,14 +77,14 @@
     },
     "Impermanent": {
         "HP": {
-            "name": "temp name",
+            "name": "HP boost",
             "description": "Heal for 30% of your max HP",
             "trigger_when": "now",
             "return_val": null,
             "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.3))"
         },
         "DMG": {
-            "name": "temp name",
+            "name": "DMG boost",
             "description": "Gain 10% bonus attack for the next combat",
             "trigger_when": "now",
             "return_val": null,

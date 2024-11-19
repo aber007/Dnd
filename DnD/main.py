@@ -150,9 +150,9 @@ class Player(Entity):
                 subtexts.append(f"{' '*6}{next_lvl_dict['description']}")
         
         # add the Impermanent perks
-        for skill_name, skill_dict in SKILL_TREE_DATA["Impermanent"].items():
+        for branch_name, skill_dict in SKILL_TREE_DATA["Impermanent"].items():
             branch_options_prefixes.append("")
-            branch_options.append(f"Impermanent - {skill_name}")
+            branch_options.append(f"Impermanent - {skill_dict['name']}")
             subtexts.append(f"{' '*6}{skill_dict['description']}")
         
         return branch_options_prefixes, branch_options, subtexts
@@ -174,6 +174,7 @@ class Player(Entity):
             branch_name = branch_name_w_colored_bars.split(CONSTANTS["color_off"], 1)[0]
             match branch_name:
                 case "Impermanent":
+                    skill_name = skill_name.split(" ", 1)[0] # "HP boost" -> "HP"
                     skill_func = eval(SKILL_TREE_DATA[branch_name][skill_name]["func"])
                     skill_func({"player": self})
 
@@ -185,6 +186,7 @@ class Player(Entity):
                     if skill_dict["trigger_when"] == "now":
                         skill_func({"player": self})
                     else:
+                        skill_func.return_val_type = skill_dict["return_val"]
                         self.skill_functions[skill_dict["trigger_when"]].append(skill_func)
                     
                     self.skill_tree_progression[branch_name] += 1
@@ -195,7 +197,7 @@ class Player(Entity):
     def call_skill_functions(self, when : str, variables : dict[str,any]) -> list[any]:
         return_vars = []
         for func in self.skill_functions[when]:
-            return_vars.append( func(variables) )
+            return_vars.append( {"val": func(variables), "return_val_type": func.return_val_type} )
         
         return return_vars
 
@@ -653,12 +655,12 @@ class Combat:
                     return action_completed
 
             # activate all the skills that are supposed to be ran before the attack fires
-            # NOTE: at the moment theres only one function in before_attack, which returns a modified version of the dmg variable
             return_vars = self.player.call_skill_functions(
                 when="before_attack",
                 variables={"player": self.player, "enemy": self.enemy, "dmg": dmg}
                 )
-            dmg = sum(return_vars) if 0 < len(return_vars) else dmg
+            returned_dmg = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg"])
+            dmg = returned_dmg if len(return_vars) and returned_dmg != 0 else dmg
 
             dmg *= dmg_mod * self.player.temp_dmg_factor
 
@@ -669,10 +671,13 @@ class Combat:
             print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
 
             # activate all the skills that are supposed to be ran after the attack fires
-            self.player.call_skill_functions(
+            return_vars = self.player.call_skill_functions(
                 when="after_attack",
                 variables={"player": self.player, "enemy": self.enemy, "dmg": dmg}
                 )
+            returned_dmg_done = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg_done" and return_var["val"] != None])
+            if 0 < returned_dmg_done:
+                print(f"A skill of yours dealt {returned_dmg_done} damage to the {self.enemy.name}")
 
             action_completed = True
         
