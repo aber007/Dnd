@@ -183,11 +183,14 @@ class Inventory:
         exp_bar_prefix = exp_bar_prefix.ljust(len(longer_prefix), " ")
         hp_bar_prefix = hp_bar_prefix.ljust(len(longer_prefix), " ")
 
+        min_val_min_width = max(len(str(self.parent.hp)), len(str(self.exp)))
+
         # hp bar
         Bar(
             length=CONSTANTS["hp_bar_max_length"],
             val=self.parent.hp,
             min_val=0,
+            min_val_min_width=min_val_min_width,
             max_val=self.parent.max_hp,
             fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
             prefix=hp_bar_prefix
@@ -198,7 +201,8 @@ class Inventory:
             length=CONSTANTS["exp_bar_max_length"],
             val=self.exp,
             min_val=CONSTANTS["player_lvl_to_exp_func"](self.lvl), # min exp for current lvl
-            max_val=CONSTANTS["player_lvl_to_exp_func"](self.lvl+1), # min xp for next lvl
+            min_val_min_width=min_val_min_width,
+            max_val=CONSTANTS["player_lvl_to_exp_func"](self.lvl+1), # min exp for next lvl
             fill_color=RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
             prefix=exp_bar_prefix
         )
