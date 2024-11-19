@@ -125,6 +125,10 @@ class Player(Entity):
         branch_options = []
         subtexts = []
 
+        color_red = RGB(*CONSTANTS["skill_tree_cross_color"], "bg")
+        color_green = RGB(*CONSTANTS["skill_tree_check_color"], "bg")
+        color_off = CONSTANTS["color_off"]
+
         # go through all branches and add them as an option if available
         for branch_name, stages in SKILL_TREE_DATA.items():
             # handle Impermanent perks separately
@@ -137,7 +141,13 @@ class Player(Entity):
             if player_progression_in_branch + 1 <= lvls_in_branch:
                 next_lvl_dict = stages[str(player_progression_in_branch+1)]
 
-                branch_options.append(f"{branch_name} - {next_lvl_dict['name']}")
+                # branch_progression_str is a comprised of a few colored boxes representing the players progression in this branch
+                branch_progression_str = f"{color_off} "
+                branch_progression_str += f"{color_green} {color_off} "*player_progression_in_branch
+                branch_progression_str += f"{color_red} {color_off} "*(lvls_in_branch-player_progression_in_branch)
+                branch_progression_str = branch_progression_str.strip()
+
+                branch_options.append(f"{branch_name}{branch_progression_str} - {next_lvl_dict['name']}")
                 subtexts.append(f"{' '*4}{next_lvl_dict['description']}")
         
         # add the Impermanent perks
@@ -157,10 +167,11 @@ class Player(Entity):
             print(f"{'='*15} SPEND SKILL POINTS {'='*15}", end="\n"*2)
 
             branch_options, subtexts = self._get_skill_tree_progression_options()
-            branch_option_idx = get_user_action_choice("\nChoose branch to progress in: ", action_options=branch_options, subtexts=subtexts)
+            branch_option_idx = get_user_action_choice("Choose branch to progress in: ", action_options=branch_options, subtexts=subtexts)
 
             # "Special - Syphon" -> "Special", "Syphon"
-            branch_name, skill_name = branch_options[branch_option_idx].split(" - ", 1)
+            branch_name_w_colored_bars, skill_name = branch_options[branch_option_idx].split(" - ", 1)
+            branch_name = branch_name_w_colored_bars.split(CONSTANTS["color_off"], 1)[0]
             match branch_name:
                 case "Impermanent":
                     skill_func = eval(SKILL_TREE_DATA[branch_name][skill_name]["func"])
@@ -179,7 +190,7 @@ class Player(Entity):
                     self.skill_tree_progression[branch_name] += 1
 
             if idx+1 != new_skill_points:
-                wait_for_key("\n[Press ENTER to continue]", "enter")
+                wait_for_key("[Press ENTER to continue]", "enter")
     
     def call_skill_functions(self, when : str, variables : dict[str,any]) -> list[any]:
         return_vars = []
@@ -650,6 +661,10 @@ class Combat:
             dmg = sum(return_vars) if 0 < len(return_vars) else dmg
 
             dmg *= dmg_mod * self.player.temp_dmg_factor
+
+            if CONSTANTS["debug"]["player_infinite_dmg"]:
+                dmg = 10**6
+
             dmg_dealt = self.enemy.take_damage(dmg)
             print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
 

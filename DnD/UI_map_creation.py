@@ -60,7 +60,7 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_qu
     
     # Initial grid color update
     for x, y, room in rooms:
-        if not room.discovered and CONSTANTS["debug"]["gray_map_tiles"]:
+        if not room.discovered and not CONSTANTS["debug"]["set_all_map_tiles_discovered"]:
             grid[x,y].configure(bg=CONSTANTS["room_ui_colors"]["default"])
         
         else:

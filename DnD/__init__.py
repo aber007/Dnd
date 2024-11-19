@@ -79,6 +79,8 @@ CONSTANTS = {
 
     "hp_bar_max_length": 50,
     "hp_bar_fill_color": [242,13,13],
+    "exp_bar_max_length": 50,
+    "exp_bar_fill_color": [48, 219, 0],
 
     "dodge_bar_length": 30,
     "dodge_bar_colors": {
@@ -100,16 +102,18 @@ CONSTANTS = {
 
     "skill_tree_check_color": [0,255,0],
     "skill_tree_cross_color": [255,0,0],
+    "color_off": "\u001b[0m",
 
     "use_fancy_item_selection": True,
-    "min_desired_terminal_width": 100,
+    "min_desired_terminal_width": 110,
 
     # change these when debugging
     "debug": {
-        "gray_map_tiles": True, # default True
+        "set_all_map_tiles_discovered": False, # default False
         "display_all_walls": False, # default False
         "print_map": False, # default False
-        "disable_console_clearing": False # default False
+        "disable_console_clearing": False, # default False
+        "player_infinite_dmg": False # default False
     }
 }
 

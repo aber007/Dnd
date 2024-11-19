@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice, view_skill_tree
+from . import CONSTANTS, ITEM_DATA, get_user_action_choice, view_skill_tree, Bar, RGB
 
 
 def eye_of_horus(player):
@@ -147,7 +147,7 @@ class Inventory:
         items_in_inventory = self.get_items(include_emtpy=True)
 
         print(f"\n{'='*15} INVENTORY {'='*15}", end="\n"*2)
-        print(f"Gold: {self.gold}\nEXP: {self.exp}\nLvl: {self.lvl}", end="\n"*2)
+        self.list_player_stats()
 
         print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
 
@@ -172,6 +172,38 @@ class Inventory:
             return self.open()
         else:
             return return_item
+
+    def list_player_stats(self):
+        print(f"Gold: {self.gold}")
+
+        exp_bar_prefix = f"Player Lvl: {self.lvl}, EXP: {self.exp}   "
+        hp_bar_prefix = f"Player HP: {self.parent.hp}   "
+        longer_prefix = sorted([exp_bar_prefix, hp_bar_prefix], key=lambda i : len(i), reverse=True)[0]
+
+        exp_bar_prefix = exp_bar_prefix.ljust(len(longer_prefix), " ")
+        hp_bar_prefix = hp_bar_prefix.ljust(len(longer_prefix), " ")
+
+        # hp bar
+        Bar(
+            length=CONSTANTS["hp_bar_max_length"],
+            val=self.parent.hp,
+            min_val=0,
+            max_val=self.parent.max_hp,
+            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
+            prefix=hp_bar_prefix
+        )
+
+        # exp bar
+        Bar(
+            length=CONSTANTS["exp_bar_max_length"],
+            val=self.exp,
+            min_val=CONSTANTS["player_lvl_to_exp_func"](self.lvl), # min exp for current lvl
+            max_val=CONSTANTS["player_lvl_to_exp_func"](self.lvl+1), # min xp for next lvl
+            fill_color=RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
+            prefix=exp_bar_prefix
+        )
+
+        print(f"Permanent DMG bonus: {self.parent.permanent_dmg_bonus}", end="\n"*2)
 
     def select_item_to_use(self) -> Item | None:
         items_in_inventory = self.get_items()

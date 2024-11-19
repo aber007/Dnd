@@ -1,7 +1,6 @@
 from . import CONSTANTS, SKILL_TREE_DATA
 
-import typing
-import os, time, sys, shutil
+import os, time, sys, shutil, typing, math
 from random import randint
 
 try:
@@ -177,7 +176,7 @@ class Slider:
 class Bar:
     def __init__(self, length : int, val : int | float, min_val : int | float, max_val : int | float, fill_color : RGB, prefix : str = " ") -> None:
         percent_done = (val-min_val)/(max_val-min_val)
-        bars_to_fill = int(length * percent_done) + 1 #round up = round down + 1
+        bars_to_fill = math.ceil(length * percent_done) 
 
         write(prefix + f"{min_val} ┤", fill_color, " "*bars_to_fill, color_off, " "*(length-bars_to_fill), f"├ {max_val}", "\n")
 
@@ -382,7 +381,10 @@ def view_skill_tree(player):
         for lvl_nr_str, lvl_dict in branch_dict.items():
             lvl_achieved = int(lvl_nr_str) <= player.skill_tree_progression[branch_name]
 
-            lvl_str = f"{check_str if lvl_achieved else cross_str} {lvl_dict['name']}: {lvl_dict['description']}"
+            if lvl_achieved:
+                lvl_str = f"{check_str} {lvl_dict['name']}: {lvl_dict['description']}"
+            else:
+                lvl_str = f"{cross_str} ???: ???"
             branch_string_parts.append(lvl_str)
         
         formatted_branch_strings.append("\n".join(branch_string_parts))

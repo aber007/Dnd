@@ -9,7 +9,7 @@
         },
         "2": {
             "name": "temp name",
-            "description": "When attacking an enemy, have a 20% chance to poison your enemy for 1 DMG for 2 rounds if they aren't already posioned",
+            "description": "When attacking an enemy, have a 20% chance to poison your enemy for 1 DMG for 2 rounds",
             "trigger_when": "after_attack",
             "return_val": null,
             "func": "lambda locals: locals[\"enemy\"].add_effect(type=\"poison\", effect=1, duration=2) if uniform(0, 1) < 0.2 and len(locals[\"enemy\"].active_effects) == 0 else None"
