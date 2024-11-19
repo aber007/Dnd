@@ -180,11 +180,12 @@ class Slider:
 
 
 class Bar:
-    def __init__(self, length : int, val : int | float, min_val : int | float, max_val : int | float, fill_color : RGB, prefix : str = " ") -> None:
+    def __init__(self, length : int, val : int | float, min_val : int | float, max_val : int | float, fill_color : RGB, prefix : str = " ", min_val_min_width : int | None = None) -> None:
         percent_done = (val-min_val)/(max_val-min_val)
         bars_to_fill = math.ceil(length * percent_done) 
+        min_val_str = str(min_val).rjust(min_val_min_width, " ")
 
-        write(prefix + f"{min_val} ┤", fill_color, " "*bars_to_fill, color_off, " "*(length-bars_to_fill), f"├ {max_val}", "\n")
+        write(prefix + f"{min_val_str} ┤", fill_color, " "*bars_to_fill, color_off, " "*(length-bars_to_fill), f"├ {max_val}", "\n")
 
 
 def ensure_terminal_width(desired_width):
