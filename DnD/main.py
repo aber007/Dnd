@@ -21,7 +21,8 @@ from . import (
     RGB,
     CreateWallsAlgorithm,
     DodgeEnemyAttack,
-    Effect
+    Effect,
+    Log
     )
 
 try:
@@ -88,7 +89,7 @@ class Player(Entity):
 
         if selected_item.offensive:
             if self.current_combat == None:
-                print("\nYou shouldn't use an offensive item outside of combat")
+                Log.use_combat_item_outside_combat()
             else:
                 dmg = selected_item.use()
                 return (dmg, selected_item.name_in_sentence)
@@ -103,7 +104,7 @@ class Player(Entity):
         hp_before = self.hp
         self.hp = min(self.hp + additional_hp, self.max_hp)
         hp_delta = self.hp - hp_before
-        print(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {self.hp}")
+        Log.player_healed(hp_before, additional_hp, hp_delta, self.hp)
     
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""
@@ -112,14 +113,14 @@ class Player(Entity):
         previous_max_hp = self.max_hp
         self.max_hp = CONSTANTS["player_max_hp"] + math.floor(CONSTANTS["player_lvl_to_bonus_hp_func"](self.inventory.lvl))
         max_hp_delta = self.max_hp - previous_max_hp
-        print(f"\nThe player's max HP has increased! Max HP: {previous_max_hp} -> {self.max_hp}")
+        Log.player_max_hp_increased(previous_max_hp, self.max_hp)
 
         self.heal(max_hp_delta) # heal the player for the new max hp
 
         # dmg
         previous_dmg_bonus = self.permanent_dmg_bonus
         self.permanent_dmg_bonus = CONSTANTS["player_lvl_to_bonus_dmg_func"](self.inventory.lvl)
-        print(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {self.permanent_dmg_bonus}")
+        Log.player_bonus_dmg_increased(previous_dmg_bonus, self.permanent_dmg_bonus)
     
     def _get_skill_tree_progression_options(self) -> tuple[list[int]]:
         branch_options_prefixes = []
@@ -164,7 +165,7 @@ class Player(Entity):
             if not CONSTANTS["debug"]["disable_console_clearing"]:
                 clear_console()
             
-            print(f"{'='*15} SPEND SKILL POINTS {'='*15}", end="\n"*2)
+            Log.header("SPEND SKILL POINTS", 1)
 
             branch_options_prefixes, branch_options, subtexts = self._get_skill_tree_progression_options()
             branch_option_idx = get_user_action_choice("Choose branch to progress in: ", action_options=branch_options, action_options_prefixes=branch_options_prefixes, subtexts=subtexts)
@@ -222,7 +223,7 @@ class Enemy(Entity):
 
     def add_effect(self, type : str, effect : int, duration : int):
         self.active_effects.append(Effect(type=type, effect=effect, duration=duration, target=self))
-        print(f"The {self.name} has been hit by a {type} effect, dealing {effect} DMG for {duration} rounds")
+        Log.entity_received_effect(self.name, type, effect, duration)
     
     def update_effects(self):
         # instance the self.active_effects list since effect.tick() might remove itself from the list
@@ -255,10 +256,13 @@ class Map:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
             match self.type:
-                case "shop":  music.play("shop")
+                case "shop":
+                    music.play("shop")
                 case "enemy": 
                     if not self.is_cleared: music.play("fight")
                 case _:       music.play("ambience")
+            
+            Log.entered_room(self.type)
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
@@ -273,11 +277,8 @@ class Map:
                     chosen_chest_item_id = choices(possible_items, item_probabilites)[0]
 
                     self.chest_item = Item(chosen_chest_item_id)
-                    print("\n" + choice(INTERACTION_DATA["chest"]))
 
                 case ("shop", True):
-                    print("\n" + choice(INTERACTION_DATA["shop"]))
-
                     possible_items = list(ITEM_DATA.keys())
                     item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
 
@@ -288,14 +289,14 @@ class Map:
                         self.shop_items.append(item)
 
                 case ("trap", _):
-                    print(f"\nYou stepped in a trap! Roll at least {CONSTANTS['normal_trap_min_roll_to_escape']} to save yourself")
+                    Log.stepped_in_trap()
                     wait_for_key("[Press ENTER to roll dice]\n", "enter")
                     roll = player.roll_dice()
 
                     if CONSTANTS["normal_trap_min_roll_to_escape"] <= roll:
-                        print(f"You rolled {roll} and managed to escape unharmed")
+                        Log.escaped_trap(roll, False)
                     else:
-                        print(f"You rolled {roll} and was harmed by the trap while escaping")
+                        Log.escaped_trap(roll, True)
                         dmg_taken = player.take_damage(CONSTANTS["normal_trap_dmg"])
                         print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
             
