@@ -7,7 +7,7 @@
         "dmg": 2,
         "special": "trap",
         "special_chance": 0.4,
-        "special_info": "The goblin set a trap that deals 1 dmg to you, your armor is ineffective",
+        "special_info": "The goblin set a trap that deals 2 dmg to you, your armor is ineffective",
         "defence_melee": 1,
         "defence_ranged": 0,
         "defence_magic": -1,

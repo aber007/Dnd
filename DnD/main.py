@@ -216,9 +216,15 @@ class Enemy(Entity):
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
         return target.take_damage(math.ceil(self.dmg * dmg_multiplier))
     
-    def use_special(self, special : str) -> None:
+    def use_special(self, special : str, player : Player) -> None:
         """Runs the code for special abilities which can be used during combat"""
-        pass
+        match special:
+            case "trap":
+                player.take_damage(player.defence + 1)
+                print(f"You have been hit by a trap for 2 damage")
+            case "berserk":
+                self.active_effects.append(Effect)
+                
 
     def add_effect(self, type : str, effect : int, duration : int):
         self.active_effects.append(Effect(type=type, effect=effect, duration=duration, target=self))
