@@ -217,7 +217,7 @@ class Enemy(Entity):
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
-        return target.take_damage(math.ceil(self.dmg * dmg_multiplier))
+        return target.take_damage(math.ceil(self.dmg * dmg_multiplier), log=False)
     
     def use_special(self, special : str) -> None:
         """Runs the code for special abilities which can be used during combat"""
@@ -511,14 +511,8 @@ class Combat:
     def start(self, music : Music) -> None:
         self.player.current_combat = self
 
-        print(f"\n{'='*15} COMBAT {'='*15}")
-        
-        story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
-        if "enemy" in story_text_enemy:
-            print(story_text_enemy.replace("enemy", self.enemy.name_in_sentence))
-        else:
-            print(story_text_enemy)
-            print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
+        Log.newline()
+        wait_for_key("[Press ENTER to continue]", "enter")
         
         enemyturn = choice([True, False])
 
@@ -527,7 +521,10 @@ class Combat:
         while self.player.is_alive and self.enemy.is_alive and not fled:
             self.turn += 1
 
-            print(f"\n--------------) Turn {self.turn} (--------------")
+            Log.clear_console()
+            Log.header("COMBAT", 1)
+            if self.turn == 1: sleep(1)
+            Log.header(f"Turn {self.turn}", 2)
 
             self.enemy.update_effects()
 
@@ -538,17 +535,17 @@ class Combat:
             else:
                 self.enemy_turn()
             
-            sleep(1)
+            Log.write(ANSI.Cursor.hide, end="")
+            sleep(4.5)
+
             enemyturn = not enemyturn
         
+        Log.write(ANSI.Cursor.show, end="")
+
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
-            print(f"\n{'='*15} COMBAT COMPLETED {'='*15}\n")
-
-            story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
-            print(story_text_enemy_defeated.replace("enemy", self.enemy.name))
-            print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
-            print(f"You earned {self.enemy.exp} EXP from this fight\n")
+            Log.header("COMBAT COMPLETED", 1)
+            Log.enemy_defeated(self.enemy.name, self.enemy.gold, self.enemy.exp)
 
             self.map.get_room(self.player.position).is_cleared = True
 
@@ -599,7 +596,7 @@ class Combat:
             fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
             prefix=enemy_bar_prefix
         )
-        print()
+        Log.newline()
 
     def player_turn(self) -> bool:
         """If the player attempted to flee: return the result, otherwise False"""
@@ -609,19 +606,21 @@ class Combat:
         while not action_completed:
             action_options = ["Use item / Attack", "Attempt to Flee"]
             action_idx = get_user_action_choice("Choose action: ", action_options)
+            line_count = len(action_options) + 4
 
             match action_options[action_idx]:                   
                 case "Use item / Attack":
                     action_completed = self.player_use_item_attack()
 
                 case "Attempt to Flee":
-                    fled = self.player_attempt_to_flee()
-                    action_completed = True
+                    return self.player_attempt_to_flee()
+            
+            Log.clear_lines(line_count)
         
         return fled
 
     def player_use_item_attack(self) -> bool:
-        """Returns wether the player used an item or not, aka action_completed"""
+        """Returns wether the player sucessfully used an item or not, aka action_completed"""
         action_completed = False
 
         # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
@@ -631,18 +630,14 @@ class Combat:
             dmg += self.player.permanent_dmg_bonus
 
             dmg_mod = combat_bar()
+            dmg_factor = {"miss": 0, "hit": 1, "hit_x2": 2}[dmg_mod]
 
-            match dmg_mod:
-                case "hit":
-                    dmg_mod=1
-                    print(f"\nThe {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
-                case "hit_x2":
-                    dmg_mod=2
-                    print(f"\nThe {self.enemy.name} was hurt by the player for 2x damage using {item_name_in_sentence}")
-                case "miss":
-                    print(f"\nYou missed the {self.enemy.name}")
-                    action_completed = True
-                    return action_completed
+            Log.combat_player_attack_mod(dmg_factor, self.enemy.name, item_name_in_sentence)
+            Log.newline()
+
+            # if the player missed the enemy mark this turn as completed
+            if dmg_factor == 0:
+                return True
 
             # activate all the skills that are supposed to be ran before the attack fires
             return_vars = self.player.call_skill_functions(
@@ -652,13 +647,12 @@ class Combat:
             returned_dmg = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg"])
             dmg = returned_dmg if len(return_vars) and returned_dmg != 0 else dmg
 
-            dmg *= dmg_mod * self.player.temp_dmg_factor
+            dmg *= dmg_factor * self.player.temp_dmg_factor
 
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
 
-            dmg_dealt = self.enemy.take_damage(dmg)
-            print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
+            self.enemy.take_damage(dmg)
 
             # activate all the skills that are supposed to be ran after the attack fires
             return_vars = self.player.call_skill_functions(
@@ -667,7 +661,8 @@ class Combat:
                 )
             returned_dmg_done = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg_done" and return_var["val"] != None])
             if 0 < returned_dmg_done:
-                print(f"A skill of yours dealt {returned_dmg_done} damage to the {self.enemy.name}")
+                Log.newline()
+                Log.player_skill_damaged_enemy()
 
             action_completed = True
         
@@ -676,41 +671,37 @@ class Combat:
     def player_attempt_to_flee(self) -> bool:
         """Returns wether the attempt to flee was successful"""
         fled = False
-
-        print("Attempting to flee, Roll 12 or higher to succeed")
+        
+        Log.combat_init_flee_roll()
 
         wait_for_key("[Press ENTER to roll dice]", "enter")
         roll = self.player.roll_dice()
         
-        print(f"\nYou rolled {roll}")
+        Log.clear_line()
+        Log.combat_flee_roll_results(roll)
+        Log.newline()
 
         # if you managed to escape
         if CONSTANTS["flee_min_roll_to_escape"] <= roll:
             # if the enemy hit you on your way out
             if roll < CONSTANTS["flee_min_roll_to_escape_unharmed"]:
                 dmg_dealt_to_player = self.enemy.attack(target=self.player)
-                
-                if self.player.is_alive:
-                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing")
-                else:
-                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
+                Log.enemy_attack_while_fleeing(self.enemy.name, dmg_dealt_to_player)
+                Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
             
             # if you escaped with coins
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
-                print(choice(INTERACTION_DATA["escape_20"]))
+                Log.combat_perfect_flee()
                 self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
             
-            print(choice(INTERACTION_DATA["escape"]))
+            Log.combat_flee_successful()
             fled = True
 
         # if you didnt escape
         else:
             dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
-
-            if self.player.is_alive:
-                print(f"You failed to flee and took {dmg_dealt_to_player} damage")
-            else:
-                print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
+            Log.enemy_attack_unsuccessful_flee(dmg_dealt_to_player)
+            Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
         
         return fled
     
@@ -718,13 +709,12 @@ class Combat:
         dmg_factor = DodgeEnemyAttack().start()
         dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=dmg_factor)
 
-        if self.player.is_alive:
-            print(f"\nThe {self.enemy.name} attacked you for {dmg_dealt_to_player} damage")
-        else:
-            print(f"\nThe {self.enemy.name} attacked you for {dmg_dealt_to_player} damage, killing you in the process")
-            return
+        Log.newline()
+        Log.enemy_attack(self.enemy.name, dmg_dealt_to_player)
+        Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
         
-        if uniform(0, 1) < self.enemy.special_chance:
+        if self.player.is_alive and uniform(0, 1) < self.enemy.special_chance:
+            Log.newline()
             print(self.enemy.special_info)
             self.enemy.use_special(self.enemy.special)
 
@@ -789,7 +779,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
     return player_action_options
 
 
-def run_game(): #! remmeber have dmg work with relentless slaughter
+def run_game():
     ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
     map = Map()
@@ -799,12 +789,16 @@ def run_game(): #! remmeber have dmg work with relentless slaughter
 
     music = Music()
 
-    Log.first_time_enter_spawn_room()
+    game_just_started = True
     while player.is_alive and player.inventory.lvl < 10:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
             Log.clear_console()
-        
+
         Log.header("NEW ROUND", 1)
+
+        if game_just_started:
+            Log.first_time_enter_spawn_room()
+            game_just_started = False
 
         # activate all the skills that are supposed to be ran right when a new non-combat round starts
         player.call_skill_functions(
@@ -831,7 +825,7 @@ def run_game(): #! remmeber have dmg work with relentless slaughter
                 door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
                 map.move_player(direction=door_to_open, player=player, music=music)
 
-        wait_for_key("\n[Press ENTER to continue]\n", "enter")
+        # wait_for_key("\n[Press ENTER to continue]", "enter")
 
     Log.game_over(player.is_alive)
 

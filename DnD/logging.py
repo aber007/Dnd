@@ -33,6 +33,10 @@ class Log:
         def __init__(self) -> None:
             pass
     
+    def write(*args, **kwargs) -> int:
+        """Wrapper class for write. This allows other files to use write while only needing to import Log"""
+        return write(*args, **kwargs)
+
     def header(content : str, lvl : int) -> int:
         match lvl:
             case 1:
@@ -46,7 +50,9 @@ class Log:
     
     def clear_console():
         write(ANSI.clear_terminal, ANSI.Cursor.set_xy_0, end="")
-    
+
+    def clear_line():
+        write(ANSI.clear_line, end="")
 
     def clear_lines(n : int):
         """Clears the current line then moves up. Repeat this n times. The cursor is moved up 1 less time than n,\n
@@ -249,3 +255,58 @@ class Log:
     
     def shop_out_of_stock():
         write("This shop is out of items")
+
+
+    # combat related
+    def combat_started(enemy_name_in_sentence : str):
+        story_text_enemy = choice(INTERACTION_DATA["enemy"])
+        if "enemy" in story_text_enemy:
+            write(story_text_enemy.replace("enemy", enemy_name_in_sentence))
+        else:
+            write(story_text_enemy, f"An enemy appeared! It's {enemy_name_in_sentence}!", sep="\n"*2)
+    
+    def enemy_defeated(enemy_name : str, enemy_gold : int, enemy_exp : int):
+        story_text_enemy_defeated = choice(INTERACTION_DATA["enemy_defeated"])
+        write(
+            story_text_enemy_defeated.replace("enemy", enemy_name),
+            f"You picked up {enemy_gold} gold from the {enemy_name}",
+            f"You earned {enemy_exp} EXP from this fight",
+            sep="\n"
+            )
+    
+    def enemy_attack(enemy_name : str, dmg : int):
+        write(f"The {enemy_name} attacked you for {dmg} damage")
+    
+    def enemy_attack_while_fleeing(enemy_name : str, dmg : int):
+        write(f"The {enemy_name} managed to hit you for {dmg} damage while fleeing")
+    
+    def enemy_attack_unsuccessful_flee(dmg : int):
+        write(f"You failed to flee and took {dmg} damage")
+
+    def combat_perfect_flee():
+        write(choice(INTERACTION_DATA["escape_20"]))
+    
+    def combat_flee_successful():
+        write(choice(INTERACTION_DATA["escape"]))
+    
+    def combat_init_flee_roll():
+        write(f"Attempting to flee, Roll {CONSTANTS["flee_min_roll_to_escape"]} or higher to succeed")
+
+    def combat_flee_roll_results(roll : int):
+        write(f"You rolled {roll}")
+    
+    def combat_player_attack_mod(success : int, enemy_name : str, item_name_in_sentence : str):
+        if success == 0:
+            write(f"You missed the {enemy_name}")
+        else:
+            write(
+                f"The {enemy_name} was hurt by the player",
+                (
+                    " for 2x damage " if success == 2 else
+                    " "
+                ),
+                f"using {item_name_in_sentence}"
+                )
+    
+    def player_skill_damaged_enemy(enemy_name, dmg):
+        write(f"A skill of yours dealt {dmg} damage to the {enemy_name}")
