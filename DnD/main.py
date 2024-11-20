@@ -196,9 +196,6 @@ class Player(Entity):
                         self.skill_functions[skill_dict["trigger_when"]].append(skill_func)
                     
                     self.skill_tree_progression[branch_name] += 1
-
-            if idx+1 != new_skill_points:
-                wait_for_key("[Press ENTER to continue]", "enter")
     
     def call_skill_functions(self, when : str, variables : dict[str,any]) -> list[any]:
         return_vars = []
@@ -246,6 +243,7 @@ class Map:
             self.discovered = discovered
             self.doors = doors
 
+            self.horus_was_used : bool = False
             self.chest_item : Item | None = None
             self.is_cleared : bool = False
             self.shop_items : list[Item] = []
@@ -260,7 +258,7 @@ class Map:
                     if not self.is_cleared: music.play("fight")
                 case _:       music.play("ambience")
             
-            Log.entered_room(self.type)
+            Log.entered_room(self.type if self.type != "mimic_trap" else "chest")
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
@@ -450,7 +448,12 @@ class Map:
 
             case "trap":
                 return colors["trap"]
-            
+
+            case "mimic_trap":
+                if    room.is_cleared: return colors["discovered"]
+                elif  room.horus_was_used and not room.is_cleared: return colors[room.type]
+                else: return colors["chest"]
+
             case _:
                 return colors["discovered"] if room.is_cleared else colors[room.type]
 
