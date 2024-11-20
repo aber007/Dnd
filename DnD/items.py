@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice, view_skill_tree, Bar, RGB
+from . import CONSTANTS, ITEM_DATA, get_user_action_choice, view_skill_tree, Bar, RGB, Log
 
 
 def eye_of_horus(player):
@@ -15,7 +15,7 @@ def eye_of_horus(player):
     selected_room = map.get_room(selected_room_coords)
 
     map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][selected_room.type])
-    print(f"\nThe Eye of Horus shows you that the room behind the door facing {selected_direction} contains {CONSTANTS['room_contains_text'][selected_room.type]}")
+    Log.used_eye_of_horus(selected_direction, CONSTANTS['room_contains_text'][selected_room.type])
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -53,7 +53,7 @@ class Item:
         
         self.durability -= 1
         if self.durability == 0:
-            print(f"\n{self.name} broke and is now useless!", end="\n"*2)
+            Log.item_broke(self.name)
             self.parent_inventory.remove_item(self)
         
         return return_val
@@ -88,22 +88,22 @@ class Inventory:
             return [item for item in self.slots if item != None]
 
     def receive_item(self, item : Item):
-        print(f"\nYou recieved {item.name_in_sentence}\n{item.description}")
+        Log.received_item(item.name_in_sentence, item.description)
 
         item.parent_inventory = self
 
         if self.is_full():
-            print("\nYour inventory is full!", end="\n"*2)
+            Log.received_item_inventory_full()
             action_options = self.get_items() + [f"New item: {item}"]
             action_idx = get_user_action_choice("Choose item to throw out: ", action_options)
             selected_item = action_options[action_idx]
 
             # if the selected item is the last option, aka the new item
             if selected_item == action_options[-1]:
-                print(f"\n{item} was thrown out")
+                Log.item_thrown_out(item.name)
                 return
             else:
-                print(f"\n{selected_item} was thrown out")
+                Log.item_thrown_out(selected_item.name)
                 self.remove_item(selected_item)
         
         # set the first found empty slot to the received item
@@ -122,15 +122,12 @@ class Inventory:
         lvl_delta = new_lvl - self.lvl
         self.lvl = new_lvl
 
-        if 0 < lvl_delta:
-            print((f"{lvl_delta}x " if 1 < lvl_delta else "") + f"Level Up! Player is now level {self.lvl}")
-        else:
-            print(f"Current lvl: {self.lvl}")
+        Log.player_lvl_up(self.lvl, lvl_delta)
         
         exp_til_next_lvl = CONSTANTS["player_lvl_to_exp_func"](self.lvl + 1) - self.exp
-        print(f"EXP til next lvl: {exp_til_next_lvl}")
+        Log.player_exp_til_next_lvl(exp_til_next_lvl)
 
-        # since on_lvl_up prints stuff to console: do it down here 
+        # since on_lvl_up prints stuff to console: receive skill points down here 
         if 0 < lvl_delta:
             self.parent.on_lvl_up()
             self.parent.receive_skill_point(lvl_delta)
@@ -146,10 +143,10 @@ class Inventory:
         return_item : Item | None = None
         items_in_inventory = self.get_items(include_emtpy=True)
 
-        print(f"\n{'='*15} INVENTORY {'='*15}", end="\n"*2)
+        Log.header("INVENTORY", 1)
         self.list_player_stats()
 
-        print("\n".join(f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)), end="\n"*2)
+        Log.list_inventory_items(items_in_inventory)
 
         action_options = ["Use item", "View skill tree", "Cancel"]
         action_idx = get_user_action_choice("Choose action: ", action_options)

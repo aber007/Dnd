@@ -69,7 +69,7 @@
         "Excitement bubbles up as you spot a chest in the corner.",
         "A chest stands before you. What secrets could it hold?"
     ],
-    "mimic": [
+    "mimic_trap": [
         "You open the chest, only to reveal a grotesque mimic ready to strike!",
         "The chest shudders and transforms into a monstrous mimic, jaws snapping shut.",
         "You think you've found treasure, but the chest suddenly turns into a mimic!",

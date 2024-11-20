@@ -34,7 +34,8 @@ except ImportError:
 
 
 class Entity:
-    def take_damage(self, dmg : int, dmg_type : str = "melee", log : bool = True) -> int:
+    def take_damage(self, dmg : int, dmg_type : str = "melee", source : str = "", log : bool = True) -> int:
+        """source is used to specify what caused the dmg. Only used if log == True"""
         if isinstance(self, Enemy) and dmg_type == "melee": dmg = max(0, dmg - self.defence_melee)
         elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence)
         
@@ -42,7 +43,7 @@ class Entity:
         self.is_alive = 0 < self.hp
 
         if log:
-            Log.entity_took_dmg(self.name, dmg, self.hp, self.is_alive)
+            Log.entity_took_dmg(self.name, dmg, self.hp, self.is_alive, source)
         
         return dmg
 
@@ -167,7 +168,7 @@ class Player(Entity):
 
         for idx in range(new_skill_points):
             if not CONSTANTS["debug"]["disable_console_clearing"]:
-                clear_console()
+                Log.clear_console()
             
             Log.header("SPEND SKILL POINTS", 1)
 
@@ -310,6 +311,8 @@ class Map:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
+            Log.interacted_w_room(self.type)
+
             match self.type:
                 case "chest":
                     player.inventory.receive_item(self.chest_item)
@@ -317,18 +320,15 @@ class Map:
                     self.is_cleared = True
 
                 case "mimic_trap":
-                    print(choice(INTERACTION_DATA["mimic"]))
-                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"])
-                    print(f"The player took {dmg_taken} damage from the Mimic ambush. {player.hp} HP remaining", end="\n"*2)
+                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
                     music.play("fight")
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
                     # stay in the shop menu until the player explicitly chooses to Leave
                     while True:
-                        print(f"\n{'='*15} SHOP {'='*15}")
-                        print(f"\nCurrent gold: {player.inventory.gold}")
-                        print("\nAvalible items:")
+                        Log.header("SHOP", 1)
+                        Log.shop_display_current_gold()
                         shop_options = [f"{item.name}: {item.current_price} gold" for idx,item in enumerate(self.shop_items)]
                         shop_options += ["Open Inventory", "Leave"]
                         
@@ -351,10 +351,10 @@ class Map:
                                     self.shop_items.remove(selected_item)
 
                                 else:
-                                    print("\nYou do not have enough gold to buy this item")
+                                    Log.shop_insufficient_gold()
                         
                         if len(self.shop_items) == 0:
-                            print("This shop is out of items")
+                            Log.shop_out_of_stock()
                             self.is_cleared = True
                             break
             
@@ -415,17 +415,7 @@ class Map:
         
 
         if CONSTANTS["debug"]["print_map"]:
-            last_y = 0
-            for x, y, walls in self.existing_walls:
-                if y != last_y: print() ; last_y = y
-                print(f" [{x},{y},{''.join([d for d,v in walls.items() if v == False])}] ".ljust(22, " "), end="")
-            print("\n"*2)
-            
-            last_y = 0
-            for x, y, room in self.rooms:
-                if y != last_y: print() ; last_y = y
-                print(f" [{x},{y},{room.type},{''.join(room.doors)}] ".ljust(22, " "), end="")
-            print("\n")
+            Log.Debug.print_map()
 
         self.UI_instance = Map.UI(self.size, self.rooms)
     
@@ -757,11 +747,8 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     match current_room.type:
         case "empty":
-            x, y = player.position
-            if x == int(map.size/2) and y == int(map.size/2):
-                print(choice(INTERACTION_DATA["start"]) + "\n")
-            else:
-                print(choice(INTERACTION_DATA["empty"]) + "\n")
+            if player.position != map.starting_position:
+                Log.entered_room(current_room.type)
             player_action_options = default_action_options
 
         case "enemy":
@@ -807,11 +794,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     return player_action_options
 
-def clear_console():
-    """Clears the entire console and sets cursor pos top left"""
-    print("\033[2J" + "\033[H", end="")
-
-
 
 def run_game(): #! remmeber have dmg work with relentless slaughter
     ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
@@ -823,11 +805,12 @@ def run_game(): #! remmeber have dmg work with relentless slaughter
 
     music = Music()
 
+    Log.first_time_enter_spawn_room()
     while player.is_alive and player.inventory.lvl < 10:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
-            clear_console()
+            Log.clear_console()
         
-        print(f"{'='*15} NEW ROUND {'='*15}", end="\n"*2)
+        Log.header("NEW ROUND", 1)
 
         # activate all the skills that are supposed to be ran right when a new non-combat round starts
         player.call_skill_functions(
@@ -856,13 +839,9 @@ def run_game(): #! remmeber have dmg work with relentless slaughter
 
         wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    if not player.is_alive:
-        print("\nGame over")
-    
-    else:
-        print("\n" + "Congratulations! You escaped the castle or something.")
+    Log.game_over(player.is_alive)
 
-        #Add stats and print them here
+    #Add stats and print them here
 
     map.close_UI_window()
 
