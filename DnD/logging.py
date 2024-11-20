@@ -1,4 +1,4 @@
-from . import CONSTANTS, INTERACTION_DATA, RGB, Bar
+from . import CONSTANTS, INTERACTION_DATA, SKILL_TREE_DATA, ANSI, Bar, wait_for_key
 from random import choice
 import sys
 
@@ -6,26 +6,7 @@ def write(*s : str, sep="", end="\n") -> None:
     sys.stdout.write(sep.join(str(_s) for _s in s) + end)
     sys.stdout.flush()
 
-class ANSI:
-    class Cursor:
-        move_up = f"\033[{1}A"
-        move_down = f"\033[{1}B"
-        move_right = f"\033[{1}C"
-        move_left = f"\033[{1}D"
-        show = "\033[?25h"
-        hide = "\033[?25l"
-        set_x_0 = "\r"
-        set_xy_0 = "\033[H"
-    
-    class Color:
-        rgb_fg = lambda r,g,b: f"\u001b[38;2;{r};{g};{b}m"
-        rgb_bg = lambda r,g,b: f"\u001b[48;2;{r};{g};{b}m"
-        selected_bg = rgb_bg(255,255,255)
-        selected_fg = rgb_fg(0,0,0)
-        off = "\u001b[0m"
-    
-    clear_terminal = "\033[2J"
-    clear_line = Cursor.set_x_0 + "\033[K"
+
 
 
 class Log:
@@ -141,7 +122,7 @@ class Log:
             min_val=0,
             min_val_min_width=min_val_min_width,
             max_val=inventory.parent.max_hp,
-            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
+            fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
             prefix=hp_bar_prefix
         )
 
@@ -152,11 +133,41 @@ class Log:
             min_val=CONSTANTS["player_lvl_to_exp_func"](inventory.lvl), # min exp for current lvl
             min_val_min_width=min_val_min_width,
             max_val=CONSTANTS["player_lvl_to_exp_func"](inventory.lvl+1), # min exp for next lvl
-            fill_color=RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
+            fill_color=ANSI.RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
             prefix=exp_bar_prefix
         )
 
         write(f"Permanent DMG bonus: {inventory.parent.permanent_dmg_bonus}")
+
+    def view_skill_tree(player):
+        check_color = ANSI.RGB(*CONSTANTS["skill_tree_check_color"], "fg")
+        check_str = f"{check_color}✔{ANSI.Color.off}"
+        cross_color = ANSI.RGB(*CONSTANTS["skill_tree_cross_color"], "fg")
+        cross_str = f"{cross_color}✖{ANSI.Color.off}"
+
+        formatted_branch_strings = []
+
+        for branch_name, branch_dict in SKILL_TREE_DATA.items():
+            # dont show the Impermanent branch
+            if branch_name == "Impermanent": continue
+
+            branch_string_parts = [branch_name]
+
+            for lvl_nr_str, lvl_dict in branch_dict.items():
+                lvl_achieved = int(lvl_nr_str) <= player.skill_tree_progression[branch_name]
+
+                if lvl_achieved:
+                    lvl_str = f"{check_str} {lvl_dict['name']}: {lvl_dict['description']}"
+                else:
+                    lvl_str = f"{cross_str} ???: ???"
+                branch_string_parts.append(lvl_str)
+            
+            formatted_branch_strings.append("\n".join(branch_string_parts))
+        
+        Log.header("SKILL TREE", 1)
+        write(*formatted_branch_strings, sep="\n"*2, end="\n"*2)
+
+        wait_for_key("[Press ENTER to continue]", "enter")
 
 
     # entity related

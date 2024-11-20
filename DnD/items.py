@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice, view_skill_tree, Bar, RGB, Log
+from . import CONSTANTS, ITEM_DATA, get_user_action_choice, Log
 
 
 def eye_of_horus(player):
@@ -129,6 +129,7 @@ class Inventory:
 
         # since on_lvl_up prints stuff to console: receive skill points down here 
         if 0 < lvl_delta:
+            Log.newline()
             self.parent.on_lvl_up()
             self.parent.receive_skill_point(lvl_delta)
 
@@ -156,7 +157,7 @@ class Inventory:
                 return_item = self.select_item_to_use()
             
             case "View skill tree":
-                view_skill_tree(self.parent)
+                Log.view_skill_tree(self.parent)
 
             case "Cancel":
                 return None

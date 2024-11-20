@@ -18,7 +18,7 @@ from . import (
     ensure_terminal_width,
     wait_for_key,
     Bar,
-    RGB,
+    ANSI,
     CreateWallsAlgorithm,
     DodgeEnemyAttack,
     Effect,
@@ -132,9 +132,9 @@ class Player(Entity):
         branch_options = []
         subtexts = []
 
-        color_red = RGB(*CONSTANTS["skill_tree_cross_color"], "bg")
-        color_green = RGB(*CONSTANTS["skill_tree_check_color"], "bg")
-        color_off = CONSTANTS["color_off"]
+        color_red = ANSI.RGB(*CONSTANTS["skill_tree_cross_color"], "bg")
+        color_green = ANSI.RGB(*CONSTANTS["skill_tree_check_color"], "bg")
+        color_off = ANSI.Color.off
 
         # go through all branches and add them as an option if available
         for branch_name, stages in SKILL_TREE_DATA.items():
@@ -177,7 +177,7 @@ class Player(Entity):
 
             # "Special - Syphon" -> "Special", "Syphon"
             branch_name_w_colored_bars, skill_name = branch_options[branch_option_idx].split(" - ", 1)
-            branch_name = branch_name_w_colored_bars.split(CONSTANTS["color_off"], 1)[0]
+            branch_name = branch_name_w_colored_bars.split(ANSI.Color.off, 1)[0]
             match branch_name:
                 case "Impermanent":
                     skill_name = skill_name.split(" ", 1)[0] # "HP boost" -> "HP"
@@ -585,7 +585,7 @@ class Combat:
             val=self.player.hp,
             min_val=0,
             max_val=self.player.max_hp,
-            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
             prefix=player_bar_prefix
         )
         Bar(
@@ -593,7 +593,7 @@ class Combat:
             val=self.enemy.hp,
             min_val=0,
             max_val=self.enemy.max_hp,
-            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
             prefix=enemy_bar_prefix
         )
         print()
