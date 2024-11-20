@@ -38,6 +38,16 @@ class Log:
     def entity_received_effect(entity_name : str, effect_type : str, dmg : int, duration : int):
         write(f"The {entity_name} has been hit by a {effect_type} effect, dealing {dmg} DMG for {duration} rounds")
     
+    def entity_took_dmg(entity_name : str, dmg : int, hp_remaining : int, is_alive : int):
+        entity_pronoun = "you" if entity_name == "player" else "it"
+        write(
+            f"The {entity_name} took {dmg} damage",
+            (
+                f". {hp_remaining} HP remaining" if is_alive else
+                    f", killing {entity_pronoun} in the process"
+            )
+            )
+    
 
     # room related
     def entered_room(room_type : str):
@@ -46,7 +56,7 @@ class Log:
             write(choice(text_options))
     
     def stepped_in_trap(min_roll_to_escape : int):
-        write(f"You stepped in a trap! Roll at least {min_roll_to_escape} to save yourself\n")
+        write(f"You stepped in a trap! Roll at least {min_roll_to_escape} to save yourself")
     
     def escaped_trap(roll : int, harmed : bool):
         write(f"You rolled {roll} and", ('managed to escape unharmed' if not harmed else 'was harmed by the trap while escaping'), sep=" ")

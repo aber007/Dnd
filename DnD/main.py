@@ -34,12 +34,15 @@ except ImportError:
 
 
 class Entity:
-    def take_damage(self, dmg : int, dmg_type = "melee") -> int:
+    def take_damage(self, dmg : int, dmg_type : str = "melee", log : bool = True) -> int:
         if isinstance(self, Enemy) and dmg_type == "melee": dmg = max(0, dmg - self.defence_melee)
         elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence)
         
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
+
+        if log:
+            Log.entity_took_dmg(self.name, dmg, self.hp, self.is_alive)
         
         return dmg
 
@@ -47,6 +50,7 @@ class Player(Entity):
     def __init__(self, parent_map) -> None:
         self.parent_map : Map = parent_map
         self.position : Vector2 = self.parent_map.starting_position
+        self.name = "player"
 
         # combat related attributes
         self.is_alive = True
@@ -297,8 +301,7 @@ class Map:
                         Log.escaped_trap(roll, False)
                     else:
                         Log.escaped_trap(roll, True)
-                        dmg_taken = player.take_damage(CONSTANTS["normal_trap_dmg"])
-                        print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
+                        player.take_damage(CONSTANTS["normal_trap_dmg"])
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -810,7 +813,7 @@ def clear_console():
 
 
 
-def run_game():
+def run_game(): #! remmeber have dmg work with relentless slaughter
     ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
     map = Map()
