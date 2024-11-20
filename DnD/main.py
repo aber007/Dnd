@@ -211,6 +211,7 @@ class Enemy(Entity):
 
         self.is_alive = True
         self.active_effects = []
+        self.special_active = False
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
@@ -220,10 +221,13 @@ class Enemy(Entity):
         """Runs the code for special abilities which can be used during combat"""
         match special:
             case "trap":
-                player.take_damage(player.defence + 1)
+                player.take_damage(player.defence + 2)
                 print(f"You have been hit by a trap for 2 damage")
             case "berserk":
-                self.active_effects.append(Effect)
+                if ENEMY_DATA["Orc"]["dmg"] == self.dmg and not self.special_active:
+                    self.special_active = True
+                    self.dmg *= 2
+
                 
 
     def add_effect(self, type : str, effect : int, duration : int):
@@ -515,10 +519,21 @@ class Combat:
                 spawn_probabilities[enemy_type] = enemy_probability
 
         distace_from_spawn = ((abs(self.map.starting_position.x - self.player.position.x)**2) + (abs(self.map.starting_position.y - self.player.position.y)**2))**0.5
-        for enemy_type in enemy_types:
+        for enemy_type in enemy_types:     
             if ENEMY_DATA[enemy_type]["probability"] == 0:
+                last_probability = spawn_probabilities[enemy_type]
                 new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
                 spawn_probabilities[enemy_type] += new_probability
+            elif ENEMY_DATA[enemy_type]["probability"] > 0:
+                last_probability = spawn_probabilities[enemy_type]
+                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
+                spawn_probabilities[enemy_type] -= new_probability
+            if CONSTANTS["debug"]["show_enemy_probabilities"] and ENEMY_DATA[enemy_type]["probability"] >= 0:
+                print(str(ENEMY_DATA[enemy_type]["name"]) + ": " + str(round(spawn_probabilities[enemy_type], 5)) + " : " + str(round(spawn_probabilities[enemy_type]-last_probability, 5))) #Not using fstring because of formatting issues
+            
+        
+            
+
 
         enemy_type_to_spawn = choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))[0]
 
@@ -741,8 +756,9 @@ class Combat:
             return
         
         if uniform(0, 1) < self.enemy.special_chance:
-            print(self.enemy.special_info)
-            self.enemy.use_special(self.enemy.special)
+            if not self.enemy.special_active: 
+                print(self.enemy.special_info)
+            self.enemy.use_special(self.enemy.special, player=self.player)
 
             # *player takes dmg from the special*
 

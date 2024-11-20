@@ -13,7 +13,7 @@
         "defence_magic": -1,
         "exp": 5,
         "gold": 5,
-        "probability": 0.4
+        "probability": 0.2
 
     },
     "Skeleton Warrior": {
@@ -30,7 +30,7 @@
         "defence_magic": 0,
         "exp": 10,
         "gold": 10,
-        "probability": 0.4
+        "probability": 0.2
     },
     "Orc": {
         "name": "Orc",
@@ -39,14 +39,14 @@
         "hp": 40,
         "dmg": 1,
         "special": "berserk",
-        "special_chance": 0.2,
-        "special_info": "The Orc went berserk, doubling its dmg for 2 turns",
+        "special_chance": 1,
+        "special_info": "The Orc went berserk, doubling its dmg for the rest of the fight",
         "defence_melee": 3,
         "defence_ranged": 2,
         "defence_magic": 1,
         "exp": 15,
         "gold": 15,
-        "probability": 0.2
+        "probability": 1
     },
     "Giant Spider":{    
         "name": "Giant Spider",

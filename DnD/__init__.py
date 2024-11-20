@@ -113,7 +113,8 @@ CONSTANTS = {
         "display_all_walls": False, # default False
         "print_map": False, # default False
         "disable_console_clearing": False, # default False
-        "player_infinite_dmg": False # default False
+        "player_infinite_dmg": False, # default False
+        "show_enemy_probabilities" : True # default False
     }
 }
 

@@ -6,17 +6,17 @@ class Effect:
         self.target = target
     
     def tick(self):
-        if self.type != "temp_buff":
-            self.target.take_damage(self.effect, "effect")
-            self.duration -= 1
+        from .main import Enemy
 
-            print(
-                f"\nThe {self.target.name} was hurt for {self.effect} DMG from the {self.type} effect.",
-                (f"Duration remaining: {self.duration}" if self.duration != 0 else f"The {self.type} effect wore off"),
-                end="\n"*2)
+        self.target.take_damage(self.effect, "effect")
+        self.duration -= 1
 
-            if self.duration == 0:
-                self.target.active_effects.remove(self)
-        else:
-            
+        print(
+            f"\nThe {self.target.name if isinstance(self.target, Enemy) else 'player'} was hurt for {self.effect} DMG from the {self.type} effect.",
+            (f"Duration remaining: {self.duration}" if self.duration != 0 else f"The {self.type} effect wore off"),
+            end="\n"*2)
+
+        if self.duration == 0:
+            self.target.active_effects.remove(self)
+
         
