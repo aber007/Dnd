@@ -1,4 +1,4 @@
-from . import INTERACTION_DATA
+from . import CONSTANTS, INTERACTION_DATA, RGB, Bar
 from random import choice
 import sys
 
@@ -7,8 +7,6 @@ def write(*s : str, sep="", end="\n") -> None:
     sys.stdout.flush()
 
 class ANSI:
-    clear_terminal = "\033[2J"
-
     class Cursor:
         move_up = f"\033[{1}A"
         move_down = f"\033[{1}B"
@@ -17,7 +15,6 @@ class ANSI:
         show = "\033[?25h"
         hide = "\033[?25l"
         set_x_0 = "\r"
-        clear_line = set_x_0 + "\033[K"
         set_xy_0 = "\033[H"
     
     class Color:
@@ -26,6 +23,10 @@ class ANSI:
         selected_bg = rgb_bg(255,255,255)
         selected_fg = rgb_fg(0,0,0)
         off = "\u001b[0m"
+    
+    clear_terminal = "\033[2J"
+    clear_line = Cursor.set_x_0 + "\033[K"
+
 
 class Log:
     class Debug:
@@ -49,12 +50,12 @@ class Log:
     def header(content : str, lvl : int):
         match lvl:
             case 1:
-                write("="*15, f" {content} ", "="*15)
+                write(ANSI.clear_line, "="*15, f" {content} ", "="*15, end="\n"*2)
             
             case 2:
-                write("-"*15, f") {content} (", "-"*15)
+                write(ANSI.clear_line, "-"*15, f") {content} (", "-"*15, end="\n"*2)
     
-    def newline(count : int): #! istead have end="" params for each func below?, move ansi codes here
+    def newline(count : int = 1):
         write("\n"*count, end="")
     
     def clear_console():
@@ -88,11 +89,14 @@ class Log:
     def item_thrown_out(item_name : str):
         write(f"{item_name} was thrown out")
     
-    def list_inventory_items(items_in_inventory : any):
-        #! WIP, main.py is done already
+    def list_inventory_items(items_in_inventory : list[any]):
         item_strings = [f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)]
-        write("\n".join(), end="\n"*2)
+        write(*item_strings, sep="\n")
     
+    def inventory_empty():
+        write("You have no items to use!")
+
+
     # player related
     def player_healed(hp_before : int, additional_hp : int, hp_delta : int, current_hp : int):
         write(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {current_hp}")
@@ -117,7 +121,44 @@ class Log:
     
     def player_exp_til_next_lvl(exp : int):
         write(f"EXP til next lvl: {exp}")
-        
+    
+    def list_player_stats(inventory):
+        write(f"Gold: {inventory.gold}")
+
+        exp_bar_prefix = f"Player Lvl: {inventory.lvl}, EXP: {inventory.exp}   "
+        hp_bar_prefix = f"Player HP: {inventory.parent.hp}   "
+        longer_prefix = sorted([exp_bar_prefix, hp_bar_prefix], key=lambda i : len(i), reverse=True)[0]
+
+        exp_bar_prefix = exp_bar_prefix.ljust(len(longer_prefix), " ")
+        hp_bar_prefix = hp_bar_prefix.ljust(len(longer_prefix), " ")
+
+        min_val_min_width = max(len(str(inventory.parent.hp)), len(str(inventory.exp)))
+
+        # hp bar
+        Bar(
+            length=CONSTANTS["hp_bar_max_length"],
+            val=inventory.parent.hp,
+            min_val=0,
+            min_val_min_width=min_val_min_width,
+            max_val=inventory.parent.max_hp,
+            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
+            prefix=hp_bar_prefix
+        )
+
+        # exp bar
+        Bar(
+            length=CONSTANTS["exp_bar_max_length"],
+            val=inventory.exp,
+            min_val=CONSTANTS["player_lvl_to_exp_func"](inventory.lvl), # min exp for current lvl
+            min_val_min_width=min_val_min_width,
+            max_val=CONSTANTS["player_lvl_to_exp_func"](inventory.lvl+1), # min exp for next lvl
+            fill_color=RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
+            prefix=exp_bar_prefix
+        )
+
+        write(f"Permanent DMG bonus: {inventory.parent.permanent_dmg_bonus}")
+
+
     # entity related
     def entity_took_dmg(entity_name : str, dmg : int, hp_remaining : int, is_alive : int, source : str = ""):
         entity_pronoun = "you" if entity_name == "player" else "it"
@@ -154,10 +195,8 @@ class Log:
         if text_options != None:
             write(choice(text_options))
     
-    def interacted_w_room(room_type : str):
-        text_options = INTERACTION_DATA.get(room_type, None)
-        if text_options != None:
-            write(choice(text_options))
+    def triggered_mimic_trap():
+        write(choice(INTERACTION_DATA["mimic_trap"]))
     
     def stepped_in_trap(min_roll_to_escape : int):
         write(f"You stepped in a trap! Roll at least {min_roll_to_escape} to save yourself")

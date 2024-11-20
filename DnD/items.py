@@ -144,8 +144,8 @@ class Inventory:
         items_in_inventory = self.get_items(include_emtpy=True)
 
         Log.header("INVENTORY", 1)
-        self.list_player_stats()
-
+        Log.list_player_stats(self)
+        Log.newline()
         Log.list_inventory_items(items_in_inventory)
 
         action_options = ["Use item", "View skill tree", "Cancel"]
@@ -170,46 +170,10 @@ class Inventory:
         else:
             return return_item
 
-    def list_player_stats(self):
-        print(f"Gold: {self.gold}")
-
-        exp_bar_prefix = f"Player Lvl: {self.lvl}, EXP: {self.exp}   "
-        hp_bar_prefix = f"Player HP: {self.parent.hp}   "
-        longer_prefix = sorted([exp_bar_prefix, hp_bar_prefix], key=lambda i : len(i), reverse=True)[0]
-
-        exp_bar_prefix = exp_bar_prefix.ljust(len(longer_prefix), " ")
-        hp_bar_prefix = hp_bar_prefix.ljust(len(longer_prefix), " ")
-
-        min_val_min_width = max(len(str(self.parent.hp)), len(str(self.exp)))
-
-        # hp bar
-        Bar(
-            length=CONSTANTS["hp_bar_max_length"],
-            val=self.parent.hp,
-            min_val=0,
-            min_val_min_width=min_val_min_width,
-            max_val=self.parent.max_hp,
-            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
-            prefix=hp_bar_prefix
-        )
-
-        # exp bar
-        Bar(
-            length=CONSTANTS["exp_bar_max_length"],
-            val=self.exp,
-            min_val=CONSTANTS["player_lvl_to_exp_func"](self.lvl), # min exp for current lvl
-            min_val_min_width=min_val_min_width,
-            max_val=CONSTANTS["player_lvl_to_exp_func"](self.lvl+1), # min exp for next lvl
-            fill_color=RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
-            prefix=exp_bar_prefix
-        )
-
-        print(f"Permanent DMG bonus: {self.parent.permanent_dmg_bonus}", end="\n"*2)
-
     def select_item_to_use(self) -> Item | None:
         items_in_inventory = self.get_items()
 
-        print(f"\n{'='*15} USE ITEM {'='*15}", end="\n"*2)
+        Log.header("USE ITEM", 1)
 
         if len(items_in_inventory):
             action_options = items_in_inventory + ["Cancel"]
@@ -222,7 +186,7 @@ class Inventory:
                     return _item
 
         else:
-            print("You have no items to use!")
+            Log.inventory_empty()
             return None
     
     def __str__(self):

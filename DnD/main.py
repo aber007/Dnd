@@ -239,13 +239,6 @@ class Enemy(Entity):
 
 class Map:
 
-    class ReachableRoom:
-        """A simple version of Map.Room that's used when generating room doors"""
-
-        def __init__(self) -> None:
-            self.doors : list[str] = []
-            self.reachable : bool = False
-
     class Room:
 
         def __init__(self, type, discovered, doors) -> None:
@@ -294,10 +287,11 @@ class Map:
                         self.shop_items.append(item)
 
                 case ("trap", _):
-                    Log.stepped_in_trap()
+                    Log.stepped_in_trap(CONSTANTS["normal_trap_min_roll_to_escape"])
                     wait_for_key("[Press ENTER to roll dice]\n", "enter")
                     roll = player.roll_dice()
 
+                    Log.newline()
                     if CONSTANTS["normal_trap_min_roll_to_escape"] <= roll:
                         Log.escaped_trap(roll, False)
                     else:
@@ -311,8 +305,6 @@ class Map:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
-            Log.interacted_w_room(self.type)
-
             match self.type:
                 case "chest":
                     player.inventory.receive_item(self.chest_item)
@@ -320,7 +312,8 @@ class Map:
                     self.is_cleared = True
 
                 case "mimic_trap":
-                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
+                    Log.triggered_mimic_trap()
+                    player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
                     music.play("fight")
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
@@ -328,7 +321,7 @@ class Map:
                     # stay in the shop menu until the player explicitly chooses to Leave
                     while True:
                         Log.header("SHOP", 1)
-                        Log.shop_display_current_gold()
+                        Log.shop_display_current_gold(player.inventory.gold)
                         shop_options = [f"{item.name}: {item.current_price} gold" for idx,item in enumerate(self.shop_items)]
                         shop_options += ["Open Inventory", "Leave"]
                         
@@ -404,7 +397,7 @@ class Map:
         # Initialize 2D array
         self.rooms : Array2D = Array2D.create_frame_by_size(width = self.size, height = self.size)
 
-        # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
+        # create a Map.Room object and assign its doors for each position the rooms Array2D
         for x, y, _ in self.rooms:
             room_doors = self.get_doors_in_room(x,y)
             if (x, y) == self.starting_position:
@@ -747,8 +740,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     match current_room.type:
         case "empty":
-            if player.position != map.starting_position:
-                Log.entered_room(current_room.type)
             player_action_options = default_action_options
 
         case "enemy":

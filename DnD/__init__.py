@@ -118,9 +118,9 @@ CONSTANTS = {
 }
 
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack, view_skill_tree
 from .logging import Log
 from .animation import AnimationLibrary, Animation
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, RGB, DodgeEnemyAttack, view_skill_tree
 from .player_actions import get_user_action_choice
 from .vector2 import Vector2
 from .array2d import Array2D
