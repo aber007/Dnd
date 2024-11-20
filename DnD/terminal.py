@@ -49,7 +49,7 @@ def write(*s : str, sep="") -> None:
     sys.stdout.flush()
 
 class ItemSelect:
-    def __init__(self, items : list[str], action_options_prefixes : list[str] | None = None, subtexts : list[str] | None = None, log_controls : bool = False, header : str = "") -> None:
+    def __init__(self, items : list[str], action_options_prefixes : list[str] | None = None, subtexts : list[str] | None = None, log_controls : bool = False, header : str = "", start_y : int = 0) -> None:
         """A fancy item selection function in the terminal.\n
         DO NOT use newlines in items or subtext as it will break the ItemSelect functionality.\n
         Tabs are allowed.\n
@@ -67,6 +67,7 @@ class ItemSelect:
             self.subtext_enabled = True
         
         
+        self.start_y = start_y
         self.y_max = len(self.items)-1
         self.y = 0
 
@@ -98,6 +99,9 @@ class ItemSelect:
         # reposition the cursor to y = 0 and mark that item as selected
         write(ANSI.Cursor.set_x_0, ANSI.Cursor.move_up * (len(self.items) * (2 if self.subtext_enabled else 1) - 1))
         self.select_current_line()
+
+        # reposition the cursor to the given start y
+        self.set_y_relative(self.start_y - self.y)
     
     def set_y_relative(self, y_delta):
         # make sure we're not moving out of range

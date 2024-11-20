@@ -137,20 +137,18 @@ class Inventory:
         return int(self.lvl)
 
 
-    def open(self) -> Item | None:
+    def open(self, item_select_start_y : int = 0) -> Item | None:
         """If an item was used return that item to be processed by the function that called this function\n
         If no item was used return None"""
 
         return_item : Item | None = None
         items_in_inventory = self.get_items(include_emtpy=True)
 
-        Log.header("INVENTORY", 1)
-        Log.list_player_stats(self)
-        Log.newline()
-        Log.list_inventory_items(items_in_inventory)
+        line_count = Log.view_inventory(self, items_in_inventory)
 
         action_options = ["Use item", "View skill tree", "Cancel"]
-        action_idx = get_user_action_choice("Choose action: ", action_options)
+        action_idx = get_user_action_choice("Choose action: ", action_options, start_y=item_select_start_y)
+        line_count += 2 # expected len(action_options) + 4 but apparently 2 works
 
         match action_options[action_idx]:
             case "Use item":
@@ -160,35 +158,43 @@ class Inventory:
                 Log.view_skill_tree(self.parent)
 
             case "Cancel":
+                Log.clear_lines(line_count)
                 return None
-        
+
         # recursively call this function until the player either
         #     cancelled the at the 'show inventory' dialog or an item was selected
         # this allows the player to: show inventory -> show use item dialog -> cancel use item -> show inventory.
         #     in other words, cancelling the use of an item doesnt close the inventory
         if return_item == None:
-            return self.open()
+            Log.clear_lines(line_count)
+            return self.open(item_select_start_y=action_idx)
         else:
             return return_item
 
     def select_item_to_use(self) -> Item | None:
+        """Returns an item or none, depending on if the user cancelled"""
+
+        selected_item : Item | None = None
         items_in_inventory = self.get_items()
 
-        Log.header("USE ITEM", 1)
+        line_count = Log.header("USE ITEM", 1)
 
         if len(items_in_inventory):
             action_options = items_in_inventory + ["Cancel"]
             action_idx = get_user_action_choice("Choose item to use: ", action_options)
+            line_count += len(items_in_inventory) + 4
 
             match action_options[action_idx]:
                 case "Cancel":
-                    return None
+                    selected_item = None
                 case _item:
-                    return _item
+                    selected_item = _item
 
         else:
-            Log.inventory_empty()
-            return None
+            line_count += Log.inventory_empty()
+        
+        Log.clear_lines(line_count)
+        return selected_item
     
     def __str__(self):
         lines = [f"\n{'='*15} INVENTORY {'='*15}"]

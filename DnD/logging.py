@@ -2,9 +2,14 @@ from . import CONSTANTS, INTERACTION_DATA, SKILL_TREE_DATA, ANSI, Bar, wait_for_
 from random import choice
 import sys
 
-def write(*s : str, sep="", end="\n") -> None:
-    sys.stdout.write(sep.join(str(_s) for _s in s) + end)
+def write(*s : str, sep="", end="\n") -> int:
+    """Returns the amount of lines written to console"""
+
+    text = sep.join(str(_s) for _s in s) + end
+    sys.stdout.write(text)
     sys.stdout.flush()
+
+    return len(text.split("\n"))
 
 
 
@@ -28,20 +33,27 @@ class Log:
         def __init__(self) -> None:
             pass
     
-    def header(content : str, lvl : int):
+    def header(content : str, lvl : int) -> int:
         match lvl:
             case 1:
-                write(ANSI.clear_line, "="*15, f" {content} ", "="*15, end="\n"*2)
+                return write(ANSI.clear_line, "="*15, f" {content} ", "="*15, end="\n"*2)
             
             case 2:
-                write(ANSI.clear_line, "-"*15, f") {content} (", "-"*15, end="\n"*2)
+                return write(ANSI.clear_line, "-"*15, f") {content} (", "-"*15, end="\n"*2)
     
-    def newline(count : int = 1):
-        write("\n"*count, end="")
+    def newline(count : int = 1) -> int:
+        return write("\n"*count, end="")
     
     def clear_console():
         write(ANSI.clear_terminal, ANSI.Cursor.set_xy_0, end="")
     
+
+    def clear_lines(n : int):
+        """Clears the current line then moves up. Repeat this n times. The cursor is moved up 1 less time than n,\n
+        which places the cursor at the beginning of the highest cleared line\n
+        Eg. n = 2 : clear, move up, clear"""
+        write(ANSI.Cursor.move_up.join([ANSI.clear_line]*n), end="")
+
 
     # game related
     def game_over(won : bool):
@@ -70,12 +82,12 @@ class Log:
     def item_thrown_out(item_name : str):
         write(f"{item_name} was thrown out")
     
-    def list_inventory_items(items_in_inventory : list[any]):
+    def list_inventory_items(items_in_inventory : list[any]) -> int:
         item_strings = [f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)]
-        write(*item_strings, sep="\n")
+        return write(*item_strings, sep="\n")
     
-    def inventory_empty():
-        write("You have no items to use!")
+    def inventory_empty() -> int:
+        return write("You have no items to use!")
 
 
     # player related
@@ -103,8 +115,8 @@ class Log:
     def player_exp_til_next_lvl(exp : int):
         write(f"EXP til next lvl: {exp}")
     
-    def list_player_stats(inventory):
-        write(f"Gold: {inventory.gold}")
+    def list_player_stats(inventory : any) -> int:
+        line_count = write(f"Gold: {inventory.gold}")
 
         exp_bar_prefix = f"Player Lvl: {inventory.lvl}, EXP: {inventory.exp}   "
         hp_bar_prefix = f"Player HP: {inventory.parent.hp}   "
@@ -125,6 +137,7 @@ class Log:
             fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
             prefix=hp_bar_prefix
         )
+        line_count += 1
 
         # exp bar
         Bar(
@@ -136,10 +149,19 @@ class Log:
             fill_color=ANSI.RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
             prefix=exp_bar_prefix
         )
+        line_count += 1
 
-        write(f"Permanent DMG bonus: {inventory.parent.permanent_dmg_bonus}")
+        line_count += write(f"Permanent DMG bonus: {inventory.parent.permanent_dmg_bonus}")
+        return line_count
 
-    def view_skill_tree(player):
+    def view_inventory(inventory : any, items_in_inventory : list[any]) -> int:
+        line_count =  Log.header("INVENTORY", 1)
+        line_count += Log.list_player_stats(inventory)
+        line_count += Log.newline()
+        line_count += Log.list_inventory_items(items_in_inventory)
+        return line_count
+
+    def view_skill_tree(player : any):
         check_color = ANSI.RGB(*CONSTANTS["skill_tree_check_color"], "fg")
         check_str = f"{check_color}✔{ANSI.Color.off}"
         cross_color = ANSI.RGB(*CONSTANTS["skill_tree_cross_color"], "fg")
@@ -165,9 +187,13 @@ class Log:
             formatted_branch_strings.append("\n".join(branch_string_parts))
         
         Log.header("SKILL TREE", 1)
-        write(*formatted_branch_strings, sep="\n"*2, end="\n"*2)
+        line_count = 1
+        line_count += write(*formatted_branch_strings, sep="\n"*2, end="\n"*2)
 
         wait_for_key("[Press ENTER to continue]", "enter")
+        line_count += 1
+
+        Log.clear_lines(line_count)
 
 
     # entity related
