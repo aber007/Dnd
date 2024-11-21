@@ -30,10 +30,16 @@ class Music:
             pygame.mixer.music.set_volume(0)
             self.play("ambience")
 
+  
+    def change_volume(self):
+        if CONSTANTS["music_enabled"]:
+            self.play("ambience")
             # the +1 adds a step where the volume is 0
             slider_steps = round(1 / CONSTANTS["music_slider_step_volume_percent"]) + 1
             slider_on_value_changed = lambda val : pygame.mixer.music.set_volume(max(0, (val/(slider_steps-1)) * CONSTANTS["music_max_volume_percent"]))
             Slider(slider_steps, slider_on_value_changed, header="Choose music volume").start()
+        
+
 
 
     def choose_song(self, new_song_type : str) -> str:
