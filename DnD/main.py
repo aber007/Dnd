@@ -21,7 +21,8 @@ from . import (
     RGB,
     CreateWallsAlgorithm,
     DodgeEnemyAttack,
-    Effect
+    Effect,
+    Buff
     )
 
 try:
@@ -53,6 +54,7 @@ class Player(Entity):
         self.max_hp = CONSTANTS["player_max_hp"]
         self.defence = CONSTANTS["player_base_defence"]
         self.current_combat : Combat | None = None
+        self.active_effects = []
 
         self.permanent_dmg_bonus = 0
         self.temp_dmg_factor = 1
@@ -212,6 +214,11 @@ class Player(Entity):
             return_vars.append( {"val": func(variables), "return_val_type": func.return_val_type} )
         
         return return_vars
+    
+    def update_effects(self):
+        # instance the self.active_effects list since effect.tick() might remove itself from the list
+        for effect in list(self.active_effects):
+            effect.tick()
 
 
         
@@ -223,14 +230,32 @@ class Enemy(Entity):
 
         self.is_alive = True
         self.active_effects = []
+        self.active_buffs = []
+        self.special_active = False
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
         return target.take_damage(math.ceil(self.dmg * dmg_multiplier))
     
-    def use_special(self, special : str) -> None:
+    def use_special(self, special : str, player : Player) -> None:
         """Runs the code for special abilities which can be used during combat"""
-        pass
+        match special:
+            case "trap":
+                player.take_damage(player.defence + 2)
+                print(f"You have been hit by a trap for 2 damage")
+            case "berserk":
+                self.active_buffs.append(Buff(type="dmg", effect=self.dmg, duration=5, target=self))
+            case "poison":
+                player.active_effects.append(Effect(type="poison", effect=2, duration=7, target=player))
+            case "fire_breath":
+                player.take_damage(ENEMY_DATA[self.name]["special_dmg"])
+                print(f"You have been hit by fire breath for 8 damage")
+            case "stone_skin":
+                self.hp += (self.max_hp * 0.1)
+                self.active_buffs.append(Buff(type="hp", effect=2, duration=2, target=self))
+            
+
+                
 
     def add_effect(self, type : str, effect : int, duration : int):
         self.active_effects.append(Effect(type=type, effect=effect, duration=duration, target=self))
@@ -239,6 +264,8 @@ class Enemy(Entity):
     def update_effects(self):
         # instance the self.active_effects list since effect.tick() might remove itself from the list
         for effect in list(self.active_effects):
+            effect.tick()
+        for effect in list(self.active_buffs):
             effect.tick()
 
 
@@ -521,10 +548,21 @@ class Combat:
                 spawn_probabilities[enemy_type] = enemy_probability
 
         distace_from_spawn = ((abs(self.map.starting_position.x - self.player.position.x)**2) + (abs(self.map.starting_position.y - self.player.position.y)**2))**0.5
-        for enemy_type in enemy_types:
+        for enemy_type in enemy_types:     
             if ENEMY_DATA[enemy_type]["probability"] == 0:
+                last_probability = spawn_probabilities[enemy_type]
                 new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
                 spawn_probabilities[enemy_type] += new_probability
+            elif ENEMY_DATA[enemy_type]["probability"] > 0:
+                last_probability = spawn_probabilities[enemy_type]
+                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
+                spawn_probabilities[enemy_type] -= new_probability
+            if CONSTANTS["debug"]["show_enemy_probabilities"] and ENEMY_DATA[enemy_type]["probability"] >= 0:
+                print(str(ENEMY_DATA[enemy_type]["name"]) + ": " + str(round(spawn_probabilities[enemy_type], 5)) + " : " + str(round(spawn_probabilities[enemy_type]-last_probability, 5))) #Not using fstring because of formatting issues
+            
+        
+            
+
 
         enemy_type_to_spawn = choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))[0]
 
@@ -552,14 +590,14 @@ class Combat:
             print(f"\n--------------) Turn {self.turn} (--------------")
 
             self.enemy.update_effects()
+            self.player.update_effects()
 
             self.write_hp_bars()
 
             if not enemyturn:
                 fled = self.player_turn()
             else:
-                self.enemy_turn()
-            
+                self.enemy_turn()            
             sleep(1)
             enemyturn = not enemyturn
         
@@ -755,7 +793,7 @@ class Combat:
         
         if uniform(0, 1) < self.enemy.special_chance:
             print(self.enemy.special_info)
-            self.enemy.use_special(self.enemy.special)
+            self.enemy.use_special(self.enemy.special, player=self.player)
 
             # *player takes dmg from the special*
 
