@@ -8,7 +8,6 @@ from . import (
     CONSTANTS,
     ITEM_DATA,
     ENEMY_DATA,
-    INTERACTION_DATA,
     SKILL_TREE_DATA,
     Item,
     Inventory,
@@ -18,10 +17,12 @@ from . import (
     ensure_terminal_width,
     wait_for_key,
     Bar,
-    RGB,
+    ANSI,
     CreateWallsAlgorithm,
     DodgeEnemyAttack,
     Effect,
+    Log,
+    Console
     Buff
     )
 
@@ -34,12 +35,16 @@ except ImportError:
 
 
 class Entity:
-    def take_damage(self, dmg : int, dmg_type = "melee") -> int:
+    def take_damage(self, dmg : int, dmg_type : str = "melee", source : str = "", log : bool = True) -> int:
+        """source is used to specify what caused the dmg. Only used if log == True"""
         if isinstance(self, Enemy) and dmg_type == "melee": dmg = max(0, dmg - self.defence_melee)
         elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence); self.stats["hp lost"] += dmg
         
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
+
+        if log:
+            Log.entity_took_dmg(self.name, dmg, self.hp, self.is_alive, source)
         
         return dmg
     
@@ -82,6 +87,7 @@ class Player(Entity):
     def __init__(self, parent_map) -> None:
         self.parent_map : Map = parent_map
         self.position : Vector2 = self.parent_map.starting_position
+        self.name = "player"
 
         # combat related attributes
         self.is_alive = True
@@ -125,8 +131,7 @@ class Player(Entity):
         return dice_result
 
     def open_inventory(self) -> tuple[int, str] | None:
-        """If any damage was dealt, return the amount and item name_in_sentence.\n
-        If no damage was dealt return None"""
+        """If any damage was dealt, return tuple[dmg, item name_in_sentence] or None"""
 
         selected_item : Item | None = self.inventory.open()
 
@@ -135,7 +140,10 @@ class Player(Entity):
 
         if selected_item.offensive:
             if self.current_combat == None:
-                print("\nYou shouldn't use an offensive item outside of combat")
+                Log.use_combat_item_outside_combat()
+                Log.newline()
+                wait_for_key("[Press ENTER to continue]", "enter")
+
             else:
                 dmg = selected_item.use()
                 return (dmg, selected_item.name_in_sentence)
@@ -145,13 +153,15 @@ class Player(Entity):
             use_callable = selected_item.use()
             use_callable(self)
 
+        return None
+
     def heal(self, additional_hp : int):
         # cap the hp to player_hp
         hp_before = self.hp
         self.hp = min(self.hp + additional_hp, self.max_hp)
         hp_delta = self.hp - hp_before
-        print(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {self.hp}")
 
+        Log.player_healed(hp_before, additional_hp, hp_delta, self.hp)
         self.stats["hp gained"] += hp_delta
     
     def on_lvl_up(self):
@@ -159,25 +169,25 @@ class Player(Entity):
 
         # health
         previous_max_hp = self.max_hp
-        self.max_hp = CONSTANTS["player_max_hp"] + math.floor(CONSTANTS["player_lvl_to_bonus_hp_func"](self.inventory.lvl))
+        self.max_hp += math.floor(CONSTANTS["player_lvl_to_bonus_hp_additive_func"](self.inventory.lvl))
         max_hp_delta = self.max_hp - previous_max_hp
-        print(f"\nThe player's max HP has increased! Max HP: {previous_max_hp} -> {self.max_hp}")
+        Log.player_max_hp_increased(previous_max_hp, self.max_hp)
 
         self.heal(max_hp_delta) # heal the player for the new max hp
 
         # dmg
         previous_dmg_bonus = self.permanent_dmg_bonus
-        self.permanent_dmg_bonus = CONSTANTS["player_lvl_to_bonus_dmg_func"](self.inventory.lvl)
-        print(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {self.permanent_dmg_bonus}")
+        self.permanent_dmg_bonus += CONSTANTS["player_lvl_to_bonus_dmg_additive_func"](self.inventory.lvl)
+        Log.player_bonus_dmg_increased(previous_dmg_bonus, self.permanent_dmg_bonus)
     
     def _get_skill_tree_progression_options(self) -> tuple[list[int]]:
         branch_options_prefixes = []
         branch_options = []
         subtexts = []
 
-        color_red = RGB(*CONSTANTS["skill_tree_cross_color"], "bg")
-        color_green = RGB(*CONSTANTS["skill_tree_check_color"], "bg")
-        color_off = CONSTANTS["color_off"]
+        color_red = ANSI.RGB(*CONSTANTS["skill_tree_cross_color"], "bg")
+        color_green = ANSI.RGB(*CONSTANTS["skill_tree_check_color"], "bg")
+        color_off = ANSI.Color.off
 
         # go through all branches and add them as an option if available
         for branch_name, stages in SKILL_TREE_DATA.items():
@@ -211,16 +221,16 @@ class Player(Entity):
 
         for idx in range(new_skill_points):
             if not CONSTANTS["debug"]["disable_console_clearing"]:
-                clear_console()
+                Log.clear_console()
             
-            print(f"{'='*15} SPEND SKILL POINTS {'='*15}", end="\n"*2)
+            Log.header("SPEND SKILL POINTS", 1)
 
             branch_options_prefixes, branch_options, subtexts = self._get_skill_tree_progression_options()
             branch_option_idx = get_user_action_choice("Choose branch to progress in: ", action_options=branch_options, action_options_prefixes=branch_options_prefixes, subtexts=subtexts)
 
             # "Special - Syphon" -> "Special", "Syphon"
             branch_name_w_colored_bars, skill_name = branch_options[branch_option_idx].split(" - ", 1)
-            branch_name = branch_name_w_colored_bars.split(CONSTANTS["color_off"], 1)[0]
+            branch_name = branch_name_w_colored_bars.split(ANSI.Color.off, 1)[0]
             match branch_name:
                 case "Impermanent":
                     skill_name = skill_name.split(" ", 1)[0] # "HP boost" -> "HP"
@@ -239,9 +249,6 @@ class Player(Entity):
                         self.skill_functions[skill_dict["trigger_when"]].append(skill_func)
                     
                     self.skill_tree_progression[branch_name] += 1
-
-            if idx+1 != new_skill_points:
-                wait_for_key("[Press ENTER to continue]", "enter")
     
     def call_skill_functions(self, when : str, variables : dict[str,any]) -> list[any]:
         return_vars = []
@@ -270,7 +277,7 @@ class Enemy(Entity):
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
-        return target.take_damage(math.ceil(self.dmg * dmg_multiplier))
+        return target.take_damage(math.ceil(self.dmg * dmg_multiplier), log=False)
     
     def use_special(self, special : str, player : Player) -> None:
         """Runs the code for special abilities which can be used during combat"""
@@ -294,7 +301,7 @@ class Enemy(Entity):
 
     def add_effect(self, type : str, effect : int, duration : int):
         self.active_effects.append(Effect(type=type, effect=effect, duration=duration, target=self))
-        print(f"The {self.name} has been hit by a {type} effect, dealing {effect} DMG for {duration} rounds")
+        Log.entity_received_effect(self.name, type, effect, duration)
     
     def update_effects(self):
         # instance the self.active_effects list since effect.tick() might remove itself from the list
@@ -307,13 +314,6 @@ class Enemy(Entity):
 
 class Map:
 
-    class ReachableRoom:
-        """A simple version of Map.Room that's used when generating room doors"""
-
-        def __init__(self) -> None:
-            self.doors : list[str] = []
-            self.reachable : bool = False
-
     class Room:
 
         def __init__(self, type, discovered, doors) -> None:
@@ -321,6 +321,7 @@ class Map:
             self.discovered = discovered
             self.doors = doors
 
+            self.horus_was_used : bool = False
             self.chest_item : Item | None = None
             self.is_cleared : bool = False
             self.shop_items : list[Item] = []
@@ -329,10 +330,13 @@ class Map:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
             match self.type:
-                case "shop":  music.play("shop")
+                case "shop":
+                    music.play("shop")
                 case "enemy": 
                     if not self.is_cleared: music.play("fight")
                 case _:       music.play("ambience")
+            
+            Log.entered_room(self.type if self.type != "mimic_trap" else "chest")
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
@@ -347,11 +351,8 @@ class Map:
                     chosen_chest_item_id = choices(possible_items, item_probabilites)[0]
 
                     self.chest_item = Item(chosen_chest_item_id)
-                    print("\n" + choice(INTERACTION_DATA["chest"]))
 
                 case ("shop", True):
-                    print("\n" + choice(INTERACTION_DATA["shop"]))
-
                     possible_items = list(ITEM_DATA.keys())
                     item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
 
@@ -362,16 +363,18 @@ class Map:
                         self.shop_items.append(item)
 
                 case ("trap", _):
-                    print(f"\nYou stepped in a trap! Roll at least {CONSTANTS['normal_trap_min_roll_to_escape']} to save yourself")
+                    Log.stepped_in_trap(CONSTANTS["normal_trap_min_roll_to_escape"])
                     wait_for_key("[Press ENTER to roll dice]\n", "enter")
                     roll = player.roll_dice()
 
+                    Log.newline()
                     if CONSTANTS["normal_trap_min_roll_to_escape"] <= roll:
-                        print(f"You rolled {roll} and managed to escape unharmed")
+                        Log.escaped_trap(roll, False)
                     else:
-                        print(f"You rolled {roll} and was harmed by the trap while escaping")
-                        dmg_taken = player.take_damage(CONSTANTS["normal_trap_dmg"])
-                        print(f"The player took {dmg_taken} damage. {player.hp} HP remaining")
+                        Log.escaped_trap(roll, True)
+                        player.take_damage(CONSTANTS["normal_trap_dmg"])
+                    
+                    wait_for_key("[Press ENTER to continue]", "enter")
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -386,23 +389,31 @@ class Map:
                     self.chest_item = None
                     self.is_cleared = True
 
+                    Log.newline()
+                    wait_for_key("[Press ENTER to continue]", "enter")
+
                 case "mimic_trap":
-                    print(choice(INTERACTION_DATA["mimic"]))
-                    dmg_taken = player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"])
-                    print(f"The player took {dmg_taken} damage from the Mimic ambush. {player.hp} HP remaining", end="\n"*2)
+                    Log.triggered_mimic_trap()
+                    player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
                     music.play("fight")
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
+                    Log.clear_console()
+                    Log.header("SHOP", 1)
+                    
+                    
                     # stay in the shop menu until the player explicitly chooses to Leave
+                    shop_option_idx = 0
                     while True:
-                        print(f"\n{'='*15} SHOP {'='*15}")
-                        print(f"\nCurrent gold: {player.inventory.gold}")
-                        print("\nAvalible items:")
+
+                        Console.save_cursor_position("shop start")
+                        Log.shop_display_current_gold(player.inventory.gold)
+                        
                         shop_options = [f"{item.name}: {item.current_price} gold" for idx,item in enumerate(self.shop_items)]
                         shop_options += ["Open Inventory", "Leave"]
-                        
-                        shop_option_idx = get_user_action_choice("Choose item to buy: ", shop_options)
+                        shop_option_idx = get_user_action_choice("Choose item to buy: ", shop_options, start_y=shop_option_idx)
+
                         match shop_options[shop_option_idx]:
                             case "Open Inventory":
                                 player.open_inventory()
@@ -421,13 +432,23 @@ class Map:
                                     self.shop_items.remove(selected_item)
 
                                 else:
-                                    print("\nYou do not have enough gold to buy this item")
+                                    Log.shop_insufficient_gold()
+                                
+                                Log.newline()
+                                wait_for_key("[Press ENTER to continue]", "enter")
+                                Console.truncate("shop start")
+                                    
                         
                         if len(self.shop_items) == 0:
-                            print("This shop is out of items")
+                            Log.shop_out_of_stock()
                             self.is_cleared = True
+                            
+                            Log.newline()
+                            wait_for_key("[Press ENTER to continue]", "enter")
                             break
-            
+                        
+                        Console.truncate("shop start")
+
             # update the tile the player just interacted with
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
 
@@ -474,7 +495,7 @@ class Map:
         # Initialize 2D array
         self.rooms : Array2D = Array2D.create_frame_by_size(width = self.size, height = self.size)
 
-        # turn the Map.ReachableRoom objects into Map.Room object, inheriting the generated doors
+        # create a Map.Room object and assign its doors for each position the rooms Array2D
         for x, y, _ in self.rooms:
             room_doors = self.get_doors_in_room(x,y)
             if (x, y) == self.starting_position:
@@ -485,17 +506,7 @@ class Map:
         
 
         if CONSTANTS["debug"]["print_map"]:
-            last_y = 0
-            for x, y, walls in self.existing_walls:
-                if y != last_y: print() ; last_y = y
-                print(f" [{x},{y},{''.join([d for d,v in walls.items() if v == False])}] ".ljust(22, " "), end="")
-            print("\n"*2)
-            
-            last_y = 0
-            for x, y, room in self.rooms:
-                if y != last_y: print() ; last_y = y
-                print(f" [{x},{y},{room.type},{''.join(room.doors)}] ".ljust(22, " "), end="")
-            print("\n")
+            Log.Debug.print_map()
 
         self.UI_instance = Map.UI(self.size, self.rooms)
     
@@ -537,7 +548,12 @@ class Map:
 
             case "trap":
                 return colors["trap"]
-            
+
+            case "mimic_trap":
+                if    room.is_cleared: return colors["discovered"]
+                elif  room.horus_was_used and not room.is_cleared: return colors[room.type]
+                else: return colors["chest"]
+
             case _:
                 return colors["discovered"] if room.is_cleared else colors[room.type]
 
@@ -606,14 +622,11 @@ class Combat:
     def start(self, music : Music) -> None:
         self.player.current_combat = self
 
-        print(f"\n{'='*15} COMBAT {'='*15}")
-        
-        story_text_enemy = str(choice(INTERACTION_DATA["enemy"]))
-        if "enemy" in story_text_enemy:
-            print(story_text_enemy.replace("enemy", self.enemy.name_in_sentence))
-        else:
-            print(story_text_enemy)
-            print(f"\nAn enemy appeared! It's {self.enemy.name_in_sentence}!")
+        Log.combat_enemy_revealed(self.enemy.name_in_sentence)
+        Log.newline()
+        wait_for_key("[Press ENTER to continue]", "enter")
+        Log.clear_console()
+        Log.header("COMBAT", 1)
         
         enemyturn = choice([True, False])
 
@@ -622,7 +635,10 @@ class Combat:
         while self.player.is_alive and self.enemy.is_alive and not fled:
             self.turn += 1
 
-            print(f"\n--------------) Turn {self.turn} (--------------")
+            Console.save_cursor_position("combat round start")
+
+            if self.turn == 1: sleep(1)
+            Log.header(f"Turn {self.turn}", 2)
 
             self.enemy.update_effects()
             self.player.update_effects()
@@ -632,24 +648,32 @@ class Combat:
             if not enemyturn:
                 fled = self.player_turn()
             else:
-                self.enemy_turn()            
-            sleep(1)
+                self.enemy_turn()
+
+            sleep(4.5)
+            Console.truncate("combat round start")
+            
             enemyturn = not enemyturn
         
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
-            print(f"\n{'='*15} COMBAT COMPLETED {'='*15}\n")
-
-            story_text_enemy_defeated = str(choice(INTERACTION_DATA["enemy_defeated"]))
-            print(story_text_enemy_defeated.replace("enemy", self.enemy.name))
-            print(f"You picked up {self.enemy.gold} gold from the {self.enemy.name}")
-            print(f"You earned {self.enemy.exp} EXP from this fight\n")
+            Log.clear_console()
+            Log.header("COMBAT COMPLETED", 1)
+            Log.enemy_defeated(self.enemy.name, self.enemy.gold, self.enemy.exp)
 
             self.map.get_room(self.player.position).is_cleared = True
 
             self.player.inventory.gold += self.enemy.gold
             self.player.inventory.exp += self.enemy.exp
-            self.player.inventory.update_lvl()
+
+            # if the player lvld up .update_lvl() would call wait_for_key
+            # if the player didnt lvl up then call wait_for_key here
+            Log.newline()
+            player_lvld_up = self.player.inventory.update_lvl()
+
+            if not player_lvld_up:
+                Log.newline()
+                wait_for_key("[Press ENTER to continue]", "enter")
 
             self.player.stats["gold earned"] += self.enemy.gold
             self.player.stats["exp gained"] += self.enemy.exp
@@ -687,7 +711,7 @@ class Combat:
             val=self.player.hp,
             min_val=0,
             max_val=self.player.max_hp,
-            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
             prefix=player_bar_prefix
         )
         Bar(
@@ -695,10 +719,10 @@ class Combat:
             val=self.enemy.hp,
             min_val=0,
             max_val=self.enemy.max_hp,
-            fill_color=RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
+            fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], ground="bg"),
             prefix=enemy_bar_prefix
         )
-        print()
+        Log.newline()
 
     def player_turn(self) -> bool:
         """If the player attempted to flee: return the result, otherwise False"""
@@ -709,18 +733,19 @@ class Combat:
             action_options = ["Use item / Attack", "Attempt to Flee"]
             action_idx = get_user_action_choice("Choose action: ", action_options)
 
-            match action_options[action_idx]:                   
+            match action_options[action_idx]:
                 case "Use item / Attack":
                     action_completed = self.player_use_item_attack()
+                    if action_completed:
+                        break # skip Log.clear_lines
 
                 case "Attempt to Flee":
-                    fled = self.player_attempt_to_flee()
-                    action_completed = True
+                    return self.player_attempt_to_flee()
         
         return fled
 
     def player_use_item_attack(self) -> bool:
-        """Returns wether the player used an item or not, aka action_completed"""
+        """Returns wether the player sucessfully used an item or not, aka action_completed"""
         action_completed = False
 
         # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
@@ -730,18 +755,14 @@ class Combat:
             dmg += self.player.permanent_dmg_bonus
 
             dmg_mod = combat_bar()
+            dmg_factor = {"miss": 0, "hit": 1, "hit_x2": 2}[dmg_mod]
 
-            match dmg_mod:
-                case "hit":
-                    dmg_mod=1
-                    print(f"\nThe {self.enemy.name} was hurt by the player using {item_name_in_sentence}")
-                case "hit_x2":
-                    dmg_mod=2
-                    print(f"\nThe {self.enemy.name} was hurt by the player for 2x damage using {item_name_in_sentence}")
-                case "miss":
-                    print(f"\nYou missed the {self.enemy.name}")
-                    action_completed = True
-                    return action_completed
+            Log.combat_player_attack_mod(dmg_factor, self.enemy.name, item_name_in_sentence)
+            Log.newline()
+
+            # if the player missed the enemy mark this turn as completed
+            if dmg_factor == 0:
+                return True
 
             # activate all the skills that are supposed to be ran before the attack fires
             return_vars = self.player.call_skill_functions(
@@ -751,15 +772,14 @@ class Combat:
             returned_dmg = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg"])
             dmg = returned_dmg if len(return_vars) and returned_dmg != 0 else dmg
 
-            dmg *= dmg_mod * self.player.temp_dmg_factor
+            dmg *= dmg_factor * self.player.temp_dmg_factor
 
             self.player.stats["dmg dealt"] += dmg
 
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
 
-            dmg_dealt = self.enemy.take_damage(dmg)
-            print(f"\nYou attacked the {self.enemy.name} for {dmg_dealt} damage")
+            self.enemy.take_damage(dmg)
 
             # activate all the skills that are supposed to be ran after the attack fires
             return_vars = self.player.call_skill_functions(
@@ -768,7 +788,8 @@ class Combat:
                 )
             returned_dmg_done = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg_done" and return_var["val"] != None])
             if 0 < returned_dmg_done:
-                print(f"A skill of yours dealt {returned_dmg_done} damage to the {self.enemy.name}")
+                Log.newline()
+                Log.player_skill_damaged_enemy(self.enemy.name, returned_dmg_done)
 
             action_completed = True
         
@@ -777,42 +798,38 @@ class Combat:
     def player_attempt_to_flee(self) -> bool:
         """Returns wether the attempt to flee was successful"""
         fled = False
-
-        print("Attempting to flee, Roll 12 or higher to succeed")
+        
+        Log.combat_init_flee_roll()
 
         wait_for_key("[Press ENTER to roll dice]", "enter")
         roll = self.player.roll_dice()
         
-        print(f"\nYou rolled {roll}")
+        Log.clear_line()
+        Log.combat_flee_roll_results(roll)
+        Log.newline()
 
         # if you managed to escape
         if CONSTANTS["flee_min_roll_to_escape"] <= roll:
             # if the enemy hit you on your way out
             if roll < CONSTANTS["flee_min_roll_to_escape_unharmed"]:
                 dmg_dealt_to_player = self.enemy.attack(target=self.player)
-                
-                if self.player.is_alive:
-                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing")
-                else:
-                    print(f"The {self.enemy.name} managed to hit you for {dmg_dealt_to_player} while fleeing, killing you in the process")
+                Log.enemy_attack_while_fleeing(self.enemy.name, dmg_dealt_to_player)
+                Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
             
             # if you escaped with coins
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
-                print(choice(INTERACTION_DATA["escape_20"]))
+                Log.combat_perfect_flee()
                 self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
                 self.player.stats["gold earned"] += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
             
-            print(choice(INTERACTION_DATA["escape"]))
+            Log.combat_flee_successful()
             fled = True
 
         # if you didnt escape
         else:
             dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
-
-            if self.player.is_alive:
-                print(f"You failed to flee and took {dmg_dealt_to_player} damage")
-            else:
-                print(f"You failed to flee and took {dmg_dealt_to_player} damage, killing you in the process")
+            Log.enemy_attack_unsuccessful_flee(dmg_dealt_to_player)
+            Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
         
         return fled
     
@@ -820,13 +837,12 @@ class Combat:
         dmg_factor = DodgeEnemyAttack().start()
         dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=dmg_factor)
 
-        if self.player.is_alive:
-            print(f"\nThe {self.enemy.name} attacked you for {dmg_dealt_to_player} damage")
-        else:
-            print(f"\nThe {self.enemy.name} attacked you for {dmg_dealt_to_player} damage, killing you in the process")
-            return
+        Log.newline()
+        Log.enemy_attack(self.enemy.name, dmg_dealt_to_player)
+        Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
         
-        if uniform(0, 1) < self.enemy.special_chance:
+        if self.player.is_alive and uniform(0, 1) < self.enemy.special_chance:
+            Log.newline()
             print(self.enemy.special_info)
             self.enemy.use_special(self.enemy.special, player=self.player)
 
@@ -845,11 +861,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     match current_room.type:
         case "empty":
-            x, y = player.position
-            if x == int(map.size/2) and y == int(map.size/2):
-                print(choice(INTERACTION_DATA["start"]) + "\n")
-            else:
-                print(choice(INTERACTION_DATA["empty"]) + "\n")
             player_action_options = default_action_options
 
         case "enemy":
@@ -895,11 +906,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     return player_action_options
 
-def clear_console():
-    """Clears the entire console and sets cursor pos top left"""
-    print("\033[2J" + "\033[H", end="")
-
-
 
 def run_game():
     music = Music()
@@ -911,21 +917,22 @@ def run_game():
         map = Map()
         player = Player(map)
 
-
-
         choice = Menu.menu(Menu, music)
-
-        
 
         match choice:
             case "Start Game":
                 map.open_UI_window(player_pos = player.position)
             
+                game_just_started = True
                 while player.is_alive and player.inventory.lvl < 20:
                     if not CONSTANTS["debug"]["disable_console_clearing"]:
-                        clear_console()
+                        Log.clear_console()
                     
-                    print(f"{'='*15} NEW ROUND {'='*15}", end="\n"*2)
+                    Log.header("NEW ROUND", 1)
+                    
+                    if game_just_started:
+                        Log.first_time_enter_spawn_room()
+                        game_just_started = False
 
                     # activate all the skills that are supposed to be ran right when a new non-combat round starts
                     player.call_skill_functions(
@@ -954,11 +961,7 @@ def run_game():
 
                     wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-                if not player.is_alive:
-                    print("\nGame over")
-                
-                else:
-                    print("\n" + "Congratulations! You escaped the castle or something.")
+                Log.game_over(player.is_alive)
 
                 # Shows lifetime stats
                 print(f"\n{"="*15}")

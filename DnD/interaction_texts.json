@@ -10,7 +10,7 @@
         "With quick thinking and a fast pace, you lose the monster in the maze of hallways.",
         "You dive into a hidden alcove, just as the monster passes by unaware.",
         "The monster slows, then stops, and you know you've escaped its pursuit."
-      ],
+    ],
     "escape_20": [
         "You managed to scoop up a few coins while running out.",
         "In the chaos, you grab some coins before making your escape.",
@@ -36,26 +36,26 @@
         "Suddenly, enemy appears, disrupting your path."
     ],
     "enemy_defeated": [
-    "With a final strike, the enemy falls, leaving nothing but silence in its wake.",
-    "The enemy lets out one last roar before collapsing, defeated at last.",
-    "You stand victorious, watching as the enemy fades into dust.",
-    "The enemy has been defeated, and a strange calm fills the room.",
-    "A final blow lands, and the enemy stumbles, crumbling before your eyes.",
-    "You lower your weapon, seeing the enemy motionless at your feet.",
-    "The enemy falls back, defeated, and you feel the weight of the battle lift.",
-    "With a heavy sigh, you realize the enemy has been vanquished for good.",
-    "The enemy's last breath escapes as it collapses, leaving no trace of life.",
-    "After a fierce struggle, the enemy lies on the ground, no longer a threat.",
-    "The enemy is gone, its form dissipating into the air as you catch your breath.",
-    "One final scream marks the enemy's defeat, echoing briefly before silence returns.",
-    "The enemy's fierce gaze fades, and you know the battle is over.",
-    "You stare down at the place where the enemy once stood, now an empty void.",
-    "With one last strike, you watch the enemy disintegrate, the danger now past.",
-    "The enemy's power fades, its form crumbling before your eyes.",
-    "As the enemy falls, a strange peace settles around you.",
-    "The enemy lies still, defeated, its presence nothing but a memory now.",
-    "With a final strike, the enemy's grip on this world fades entirely.",
-    "You catch your breath, looking at the spot where the enemy was last standing."
+        "With a final strike, the enemy falls, leaving nothing but silence in its wake.",
+        "The enemy lets out one last roar before collapsing, defeated at last.",
+        "You stand victorious, watching as the enemy fades into dust.",
+        "The enemy has been defeated, and a strange calm fills the room.",
+        "A final blow lands, and the enemy stumbles, crumbling before your eyes.",
+        "You lower your weapon, seeing the enemy motionless at your feet.",
+        "The enemy falls back, defeated, and you feel the weight of the battle lift.",
+        "With a heavy sigh, you realize the enemy has been vanquished for good.",
+        "The enemy's last breath escapes as it collapses, leaving no trace of life.",
+        "After a fierce struggle, the enemy lies on the ground, no longer a threat.",
+        "The enemy is gone, its form dissipating into the air as you catch your breath.",
+        "One final scream marks the enemy's defeat, echoing briefly before silence returns.",
+        "The enemy's fierce gaze fades, and you know the battle is over.",
+        "You stare down at the place where the enemy once stood, now an empty void.",
+        "With one last strike, you watch the enemy disintegrate, the danger now past.",
+        "The enemy's power fades, its form crumbling before your eyes.",
+        "As the enemy falls, a strange peace settles around you.",
+        "The enemy lies still, defeated, its presence nothing but a memory now.",
+        "With a final strike, the enemy's grip on this world fades entirely.",
+        "You catch your breath, looking at the spot where the enemy was last standing."
     ],
     "chest": [
         "You stumble upon a chest, its lid gleaming with potential treasure.",
@@ -69,7 +69,7 @@
         "Excitement bubbles up as you spot a chest in the corner.",
         "A chest stands before you. What secrets could it hold?"
     ],
-    "mimic": [
+    "mimic_trap": [
         "You open the chest, only to reveal a grotesque mimic ready to strike!",
         "The chest shudders and transforms into a monstrous mimic, jaws snapping shut.",
         "You think you've found treasure, but the chest suddenly turns into a mimic!",
@@ -80,7 +80,7 @@
         "A glimmer of hope fades as the chest reveals itself to be a mimic, hungry for a fight.",
         "You reach for the chest, only to see it shift into the terrifying form of a mimic.",
         "The chest opens with a strange groan, but instead of treasure, a mimic leaps out!"
-  ],
+    ],
     "empty": [
         "You walk into the large stone chamber, and the cold air greets you, with only a small window high above letting in light.",
         "Stepping into the dusty, vacant room, you notice cobwebs hanging from the rafters and old, abandoned furniture.",

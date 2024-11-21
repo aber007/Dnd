@@ -1,3 +1,5 @@
+from . import Log
+
 class Effect:
     def __init__(self, type : str, effect : int, duration : int, target) -> None:
         self.type = type
@@ -8,9 +10,10 @@ class Effect:
     def tick(self):
         from .main import Enemy
 
-        self.target.take_damage(self.effect, "effect")
+        self.target.take_damage(self.effect, "effect") # log=False ?
         self.duration -= 1
 
+        #TODO Log.effect_tick(self.target.name, self.type, self.effect, self.duration)
         print(
             f"\nThe {self.target.name if isinstance(self.target, Enemy) else 'player'} was hurt for {self.effect} DMG from the {self.type} effect.",
             (f"Duration remaining: {self.duration}" if self.duration != 0 else f"The {self.type} effect wore off"),
