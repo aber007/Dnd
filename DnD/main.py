@@ -83,26 +83,35 @@ class Player(Entity):
 
         return dice_result
 
-    def open_inventory(self) -> tuple[int, str] | None:
-        """If any damage was dealt, return the amount and item name_in_sentence.\n
-        If no damage was dealt return None"""
+    def open_inventory(self) -> tuple[tuple[int, str] | None, int]:
+        """If any damage was dealt, return tuple[tuple[dmg, item name_in_sentence] or None, line count]"""
 
+        line_count = 0
         selected_item : Item | None = self.inventory.open()
 
+        sleep(5)
+        return
+
         if selected_item == None:
-            return None
+            return None, line_count
 
         if selected_item.offensive:
             if self.current_combat == None:
                 Log.use_combat_item_outside_combat()
+                Log.newline()
+                wait_for_key("[Press ENTER to continue]", "enter")
+                line_count += 2
+
             else:
                 dmg = selected_item.use()
-                return (dmg, selected_item.name_in_sentence)
+                return (dmg, selected_item.name_in_sentence), line_count
 
         else:
             # non offensive items always return a callable where the argument 'player' is expected
             use_callable = selected_item.use()
             use_callable(self)
+
+        return None, line_count
 
     def heal(self, additional_hp : int):
         # cap the hp to player_hp
@@ -295,6 +304,8 @@ class Map:
                     else:
                         Log.escaped_trap(roll, True)
                         player.take_damage(CONSTANTS["normal_trap_dmg"])
+                    
+                    wait_for_key("[Press ENTER to continue]", "enter")
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -309,6 +320,9 @@ class Map:
                     self.chest_item = None
                     self.is_cleared = True
 
+                    Log.newline()
+                    wait_for_key("[Press ENTER to continue]", "enter")
+
                 case "mimic_trap":
                     Log.triggered_mimic_trap()
                     player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
@@ -316,18 +330,24 @@ class Map:
                     Combat(player, map, force_enemy_type = "Mimic").start(music=music)
 
                 case "shop":
+                    Log.clear_console()
+
                     # stay in the shop menu until the player explicitly chooses to Leave
+                    shop_option_idx = 0
                     while True:
-                        Log.header("SHOP", 1)
-                        Log.shop_display_current_gold(player.inventory.gold)
+                        line_count = Log.header("SHOP", 1)
+                        line_count += Log.shop_display_current_gold(player.inventory.gold)
+                        
                         shop_options = [f"{item.name}: {item.current_price} gold" for idx,item in enumerate(self.shop_items)]
                         shop_options += ["Open Inventory", "Leave"]
-                        
-                        shop_option_idx = get_user_action_choice("Choose item to buy: ", shop_options)
+                        shop_option_idx = get_user_action_choice("Choose item to buy: ", shop_options, start_y=shop_option_idx)
+                        line_count += len(shop_options) + 2
+
                         match shop_options[shop_option_idx]:
                             case "Open Inventory":
-                                player.open_inventory()
-
+                                _, inv_line_count = player.open_inventory()
+                                line_count += inv_line_count
+                            
                             case "Leave":
                                 break
 
@@ -340,14 +360,22 @@ class Map:
                                     player.inventory.gold -= selected_item.current_price
                                     player.inventory.receive_item(selected_item)
                                     self.shop_items.remove(selected_item)
+                                    line_count += 2
 
                                 else:
-                                    Log.shop_insufficient_gold()
+                                    line_count += Log.shop_insufficient_gold()
+                                    line_count += Log.newline()
+                                    wait_for_key("[Press ENTER to continue]", "enter")
+                                    line_count += 1
                         
                         if len(self.shop_items) == 0:
                             Log.shop_out_of_stock()
                             self.is_cleared = True
+
+                            wait_for_key("[Press ENTER to continue]", "enter")
                             break
+                        
+                        Log.clear_lines(line_count)
             
             # update the tile the player just interacted with
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -511,6 +539,7 @@ class Combat:
     def start(self, music : Music) -> None:
         self.player.current_combat = self
 
+        Log.combat_enemy_revealed(self.enemy.name_in_sentence)
         Log.newline()
         wait_for_key("[Press ENTER to continue]", "enter")
         
@@ -544,6 +573,7 @@ class Combat:
 
         # if the combat ended and the enemy died: mark the room as cleared
         if not self.enemy.is_alive:
+            Log.clear_console()
             Log.header("COMBAT COMPLETED", 1)
             Log.enemy_defeated(self.enemy.name, self.enemy.gold, self.enemy.exp)
 
@@ -611,6 +641,8 @@ class Combat:
             match action_options[action_idx]:                   
                 case "Use item / Attack":
                     action_completed = self.player_use_item_attack()
+                    if action_completed:
+                        break # skip Log.clear_lines
 
                 case "Attempt to Flee":
                     return self.player_attempt_to_flee()
@@ -624,7 +656,7 @@ class Combat:
         action_completed = False
 
         # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
-        item_return = self.player.open_inventory()
+        item_return, _ = self.player.open_inventory()
         if item_return is not None:
             dmg, item_name_in_sentence = item_return
             dmg += self.player.permanent_dmg_bonus
@@ -788,6 +820,10 @@ def run_game():
     map.open_UI_window(player_pos = player.position)
 
     music = Music()
+
+    Log.write("this is text")
+    return
+
 
     game_just_started = True
     while player.is_alive and player.inventory.lvl < 10:

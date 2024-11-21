@@ -1,4 +1,4 @@
-from . import CONSTANTS, SKILL_TREE_DATA
+from . import CONSTANTS, SKILL_TREE_DATA, Console, ANSI
 
 import os, time, sys, shutil, typing, math
 from random import randint
@@ -10,43 +10,10 @@ except ImportError:
     import keyboard
 
 
-class ANSI:
-
-    class RGB:
-        def __init__(self, r : int, g : int, b : int, ground : str) -> None:
-            """ground is either 'fg' or 'bg'"""
-
-            self.rgb = [r,g,b]
-            self.ground = ground
-            self.ansi = ANSI.Color.rgb_bg(*self.rgb) if ground == "bg" else ANSI.Color.rgb_fg(*self.rgb)
-        
-        def __str__(self):
-            return self.ansi
-
-    class Cursor:
-        move_up = f"\033[{1}A"
-        move_down = f"\033[{1}B"
-        move_right = f"\033[{1}C"
-        move_left = f"\033[{1}D"
-        show = "\033[?25h"
-        hide = "\033[?25l"
-        set_x_0 = "\r"
-        set_xy_0 = "\033[H"
-    
-    class Color:
-        rgb_fg = lambda r,g,b: f"\u001b[38;2;{r};{g};{b}m"
-        rgb_bg = lambda r,g,b: f"\u001b[48;2;{r};{g};{b}m"
-        selected_bg = rgb_bg(255,255,255)
-        selected_fg = rgb_fg(0,0,0)
-        off = "\u001b[0m"
-    
-    clear_terminal = "\033[2J"
-    clear_line = Cursor.set_x_0 + "\033[K"
-
-
-def write(*s : str, sep="") -> None:
-    sys.stdout.write(sep.join(str(_s) for _s in s))
-    sys.stdout.flush()
+def write(*s : str, sep="", end="", flush=True) -> int:
+    """Similar to print() except using custom default variables\n
+    Also returns the amount of line count written to console"""
+    return Console.write(*s, sep=sep, end=end, flush=flush, clear_on_flush=False)
 
 class ItemSelect:
     def __init__(self, items : list[str], action_options_prefixes : list[str] | None = None, subtexts : list[str] | None = None, log_controls : bool = False, header : str = "", start_y : int = 0) -> None:
@@ -165,7 +132,7 @@ class Slider:
 
         pad_len = (slider_width - len(self.header))//2
         header_w_padding = f"{' '*pad_len}{self.header}"
-        write(header_w_padding, "\n")
+        write(header_w_padding, "\n", flush=False)
 
     def set_x(self, new_x):
         new_x = min(self.x_max, max(0, new_x))

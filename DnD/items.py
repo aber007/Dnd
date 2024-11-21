@@ -147,6 +147,8 @@ class Inventory:
 
         line_count = Log.view_inventory(self, items_in_inventory)
 
+        return
+
         action_options = ["Use item", "View skill tree", "Cancel"]
         action_idx = get_user_action_choice("Choose action: ", action_options, start_y=item_select_start_y)
         line_count += 2 # expected len(action_options) + 4 but apparently 2 works
@@ -154,8 +156,11 @@ class Inventory:
         match action_options[action_idx]:
             case "Use item":
                 return_item = self.select_item_to_use()
+                if return_item == None:
+                    Log.clear_lines(line_count)
             
             case "View skill tree":
+                Log.clear_lines(line_count)
                 Log.view_skill_tree(self.parent)
 
             case "Cancel":
@@ -167,7 +172,6 @@ class Inventory:
         # this allows the player to: show inventory -> show use item dialog -> cancel use item -> show inventory.
         #     in other words, cancelling the use of an item doesnt close the inventory
         if return_item == None:
-            Log.clear_lines(line_count)
             return self.open(item_select_start_y=action_idx)
         else:
             return return_item

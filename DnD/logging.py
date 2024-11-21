@@ -1,43 +1,45 @@
-from . import CONSTANTS, INTERACTION_DATA, SKILL_TREE_DATA, ANSI, Bar, wait_for_key
+from . import CONSTANTS, INTERACTION_DATA, SKILL_TREE_DATA, ANSI, Bar, wait_for_key, Console
 from random import choice
 import sys
 
-def write(*s : str, sep="", end="\n") -> int:
-    """Returns the amount of lines written to console"""
 
-    text = sep.join(str(_s) for _s in s) + end
-    sys.stdout.write(text)
-    sys.stdout.flush()
-
-    return len(text.split("\n"))
+def write(self, *s : str, sep="", end="\n") -> int:
+    """Similar to print() except using custom default variables\n
+    Also returns the amount of line count written to console"""
+    return Console.write(*s, sep=sep, end=end, flush=Log.auto_flush)
 
 
 
+class _Log:
 
-class Log:
     class Debug:
         def print_map(rooms, existing_walls):
             last_y = 0
             for x, y, walls in existing_walls:
-                if y != last_y: print() ; last_y = y
+                if y != last_y: Log.newline() ; last_y = y
                 write(f" [{x},{y},{''.join([d for d,v in walls.items() if v == False])}] ".ljust(22, " "), end="")
             write("\n"*2)
             
             last_y = 0
             for x, y, room in rooms:
-                if y != last_y: print() ; last_y = y
+                if y != last_y: Log.newline() ; last_y = y
                 write(f" [{x},{y},{room.type},{''.join(room.doors)}] ".ljust(22, " "), end="")
             write("\n")
-
-    class CombatHistory:
-        def __init__(self) -> None:
-            pass
     
-    def write(*args, **kwargs) -> int:
+    def __init__(self) -> None:
+        self.auto_flush = True
+        
+
+    def flush(_):
+        """Flushes the content written to log into terminal"""
+        Console.flush()
+
+    
+    def write(self, *args, **kwargs) -> int:
         """Wrapper class for write. This allows other files to use write while only needing to import Log"""
         return write(*args, **kwargs)
 
-    def header(content : str, lvl : int) -> int:
+    def header(_, content : str, lvl : int) -> int:
         match lvl:
             case 1:
                 return write(ANSI.clear_line, "="*15, f" {content} ", "="*15, end="\n"*2)
@@ -45,24 +47,24 @@ class Log:
             case 2:
                 return write(ANSI.clear_line, "-"*15, f") {content} (", "-"*15, end="\n"*2)
     
-    def newline(count : int = 1) -> int:
+    def newline(_, count : int = 1) -> int:
         return write("\n"*count, end="")
     
-    def clear_console():
-        write(ANSI.clear_terminal, ANSI.Cursor.set_xy_0, end="")
+    def clear_console(_):
+        Console.clear()
 
-    def clear_line():
+    def clear_line(_):
         write(ANSI.clear_line, end="")
 
-    def clear_lines(n : int):
+    def clear_lines(_, n : int):
         """Clears the current line then moves up. Repeat this n times. The cursor is moved up 1 less time than n,\n
         which places the cursor at the beginning of the highest cleared line\n
         Eg. n = 2 : clear, move up, clear"""
-        write(ANSI.Cursor.move_up.join([ANSI.clear_line]*n), end="")
+        write(*[ANSI.clear_line]*n, sep=ANSI.Cursor.move_up, end="")
 
 
     # game related
-    def game_over(won : bool):
+    def game_over(_, won : bool):
         if won:
             write("Congratulations! You escaped the castle or something")
         else:
@@ -70,43 +72,43 @@ class Log:
     
 
     # item related
-    def use_combat_item_outside_combat():
-        write("You shouldn't use an offensive item outside of combat")
+    def use_combat_item_outside_combat(_, ) -> int:
+        return write("You shouldn't use an offensive item outside of combat")
     
-    def used_eye_of_horus(selected_direction : str, room_contains_text : str):
+    def used_eye_of_horus(_, selected_direction : str, room_contains_text : str):
         write(f"The Eye of Horus shows you that the room behind the door facing {selected_direction} contains {room_contains_text}")
     
-    def item_broke(item_name : str):
+    def item_broke(_, item_name : str):
         write(f"{item_name} broke and is now useless!")
     
-    def received_item(name_in_sentence : str, description : str):
+    def received_item(_, name_in_sentence : str, description : str):
         write(f"You recieved {name_in_sentence}", description, sep="\n")
     
-    def received_item_inventory_full():
+    def received_item_inventory_full(_):
         write("Your inventory is full!")
     
-    def item_thrown_out(item_name : str):
+    def item_thrown_out(_, item_name : str):
         write(f"{item_name} was thrown out")
     
-    def list_inventory_items(items_in_inventory : list[any]) -> int:
+    def list_inventory_items(_, items_in_inventory : list[any]) -> int:
         item_strings = [f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)]
         return write(*item_strings, sep="\n")
     
-    def inventory_empty() -> int:
+    def inventory_empty(_, ) -> int:
         return write("You have no items to use!")
 
 
     # player related
-    def player_healed(hp_before : int, additional_hp : int, hp_delta : int, current_hp : int):
+    def player_healed(_, hp_before : int, additional_hp : int, hp_delta : int, current_hp : int):
         write(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {current_hp}")
     
-    def player_max_hp_increased(previous_max_hp : int, current_max_hp : int):
+    def player_max_hp_increased(_, previous_max_hp : int, current_max_hp : int):
         write(f"The player's max HP has increased! Max HP: {previous_max_hp} -> {current_max_hp}")
     
-    def player_bonus_dmg_increased(previous_dmg_bonus : int, current_dmg_bonus : int):
+    def player_bonus_dmg_increased(_, previous_dmg_bonus : int, current_dmg_bonus : int):
         write(f"The player's dmg bonus has increased! Dmg bonus: {previous_dmg_bonus} -> {current_dmg_bonus}")
     
-    def player_lvl_up(new_lvl : int, lvl_delta : int):
+    def player_lvl_up(_, new_lvl : int, lvl_delta : int):
         if 0 < lvl_delta:
             write(
                 (
@@ -118,10 +120,10 @@ class Log:
         else:
             write(f"Current lvl: {new_lvl}")
     
-    def player_exp_til_next_lvl(exp : int):
+    def player_exp_til_next_lvl(_, exp : int):
         write(f"EXP til next lvl: {exp}")
     
-    def list_player_stats(inventory : any) -> int:
+    def list_player_stats(_, inventory : any) -> int:
         line_count = write(f"Gold: {inventory.gold}")
 
         exp_bar_prefix = f"Player Lvl: {inventory.lvl}, EXP: {inventory.exp}   "
@@ -160,14 +162,14 @@ class Log:
         line_count += write(f"Permanent DMG bonus: {inventory.parent.permanent_dmg_bonus}")
         return line_count
 
-    def view_inventory(inventory : any, items_in_inventory : list[any]) -> int:
+    def view_inventory(_, inventory : any, items_in_inventory : list[any]) -> int:
         line_count =  Log.header("INVENTORY", 1)
         line_count += Log.list_player_stats(inventory)
         line_count += Log.newline()
         line_count += Log.list_inventory_items(items_in_inventory)
         return line_count
 
-    def view_skill_tree(player : any):
+    def view_skill_tree(_, player : any):
         check_color = ANSI.RGB(*CONSTANTS["skill_tree_check_color"], "fg")
         check_str = f"{check_color}✔{ANSI.Color.off}"
         cross_color = ANSI.RGB(*CONSTANTS["skill_tree_cross_color"], "fg")
@@ -203,7 +205,7 @@ class Log:
 
 
     # entity related
-    def entity_took_dmg(entity_name : str, dmg : int, hp_remaining : int, is_alive : int, source : str = ""):
+    def entity_took_dmg(_, entity_name : str, dmg : int, hp_remaining : int, is_alive : int, source : str = ""):
         entity_pronoun = "you" if entity_name == "player" else "it"
         write(
             f"The {entity_name} took {dmg} damage",
@@ -216,10 +218,10 @@ class Log:
             )
             )
 
-    def entity_received_effect(entity_name : str, effect_type : str, dmg : int, duration : int):
+    def entity_received_effect(_, entity_name : str, effect_type : str, dmg : int, duration : int):
         write(f"The {entity_name} has been hit by a {effect_type} effect, dealing {dmg} DMG for {duration} rounds")
     
-    def effect_tick(target_name : str, effect_type : str, dmg : int, duration : int):
+    def effect_tick(_, target_name : str, effect_type : str, dmg : int, duration : int):
         write(
             f"The {target_name} was hurt for {dmg} DMG from the {effect_type} effect.",
             (
@@ -230,42 +232,42 @@ class Log:
     
 
     # room related
-    def first_time_enter_spawn_room():
+    def first_time_enter_spawn_room(_):
         write(choice(INTERACTION_DATA["start"]))
 
-    def entered_room(room_type : str):
+    def entered_room(_, room_type : str):
         text_options = INTERACTION_DATA.get(room_type, None)
         if text_options != None:
             write(choice(text_options))
     
-    def triggered_mimic_trap():
+    def triggered_mimic_trap(_):
         write(choice(INTERACTION_DATA["mimic_trap"]))
     
-    def stepped_in_trap(min_roll_to_escape : int):
+    def stepped_in_trap(_, min_roll_to_escape : int):
         write(f"You stepped in a trap! Roll at least {min_roll_to_escape} to save yourself")
     
-    def escaped_trap(roll : int, harmed : bool):
+    def escaped_trap(_, roll : int, harmed : bool):
         write(f"You rolled {roll} and", ('managed to escape unharmed' if not harmed else 'was harmed by the trap while escaping'), sep=" ")
 
-    def shop_display_current_gold(gold : int):
-        write(f"Current gold: {gold}")
+    def shop_display_current_gold(_, gold : int) -> int:
+        return write(f"Current gold: {gold}")
     
-    def shop_insufficient_gold():
-        write("You do not have enough gold to buy this item")
+    def shop_insufficient_gold(_, ) -> int:
+        return write("You do not have enough gold to buy this item")
     
-    def shop_out_of_stock():
+    def shop_out_of_stock(_):
         write("This shop is out of items")
 
 
     # combat related
-    def combat_started(enemy_name_in_sentence : str):
+    def combat_started(_, enemy_name_in_sentence : str):
         story_text_enemy = choice(INTERACTION_DATA["enemy"])
         if "enemy" in story_text_enemy:
             write(story_text_enemy.replace("enemy", enemy_name_in_sentence))
         else:
             write(story_text_enemy, f"An enemy appeared! It's {enemy_name_in_sentence}!", sep="\n"*2)
     
-    def enemy_defeated(enemy_name : str, enemy_gold : int, enemy_exp : int):
+    def enemy_defeated(_, enemy_name : str, enemy_gold : int, enemy_exp : int):
         story_text_enemy_defeated = choice(INTERACTION_DATA["enemy_defeated"])
         write(
             story_text_enemy_defeated.replace("enemy", enemy_name),
@@ -274,28 +276,28 @@ class Log:
             sep="\n"
             )
     
-    def enemy_attack(enemy_name : str, dmg : int):
+    def enemy_attack(_, enemy_name : str, dmg : int):
         write(f"The {enemy_name} attacked you for {dmg} damage")
     
-    def enemy_attack_while_fleeing(enemy_name : str, dmg : int):
+    def enemy_attack_while_fleeing(_, enemy_name : str, dmg : int):
         write(f"The {enemy_name} managed to hit you for {dmg} damage while fleeing")
     
-    def enemy_attack_unsuccessful_flee(dmg : int):
+    def enemy_attack_unsuccessful_flee(_, dmg : int):
         write(f"You failed to flee and took {dmg} damage")
 
-    def combat_perfect_flee():
+    def combat_perfect_flee(_):
         write(choice(INTERACTION_DATA["escape_20"]))
     
-    def combat_flee_successful():
+    def combat_flee_successful(_):
         write(choice(INTERACTION_DATA["escape"]))
     
-    def combat_init_flee_roll():
+    def combat_init_flee_roll(_):
         write(f"Attempting to flee, Roll {CONSTANTS["flee_min_roll_to_escape"]} or higher to succeed")
 
-    def combat_flee_roll_results(roll : int):
+    def combat_flee_roll_results(_, roll : int):
         write(f"You rolled {roll}")
     
-    def combat_player_attack_mod(success : int, enemy_name : str, item_name_in_sentence : str):
+    def combat_player_attack_mod(_, success : int, enemy_name : str, item_name_in_sentence : str):
         if success == 0:
             write(f"You missed the {enemy_name}")
         else:
@@ -308,5 +310,11 @@ class Log:
                 f"using {item_name_in_sentence}"
                 )
     
-    def player_skill_damaged_enemy(enemy_name, dmg):
+    def combat_enemy_revealed(_, enemy_name_in_sentence : str):
+        write(f"{enemy_name_in_sentence.capitalize()} appeared!")
+    
+    def player_skill_damaged_enemy(_, enemy_name : str, dmg : int):
         write(f"A skill of yours dealt {dmg} damage to the {enemy_name}")
+
+
+Log = _Log()

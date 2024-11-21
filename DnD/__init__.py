@@ -6,7 +6,7 @@ CONSTANTS = {
         "chest": 0.25,
         "trap": 0.05,
         "mimic_trap": 0.05,
-        "shop": 0.1
+        "shop": 10#0.1
     },
     "room_ui_colors": {
         "default" : "gray",
@@ -108,15 +108,17 @@ CONSTANTS = {
 
     # change these when debugging
     "debug": {
-        "set_all_map_tiles_discovered": False, # default False
-        "display_all_walls": False, # default False
+        "set_all_map_tiles_discovered": True, # default False
+        "display_all_walls": True, # default False
         "print_map": False, # default False
         "disable_console_clearing": False, # default False
-        "player_infinite_dmg": False # default False
+        "player_infinite_dmg": True # default False
     }
 }
 
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
+from .ANSI import ANSI
+from .console_io_setup import Console
 from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, ANSI, DodgeEnemyAttack
 from .logging import Log
 from .animation import AnimationLibrary, Animation
