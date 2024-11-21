@@ -21,7 +21,8 @@ from . import (
     RGB,
     CreateWallsAlgorithm,
     DodgeEnemyAttack,
-    Effect
+    Effect,
+    Buff
     )
 
 try:
@@ -53,6 +54,7 @@ class Player(Entity):
         self.max_hp = CONSTANTS["player_max_hp"]
         self.defence = CONSTANTS["player_base_defence"]
         self.current_combat : Combat | None = None
+        self.active_effects = []
 
         self.permanent_dmg_bonus = 0
         self.temp_dmg_factor = 1
@@ -200,6 +202,11 @@ class Player(Entity):
             return_vars.append( {"val": func(variables), "return_val_type": func.return_val_type} )
         
         return return_vars
+    
+    def update_effects(self):
+        # instance the self.active_effects list since effect.tick() might remove itself from the list
+        for effect in list(self.active_effects):
+            effect.tick()
 
 
         
@@ -211,6 +218,7 @@ class Enemy(Entity):
 
         self.is_alive = True
         self.active_effects = []
+        self.active_buffs = []
         self.special_active = False
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
@@ -224,9 +232,16 @@ class Enemy(Entity):
                 player.take_damage(player.defence + 2)
                 print(f"You have been hit by a trap for 2 damage")
             case "berserk":
-                if ENEMY_DATA["Orc"]["dmg"] == self.dmg and not self.special_active:
-                    self.special_active = True
-                    self.dmg *= 2
+                self.active_buffs.append(Buff(type="dmg", effect=self.dmg, duration=5, target=self))
+            case "poison":
+                player.active_effects.append(Effect(type="poison", effect=2, duration=7, target=player))
+            case "fire_breath":
+                player.take_damage(ENEMY_DATA[self.name]["special_dmg"])
+                print(f"You have been hit by fire breath for 8 damage")
+            case "stone_skin":
+                self.hp += (self.max_hp * 0.1)
+                self.active_buffs.append(Buff(type="hp", effect=2, duration=2, target=self))
+            
 
                 
 
@@ -237,6 +252,8 @@ class Enemy(Entity):
     def update_effects(self):
         # instance the self.active_effects list since effect.tick() might remove itself from the list
         for effect in list(self.active_effects):
+            effect.tick()
+        for effect in list(self.active_buffs):
             effect.tick()
 
 
@@ -561,14 +578,14 @@ class Combat:
             print(f"\n--------------) Turn {self.turn} (--------------")
 
             self.enemy.update_effects()
+            self.player.update_effects()
 
             self.write_hp_bars()
 
             if not enemyturn:
                 fled = self.player_turn()
             else:
-                self.enemy_turn()
-            
+                self.enemy_turn()            
             sleep(1)
             enemyturn = not enemyturn
         
@@ -756,8 +773,7 @@ class Combat:
             return
         
         if uniform(0, 1) < self.enemy.special_chance:
-            if not self.enemy.special_active: 
-                print(self.enemy.special_info)
+            print(self.enemy.special_info)
             self.enemy.use_special(self.enemy.special, player=self.player)
 
             # *player takes dmg from the special*
