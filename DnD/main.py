@@ -22,7 +22,7 @@ from . import (
     DodgeEnemyAttack,
     Effect,
     Log,
-    Console
+    Console,
     Buff
     )
 
