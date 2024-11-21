@@ -1,12 +1,14 @@
+# This file is dedicated to unique logging functions used in a variety of scenarios in the game
+# These comments exist to clarify the difference between terminal.py, logger.py and console_io.py
+
 from . import CONSTANTS, INTERACTION_DATA, SKILL_TREE_DATA, ANSI, Bar, wait_for_key, Console
 from random import choice
-import sys
 
 
-def write(self, *s : str, sep="", end="\n") -> int:
+def write(*s : str, sep="", end="\n") -> int:
     """Similar to print() except using custom default variables\n
     Also returns the amount of line count written to console"""
-    return Console.write(*s, sep=sep, end=end, flush=Log.auto_flush)
+    return Console.write(*s, sep=sep, end=end)
 
 
 
@@ -35,9 +37,9 @@ class _Log:
         Console.flush()
 
     
-    def write(self, *args, **kwargs) -> int:
+    def write(self, *s : str, sep : str = "", end : str = "\n") -> int:
         """Wrapper class for write. This allows other files to use write while only needing to import Log"""
-        return write(*args, **kwargs)
+        Console.write(*s, sep="", end="\n")
 
     def header(_, content : str, lvl : int) -> int:
         match lvl:
@@ -123,8 +125,8 @@ class _Log:
     def player_exp_til_next_lvl(_, exp : int):
         write(f"EXP til next lvl: {exp}")
     
-    def list_player_stats(_, inventory : any) -> int:
-        line_count = write(f"Gold: {inventory.gold}")
+    def list_player_stats(_, inventory : any):
+        write(f"Gold: {inventory.gold}")
 
         exp_bar_prefix = f"Player Lvl: {inventory.lvl}, EXP: {inventory.exp}   "
         hp_bar_prefix = f"Player HP: {inventory.parent.hp}   "
@@ -145,7 +147,7 @@ class _Log:
             fill_color=ANSI.RGB(*CONSTANTS["hp_bar_fill_color"], "bg"),
             prefix=hp_bar_prefix
         )
-        line_count += 1
+
 
         # exp bar
         Bar(
@@ -157,17 +159,14 @@ class _Log:
             fill_color=ANSI.RGB(*CONSTANTS["exp_bar_fill_color"], "bg"),
             prefix=exp_bar_prefix
         )
-        line_count += 1
 
-        line_count += write(f"Permanent DMG bonus: {inventory.parent.permanent_dmg_bonus}")
-        return line_count
+        write(f"Permanent DMG bonus: {inventory.parent.permanent_dmg_bonus}")
 
-    def view_inventory(_, inventory : any, items_in_inventory : list[any]) -> int:
-        line_count =  Log.header("INVENTORY", 1)
-        line_count += Log.list_player_stats(inventory)
-        line_count += Log.newline()
-        line_count += Log.list_inventory_items(items_in_inventory)
-        return line_count
+    def view_inventory(_, inventory : any, items_in_inventory : list[any]):
+        Log.header("INVENTORY", 1)
+        Log.list_player_stats(inventory)
+        Log.newline()
+        Log.list_inventory_items(items_in_inventory)
 
     def view_skill_tree(_, player : any):
         check_color = ANSI.RGB(*CONSTANTS["skill_tree_check_color"], "fg")
@@ -195,13 +194,9 @@ class _Log:
             formatted_branch_strings.append("\n".join(branch_string_parts))
         
         Log.header("SKILL TREE", 1)
-        line_count = 1
-        line_count += write(*formatted_branch_strings, sep="\n"*2, end="\n"*2)
+        write(*formatted_branch_strings, sep="\n"*2, end="\n"*2)
 
         wait_for_key("[Press ENTER to continue]", "enter")
-        line_count += 1
-
-        Log.clear_lines(line_count)
 
 
     # entity related

@@ -6,7 +6,7 @@ CONSTANTS = {
         "chest": 0.25,
         "trap": 0.05,
         "mimic_trap": 0.05,
-        "shop": 10#0.1
+        "shop": 0.1
     },
     "room_ui_colors": {
         "default" : "gray",
@@ -118,7 +118,7 @@ CONSTANTS = {
 
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
 from .ANSI import ANSI
-from .console_io_setup import Console
+from .console_io import Console
 from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, ANSI, DodgeEnemyAttack
 from .logging import Log
 from .animation import AnimationLibrary, Animation

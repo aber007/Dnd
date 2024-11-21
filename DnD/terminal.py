@@ -1,6 +1,9 @@
-from . import CONSTANTS, SKILL_TREE_DATA, Console, ANSI
+# This file is dedicated to interactive terminal utils that are more advanced than just input()
+# These comments exist to clarify the difference between terminal.py, logger.py and console_io.py
 
-import os, time, sys, shutil, typing, math
+from . import CONSTANTS, Console, ANSI
+
+import os, time, shutil, typing, math
 from random import randint
 
 try:
@@ -13,7 +16,7 @@ except ImportError:
 def write(*s : str, sep="", end="", flush=True) -> int:
     """Similar to print() except using custom default variables\n
     Also returns the amount of line count written to console"""
-    return Console.write(*s, sep=sep, end=end, flush=flush, clear_on_flush=False)
+    return Console.write(*s, sep=sep, end=end)
 
 class ItemSelect:
     def __init__(self, items : list[str], action_options_prefixes : list[str] | None = None, subtexts : list[str] | None = None, log_controls : bool = False, header : str = "", start_y : int = 0) -> None:
@@ -48,14 +51,14 @@ class ItemSelect:
         keyboard.on_press_key("down", lambda _ : self.set_y_relative(+1), suppress=True)
         keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
 
-        write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n" if self.log_controls else "", ANSI.Cursor.hide)
+        write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n" if self.log_controls else "")
 
         write(self.header, "\n")
         self.list_items()
 
         self.loop()
 
-        write(ANSI.Cursor.show, ANSI.Cursor.move_down * (self.y_max - self.y + 1) * (2 if self.subtext_enabled else 1), ANSI.Cursor.set_x_0, "\n")
+        write(ANSI.Cursor.move_down * (self.y_max - self.y + 1) * (2 if self.subtext_enabled else 1), ANSI.Cursor.set_x_0, "\n")
         return self.items[self.y]["raw_value"]
 
     def list_items(self):
@@ -116,14 +119,14 @@ class Slider:
         keyboard.on_press_key("left",  lambda _ : self.set_x(self.x-1), suppress=True)
         keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
 
-        write("[Press ENTER to confirm and arrow UP/DOWN/LEFT/RIGHT to navigate]\n" if self.log_controls else "", ANSI.Cursor.hide)
+        write("[Press ENTER to confirm and arrow UP/DOWN/LEFT/RIGHT to navigate]\n" if self.log_controls else "")
 
         self.write_header()
         self.set_x(0)
 
         self.loop()
 
-        write(ANSI.Cursor.show, ANSI.Cursor.set_x_0, "\n")
+        write(ANSI.Cursor.set_x_0, "\n")
         return self.x
 
     def write_header(self):
@@ -177,12 +180,11 @@ def ensure_terminal_width(desired_width):
     time.sleep(2)
 
     # clears the entire terminal and sets cursor pos top left
-    write(ANSI.clear_terminal, ANSI.Cursor.set_xy_0)
+    write(ANSI.cls)
 
 def wait_for_key(msg: str, key : str):
-    write(ANSI.Cursor.hide, msg)
+    write(msg)
     keyboard.wait(key, suppress=True)
-    write(ANSI.Cursor.show)
 
 
 def combat_bar():
@@ -256,17 +258,14 @@ def combat_bar():
     print("\nPress ENTER on the indication to Attack")
     keyboard.on_press_key("enter", on_enter, suppress=True)
 
-    write(ANSI.Cursor.hide)
-
     # Animate the box over the line
     animate_box()
 
     # Return the current box position if ENTER was pressed
-
+    write("\n")
     if enter_pressed["status"]:
         keyboard.unhook_all()
         time.sleep(1)
-        write(ANSI.Cursor.show, "\n")
         if box_position["start"] >= red_length and box_position["start"] < red_length+orange_length:
             return("hit")
         elif box_position["start"] >= red_length+orange_length and box_position["start"] < red_length+orange_length+green_length:
@@ -275,7 +274,6 @@ def combat_bar():
             return("miss")
     
     else:
-        write(ANSI.Cursor.show, "\n")
         return "miss"
 
 
@@ -296,7 +294,7 @@ class DodgeEnemyAttack:
         # Decide the time before the bar turns green
         wait_time = self.times["waiting"] + randint(-self.times["waiting_range"], self.times["waiting_range"])
 
-        write(ANSI.Cursor.hide, "Press ENTER when the bar is green or orange to dodge\n")
+        write("Press ENTER when the bar is green or orange to dodge\n")
         time.sleep(1)
         keyboard.on_press_key("enter", lambda _ : setattr(self, "enter_pressed", True), suppress=True)
 
@@ -341,7 +339,6 @@ class DodgeEnemyAttack:
     def on_finished(self):
         keyboard.unhook_all()
         time.sleep(1)
-        write(ANSI.Cursor.show)
 
     
 

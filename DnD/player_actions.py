@@ -1,4 +1,4 @@
-from . import CONSTANTS, ItemSelect
+from . import CONSTANTS, ItemSelect, Log
 
 def get_user_action_choice(choose_message : str, action_options : list[str], action_options_prefixes : list[str] | None = None, subtexts : list[str] | None = None, start_y : int = 0) -> str:
     """Have the user select an action for a list of actions\n
@@ -13,7 +13,7 @@ def get_user_action_choice(choose_message : str, action_options : list[str], act
 
 
     if CONSTANTS["use_fancy_item_selection"]:
-        print(choose_message)
+        Log.write(choose_message)
         selected_item = ItemSelect(items=action_options, action_options_prefixes=action_options_prefixes, subtexts=subtexts, start_y=start_y).start()
         return action_options.index(selected_item)
     else:

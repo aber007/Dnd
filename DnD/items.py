@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice, Log
+from . import CONSTANTS, ITEM_DATA, get_user_action_choice, Log, Console
 
 
 def eye_of_horus(player):
@@ -94,6 +94,7 @@ class Inventory:
         item.parent_inventory = self
 
         if self.is_full():
+            Log.newline()
             Log.received_item_inventory_full()
             action_options = self.get_items() + [f"New item: {item}"]
             action_idx = get_user_action_choice("Choose item to throw out: ", action_options)
@@ -145,27 +146,27 @@ class Inventory:
         return_item : Item | None = None
         items_in_inventory = self.get_items(include_emtpy=True)
 
-        line_count = Log.view_inventory(self, items_in_inventory)
-
-        return
+        Console.save_cursor_position("inventory start")
+        Log.view_inventory(self, items_in_inventory)
+        Log.newline()
 
         action_options = ["Use item", "View skill tree", "Cancel"]
         action_idx = get_user_action_choice("Choose action: ", action_options, start_y=item_select_start_y)
-        line_count += 2 # expected len(action_options) + 4 but apparently 2 works
 
         match action_options[action_idx]:
             case "Use item":
                 return_item = self.select_item_to_use()
-                if return_item == None:
-                    Log.clear_lines(line_count)
             
             case "View skill tree":
-                Log.clear_lines(line_count)
+                Console.save_cursor_position("view skill tree start")
                 Log.view_skill_tree(self.parent)
+                Console.truncate("view skill tree start")
 
             case "Cancel":
-                Log.clear_lines(line_count)
+                Console.truncate("inventory start")
                 return None
+
+        Console.truncate("inventory start")
 
         # recursively call this function until the player either
         #     cancelled the at the 'show inventory' dialog or an item was selected
@@ -182,12 +183,12 @@ class Inventory:
         selected_item : Item | None = None
         items_in_inventory = self.get_items()
 
-        line_count = Log.header("USE ITEM", 1)
+        Console.save_cursor_position("select item start")
+        Log.header("USE ITEM", 1)
 
         if len(items_in_inventory):
             action_options = items_in_inventory + ["Cancel"]
             action_idx = get_user_action_choice("Choose item to use: ", action_options)
-            line_count += len(items_in_inventory) + 4
 
             match action_options[action_idx]:
                 case "Cancel":
@@ -196,16 +197,9 @@ class Inventory:
                     selected_item = _item
 
         else:
-            line_count += Log.inventory_empty()
+            Log.inventory_empty()
         
-        Log.clear_lines(line_count)
+        Console.truncate("select item start")
         return selected_item
-    
-    def __str__(self):
-        lines = [f"\n{'='*15} INVENTORY {'='*15}"]
 
-        for idx, item in enumerate(self.slots):
-            lines.append(f"Slot {idx+1}: " + (item.name if item != None else ""))
-        
-        return "\n".join(lines)
 

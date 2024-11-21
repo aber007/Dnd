@@ -28,5 +28,7 @@ class ANSI:
         selected_fg = rgb_fg(0,0,0)
         off = "\u001b[0m"
     
-    clear_terminal = "\033[2J"
+    # clear_terminal = "\033[2J"
+    # clear_terminal_buffer = "\033[3J"
     clear_line = Cursor.set_x_0 + "\033[K"
+    cls = "\033c" # sets all console settings to default
