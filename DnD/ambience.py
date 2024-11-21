@@ -26,9 +26,7 @@ class Music:
         self.current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
         self.story_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story'))
 
-        if CONSTANTS["music_enabled"]:
-            pygame.mixer.music.set_volume(0)
-            self.play("ambience")
+        pygame.mixer.music.set_volume(0)
 
   
     def change_volume(self):

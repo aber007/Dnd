@@ -9,8 +9,6 @@ import sys
 class _Console:
     def __init__(self) -> None:
         self.io = StringIO()
-        self.clear()
-
         self.saved_positions = {}
 
     def write(self, *s : str, sep : str = "", end : str = "\n") -> int:
@@ -51,7 +49,7 @@ class _Console:
         The position is saved in .saved_positions[key]"""
         self.saved_positions[key] = self.io.tell()
     
-    def truncate(self, key : str, del_key_afterwards : bool = True) -> None:
+    def truncate(self, key : str, del_key_afterwards : bool = False) -> None:
         """Clear the console from the key til the end of the console.\n
         The key is the one used when saving the cursor position in save_cursor_position\n
         If the key doesnt exist nothing happens\n

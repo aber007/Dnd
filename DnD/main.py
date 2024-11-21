@@ -1,4 +1,4 @@
-import os, math, sys
+import os, math
 from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
@@ -48,40 +48,78 @@ class Entity:
         
         return dmg
     
-class Menu:
-    def clear():
-        os.system("cls")
-    def menu(self, music):
-        action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
-        action_idx = get_user_action_choice("", action_options)
-        self.clear()
+class MainMenu:
+    
+    def __init__(self, music : Music) -> None:
+        self.music = music
+        
+    def start(self) -> bool:
+        """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
+
+        user_wishes_to_start_game = False
+
+        Log.header("MAIN MENU", 1)
+        Console.save_cursor_position("main menu start")
+
+        while True:
+            action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
+            action_idx = get_user_action_choice("", action_options)
+            
+            # remove the ItemSelect remains
+            Console.truncate("main menu start")
+
+            match action_options[action_idx]:
+                case "Start Game":
+                    user_wishes_to_start_game = True
+                    break
+
+                case "Options":
+                    self.submenu_options()
+                
+                case "Lore":
+                    """Shows lore (maybe remove? Are we lazy?)"""
+                
+                case "Help":
+                    """Shows controls, what inputs will be disabled for the rest of the computer during gameplay etc."""
+                
+                case "Quit Game":
+                    break
+            
+            # remove the remains of eg. the options header
+            Console.truncate("main menu start")
+        
+        return user_wishes_to_start_game
 
         # Print tip to guide users to Options later
 
-        return action_options[action_idx]
     
-    def Options(self, music: Music):
+    def submenu_options(self):
+        Log.header("OPTIONS", 2)
+        Console.save_cursor_position("options menu start")
+
         action_options = ["Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
         action_idx = get_user_action_choice("", action_options)
-        self.clear()
+        
+        Console.truncate("options menu start")
 
         match action_options[action_idx]:
             case "Music Volume":
-                music.change_volume()
-                self.clear()
+                self.music.change_volume()
 
             case "Change Difficulty maybe?":
                 print("mimimi change difficulty")
-                self.clear()
 
             case "Add more shit later?":
                 print("absolutely not.")
-            
-            case "Return":
-                return None
-            
-    def Lore(self):
-        """Show general lore and .txt document"""
+        
+        # if theres text to display here use wait_for_key before the truncate call
+        Console.truncate("options menu start")
+    
+
+    # build inside these
+    def submenu_lore(self): ...
+    def submenu_help(self): ...
+
 
 class Player(Entity):
     def __init__(self, parent_map) -> None:
@@ -650,7 +688,7 @@ class Combat:
             else:
                 self.enemy_turn()
 
-            sleep(4.5)
+            sleep(4)
             Console.truncate("combat round start")
             
             enemyturn = not enemyturn
@@ -908,85 +946,78 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 
 def run_game():
+    Console.clear()
+
+    # ensures ItemSelect and music volume slider work properly, therefore must be first
+    ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
+
     music = Music()
 
-    while True:
+    # open main menu
+    user_wishes_to_start_game = MainMenu(music).start()
+    if not user_wishes_to_start_game:
+        Log.write("Exiting game...")
+        return
 
-        ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
+    # init the game
+    map = Map()
+    player = Player(map)
 
-        map = Map()
-        player = Player(map)
+    map.open_UI_window(player_pos = player.position)
 
-        choice = Menu.menu(Menu, music)
+    game_just_started = True
+    while player.is_alive and player.inventory.lvl < 20:
+        if not CONSTANTS["debug"]["disable_console_clearing"]:
+            Log.clear_console()
+        
+        Log.header("NEW ROUND", 1)
+        
+        if game_just_started:
+            Log.first_time_enter_spawn_room()
+            game_just_started = False
 
-        match choice:
-            case "Start Game":
-                map.open_UI_window(player_pos = player.position)
-            
-                game_just_started = True
-                while player.is_alive and player.inventory.lvl < 20:
-                    if not CONSTANTS["debug"]["disable_console_clearing"]:
-                        Log.clear_console()
-                    
-                    Log.header("NEW ROUND", 1)
-                    
-                    if game_just_started:
-                        Log.first_time_enter_spawn_room()
-                        game_just_started = False
+        # activate all the skills that are supposed to be ran right when a new non-combat round starts
+        player.call_skill_functions(
+                when="new_non_combat_round",
+                variables={"player": player}
+                )
 
-                    # activate all the skills that are supposed to be ran right when a new non-combat round starts
-                    player.call_skill_functions(
-                            when="new_non_combat_round",
-                            variables={"player": player}
-                            )
+        # Get a list of the players currently available options and ask user to choose
+        # Retry until a valid answer has been given
+        action_options : list[str] = get_player_action_options(player, map)
+        action_idx = get_user_action_choice("Choose action: ", action_options)
 
-                    # Get a list of the players currently available options and ask user to choose
-                    # Retry until a valid answer has been given
-                    action_options : list[str] = get_player_action_options(player, map)
-                    action_idx = get_user_action_choice("Choose action: ", action_options)
+        # Decide what to do based on the player's choice
+        match action_options[action_idx]:
+            case "Open chest" | "Buy from shop":
+                # interact with the current room
+                map.get_room(player.position).interact(player, map, music)
 
-                    # Decide what to do based on the player's choice
-                    match action_options[action_idx]:
-                        case "Open chest" | "Buy from shop":
-                            # interact with the current room
-                            map.get_room(player.position).interact(player, map, music)
+            case "Open Inventory":
+                player.open_inventory()
 
-                        case "Open Inventory":
-                            player.open_inventory()
-
-                        case _other: # all other cases, aka Open door ...
-                            assert _other.startswith("Open door facing")
-                            door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
-                            map.move_player(direction=door_to_open, player=player, music=music)
-
-                    wait_for_key("\n[Press ENTER to continue]\n", "enter")
-
-                Log.game_over(player.is_alive)
-
-                # Shows lifetime stats
-                print(f"\n{"="*15}")
-                for key, values in player.stats.items():
-                    print(f"{key}: {values}")
-
-                print(f"{"="*15}")
-
-                map.close_UI_window()
-                break
+            case _other: # all other cases, aka Open door ...
+                assert _other.startswith("Open door facing")
+                door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
+                map.move_player(direction=door_to_open, player=player, music=music)
 
 
-            case "Options":
-                Menu.Options(Menu, music)
-            
-            case "Lore":
-                """Shows lore (maybe remove? Are we lazy?)"""
-            
-            case "Help":
-                """Shows controls, what inputs will be disabled for the rest of the computer during gameplay etc."""
-            
-            case "Quit Game":
-                """Quite self explanatory, does nothing, quits the game"""
-                print("Test")
-                break
+    Log.game_over(player.is_alive)
+
+
+    # Shows lifetime stats
+    Log.newline()
+    Log.header("GAME STATS", 1)
+    for key, values in player.stats.items():
+        print(f"{key}: {values}")
+
+    Log.newline()
+
+
+    map.close_UI_window()
+
+
+
 
 
 if __name__ == "__main__":
