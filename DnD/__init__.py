@@ -43,8 +43,8 @@ CONSTANTS = {
     
     "player_exp_to_lvl_func": lambda exp: int(exp**0.5),
     "player_lvl_to_exp_func": lambda lvl: int(lvl**2),
-    "player_lvl_to_bonus_hp_func": lambda lvl: int(lvl**1.7),
-    "player_lvl_to_bonus_dmg_func": lambda lvl: lvl,
+    "player_lvl_to_bonus_hp_additive_func": lambda lvl: lvl,
+    "player_lvl_to_bonus_dmg_additive_func": lambda lvl: lvl,
     
     "player_movement_anim_duration": 0.2,
     "player_movement_anim_active_update_delay": 5,
@@ -108,11 +108,11 @@ CONSTANTS = {
 
     # change these when debugging
     "debug": {
-        "set_all_map_tiles_discovered": True, # default False
-        "display_all_walls": True, # default False
+        "set_all_map_tiles_discovered": False, # default False
+        "display_all_walls": False, # default False
         "print_map": False, # default False
         "disable_console_clearing": False, # default False
-        "player_infinite_dmg": True # default False
+        "player_infinite_dmg": False # default False
     }
 }
 

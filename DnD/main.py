@@ -120,7 +120,7 @@ class Player(Entity):
 
         # health
         previous_max_hp = self.max_hp
-        self.max_hp = CONSTANTS["player_max_hp"] + math.floor(CONSTANTS["player_lvl_to_bonus_hp_func"](self.inventory.lvl))
+        self.max_hp += math.floor(CONSTANTS["player_lvl_to_bonus_hp_additive_func"](self.inventory.lvl))
         max_hp_delta = self.max_hp - previous_max_hp
         Log.player_max_hp_increased(previous_max_hp, self.max_hp)
 
@@ -128,7 +128,7 @@ class Player(Entity):
 
         # dmg
         previous_dmg_bonus = self.permanent_dmg_bonus
-        self.permanent_dmg_bonus = CONSTANTS["player_lvl_to_bonus_dmg_func"](self.inventory.lvl)
+        self.permanent_dmg_bonus += CONSTANTS["player_lvl_to_bonus_dmg_additive_func"](self.inventory.lvl)
         Log.player_bonus_dmg_increased(previous_dmg_bonus, self.permanent_dmg_bonus)
     
     def _get_skill_tree_progression_options(self) -> tuple[list[int]]:
@@ -698,7 +698,7 @@ class Combat:
             returned_dmg_done = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg_done" and return_var["val"] != None])
             if 0 < returned_dmg_done:
                 Log.newline()
-                Log.player_skill_damaged_enemy()
+                Log.player_skill_damaged_enemy(self.enemy.name, returned_dmg_done)
 
             action_completed = True
         
@@ -825,8 +825,7 @@ def run_game():
 
     music = Music()
 
-    Log.write("this is text")
-
+    player.inventory.update_lvl()
 
     game_just_started = True
     while player.is_alive and player.inventory.lvl < 10:
