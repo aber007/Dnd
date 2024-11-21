@@ -47,7 +47,7 @@
         "defence_magic": 1,
         "exp": 15,
         "gold": 15,
-        "probability": 1
+        "probability": 0.1
     },
     "Giant Spider":{    
         "name": "Giant Spider",

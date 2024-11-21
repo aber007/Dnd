@@ -551,11 +551,11 @@ class Combat:
         for enemy_type in enemy_types:     
             if ENEMY_DATA[enemy_type]["probability"] == 0:
                 last_probability = spawn_probabilities[enemy_type]
-                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
+                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/50))
                 spawn_probabilities[enemy_type] += new_probability
             elif ENEMY_DATA[enemy_type]["probability"] > 0:
                 last_probability = spawn_probabilities[enemy_type]
-                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
+                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/20))
                 spawn_probabilities[enemy_type] -= new_probability
             if CONSTANTS["debug"]["show_enemy_probabilities"] and ENEMY_DATA[enemy_type]["probability"] >= 0:
                 print(str(ENEMY_DATA[enemy_type]["name"]) + ": " + str(round(spawn_probabilities[enemy_type], 5)) + " : " + str(round(spawn_probabilities[enemy_type]-last_probability, 5))) #Not using fstring because of formatting issues

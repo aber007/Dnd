@@ -33,8 +33,13 @@ class Buff:
 
         if self.duration == 0:
             print("The Buff has ran out")
-            self.target.active_effects.remove(self)
-            setattr(self.target, self.type, eval(self.getattr)-self.effect)
+            try:
+                self.target.active_effects.remove(self)
+                setattr(self.target, self.type, eval(self.getattr)-self.effect)
+            except ValueError:
+                pass
+                #This code will sometimes run twice and will therefore already remove the buff
+
             
 
         
