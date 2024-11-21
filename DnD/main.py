@@ -892,6 +892,8 @@ if __name__ == "__main__":
     run_game()
 
 
+# DO NOT REMOVE, IT'S NECESSARY
+
 """
 init karta och UI karta
 Titel
