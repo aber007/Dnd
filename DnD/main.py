@@ -1,4 +1,4 @@
-import os, math
+import os, math, sys
 from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
@@ -23,6 +23,7 @@ from . import (
     Effect,
     Log,
     Console
+    Buff
     )
 
 try:
@@ -37,7 +38,7 @@ class Entity:
     def take_damage(self, dmg : int, dmg_type : str = "melee", source : str = "", log : bool = True) -> int:
         """source is used to specify what caused the dmg. Only used if log == True"""
         if isinstance(self, Enemy) and dmg_type == "melee": dmg = max(0, dmg - self.defence_melee)
-        elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence)
+        elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence); self.stats["hp lost"] += dmg
         
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
@@ -46,6 +47,41 @@ class Entity:
             Log.entity_took_dmg(self.name, dmg, self.hp, self.is_alive, source)
         
         return dmg
+    
+class Menu:
+    def clear():
+        os.system("cls")
+    def menu(self, music):
+        action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
+        action_idx = get_user_action_choice("", action_options)
+        self.clear()
+
+        # Print tip to guide users to Options later
+
+        return action_options[action_idx]
+    
+    def Options(self, music: Music):
+        action_options = ["Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
+        action_idx = get_user_action_choice("", action_options)
+        self.clear()
+
+        match action_options[action_idx]:
+            case "Music Volume":
+                music.change_volume()
+                self.clear()
+
+            case "Change Difficulty maybe?":
+                print("mimimi change difficulty")
+                self.clear()
+
+            case "Add more shit later?":
+                print("absolutely not.")
+            
+            case "Return":
+                return None
+            
+    def Lore(self):
+        """Show general lore and .txt document"""
 
 class Player(Entity):
     def __init__(self, parent_map) -> None:
@@ -59,9 +95,20 @@ class Player(Entity):
         self.max_hp = CONSTANTS["player_max_hp"]
         self.defence = CONSTANTS["player_base_defence"]
         self.current_combat : Combat | None = None
+        self.active_effects = []
 
         self.permanent_dmg_bonus = 0
         self.temp_dmg_factor = 1
+
+        # Fix this later, these are just temporary
+        self.stats = {
+            "hp gained": 0, # Fixed
+            "hp lost": 0, # Fixed
+            "gold earned": 0, # Fixed
+            "exp gained": 0, # Fixed
+            "dmg dealt": 0, # Fixed
+            "monsters defeated": 0, # Fixed
+        }
 
         # progression related attributes
         self.inventory = Inventory(parent=self)
@@ -113,7 +160,9 @@ class Player(Entity):
         hp_before = self.hp
         self.hp = min(self.hp + additional_hp, self.max_hp)
         hp_delta = self.hp - hp_before
+
         Log.player_healed(hp_before, additional_hp, hp_delta, self.hp)
+        self.stats["hp gained"] += hp_delta
     
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""
@@ -207,6 +256,11 @@ class Player(Entity):
             return_vars.append( {"val": func(variables), "return_val_type": func.return_val_type} )
         
         return return_vars
+    
+    def update_effects(self):
+        # instance the self.active_effects list since effect.tick() might remove itself from the list
+        for effect in list(self.active_effects):
+            effect.tick()
 
 
         
@@ -218,14 +272,32 @@ class Enemy(Entity):
 
         self.is_alive = True
         self.active_effects = []
+        self.active_buffs = []
+        self.special_active = False
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
         return target.take_damage(math.ceil(self.dmg * dmg_multiplier), log=False)
     
-    def use_special(self, special : str) -> None:
+    def use_special(self, special : str, player : Player) -> None:
         """Runs the code for special abilities which can be used during combat"""
-        pass
+        match special:
+            case "trap":
+                player.take_damage(player.defence + 2)
+                print(f"You have been hit by a trap for 2 damage")
+            case "berserk":
+                self.active_buffs.append(Buff(type="dmg", effect=self.dmg, duration=5, target=self))
+            case "poison":
+                player.active_effects.append(Effect(type="poison", effect=2, duration=7, target=player))
+            case "fire_breath":
+                player.take_damage(ENEMY_DATA[self.name]["special_dmg"])
+                print(f"You have been hit by fire breath for 8 damage")
+            case "stone_skin":
+                self.hp += (self.max_hp * 0.1)
+                self.active_buffs.append(Buff(type="hp", effect=2, duration=2, target=self))
+            
+
+                
 
     def add_effect(self, type : str, effect : int, duration : int):
         self.active_effects.append(Effect(type=type, effect=effect, duration=duration, target=self))
@@ -234,6 +306,8 @@ class Enemy(Entity):
     def update_effects(self):
         # instance the self.active_effects list since effect.tick() might remove itself from the list
         for effect in list(self.active_effects):
+            effect.tick()
+        for effect in list(self.active_buffs):
             effect.tick()
 
 
@@ -525,10 +599,21 @@ class Combat:
                 spawn_probabilities[enemy_type] = enemy_probability
 
         distace_from_spawn = ((abs(self.map.starting_position.x - self.player.position.x)**2) + (abs(self.map.starting_position.y - self.player.position.y)**2))**0.5
-        for enemy_type in enemy_types:
+        for enemy_type in enemy_types:     
             if ENEMY_DATA[enemy_type]["probability"] == 0:
-                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/100))
+                last_probability = spawn_probabilities[enemy_type]
+                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/50))
                 spawn_probabilities[enemy_type] += new_probability
+            elif ENEMY_DATA[enemy_type]["probability"] > 0:
+                last_probability = spawn_probabilities[enemy_type]
+                new_probability = distace_from_spawn/10 * ((100-ENEMY_DATA[enemy_type]["exp"])/1000 + ((player.inventory.get_lvl()**0.9)/20))
+                spawn_probabilities[enemy_type] -= new_probability
+            if CONSTANTS["debug"]["show_enemy_probabilities"] and ENEMY_DATA[enemy_type]["probability"] >= 0:
+                print(str(ENEMY_DATA[enemy_type]["name"]) + ": " + str(round(spawn_probabilities[enemy_type], 5)) + " : " + str(round(spawn_probabilities[enemy_type]-last_probability, 5))) #Not using fstring because of formatting issues
+            
+        
+            
+
 
         enemy_type_to_spawn = choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))[0]
 
@@ -556,6 +641,7 @@ class Combat:
             Log.header(f"Turn {self.turn}", 2)
 
             self.enemy.update_effects()
+            self.player.update_effects()
 
             self.write_hp_bars()
 
@@ -565,9 +651,8 @@ class Combat:
                 self.enemy_turn()
 
             sleep(4.5)
-
             Console.truncate("combat round start")
-
+            
             enemyturn = not enemyturn
         
         # if the combat ended and the enemy died: mark the room as cleared
@@ -589,6 +674,10 @@ class Combat:
             if not player_lvld_up:
                 Log.newline()
                 wait_for_key("[Press ENTER to continue]", "enter")
+
+            self.player.stats["gold earned"] += self.enemy.gold
+            self.player.stats["exp gained"] += self.enemy.exp
+            self.player.stats["monsters defeated"] += 1
             
 
         self.player.temp_dmg_factor = CONSTANTS["player_default_temp_dmg_factor"]
@@ -685,6 +774,8 @@ class Combat:
 
             dmg *= dmg_factor * self.player.temp_dmg_factor
 
+            self.player.stats["dmg dealt"] += dmg
+
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
 
@@ -729,6 +820,7 @@ class Combat:
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
                 Log.combat_perfect_flee()
                 self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
+                self.player.stats["gold earned"] += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
             
             Log.combat_flee_successful()
             fled = True
@@ -752,7 +844,7 @@ class Combat:
         if self.player.is_alive and uniform(0, 1) < self.enemy.special_chance:
             Log.newline()
             print(self.enemy.special_info)
-            self.enemy.use_special(self.enemy.special)
+            self.enemy.use_special(self.enemy.special, player=self.player)
 
             # *player takes dmg from the special*
 
@@ -816,66 +908,92 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 
 def run_game():
-    ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
-
-    map = Map()
-    player = Player(map)
-
-    map.open_UI_window(player_pos = player.position)
-
     music = Music()
 
-    player.inventory.update_lvl()
+    while True:
 
-    game_just_started = True
-    while player.is_alive and player.inventory.lvl < 10:
-        if not CONSTANTS["debug"]["disable_console_clearing"]:
-            Log.clear_console()
+        ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
-        Log.header("NEW ROUND", 1)
+        map = Map()
+        player = Player(map)
 
-        if game_just_started:
-            Log.first_time_enter_spawn_room()
-            game_just_started = False
+        choice = Menu.menu(Menu, music)
 
-        # activate all the skills that are supposed to be ran right when a new non-combat round starts
-        player.call_skill_functions(
-                when="new_non_combat_round",
-                variables={"player": player}
-                )
+        match choice:
+            case "Start Game":
+                map.open_UI_window(player_pos = player.position)
+            
+                game_just_started = True
+                while player.is_alive and player.inventory.lvl < 20:
+                    if not CONSTANTS["debug"]["disable_console_clearing"]:
+                        Log.clear_console()
+                    
+                    Log.header("NEW ROUND", 1)
+                    
+                    if game_just_started:
+                        Log.first_time_enter_spawn_room()
+                        game_just_started = False
 
-        # Get a list of the players currently available options and ask user to choose
-        # Retry until a valid answer has been given
-        action_options : list[str] = get_player_action_options(player, map)
-        action_idx = get_user_action_choice("Choose action: ", action_options)
+                    # activate all the skills that are supposed to be ran right when a new non-combat round starts
+                    player.call_skill_functions(
+                            when="new_non_combat_round",
+                            variables={"player": player}
+                            )
 
-        # Decide what to do based on the player's choice
-        match action_options[action_idx]:
-            case "Open chest" | "Buy from shop":
-                # interact with the current room
-                map.get_room(player.position).interact(player, map, music)
+                    # Get a list of the players currently available options and ask user to choose
+                    # Retry until a valid answer has been given
+                    action_options : list[str] = get_player_action_options(player, map)
+                    action_idx = get_user_action_choice("Choose action: ", action_options)
 
-            case "Open Inventory":
-                player.open_inventory()
+                    # Decide what to do based on the player's choice
+                    match action_options[action_idx]:
+                        case "Open chest" | "Buy from shop":
+                            # interact with the current room
+                            map.get_room(player.position).interact(player, map, music)
 
-            case _other: # all other cases, aka Open door ...
-                assert _other.startswith("Open door facing")
-                door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
-                map.move_player(direction=door_to_open, player=player, music=music)
+                        case "Open Inventory":
+                            player.open_inventory()
 
-        # wait_for_key("\n[Press ENTER to continue]", "enter")
+                        case _other: # all other cases, aka Open door ...
+                            assert _other.startswith("Open door facing")
+                            door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
+                            map.move_player(direction=door_to_open, player=player, music=music)
 
-    Log.game_over(player.is_alive)
+                    wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    #Add stats and print them here
+                Log.game_over(player.is_alive)
 
-    map.close_UI_window()
+                # Shows lifetime stats
+                print(f"\n{"="*15}")
+                for key, values in player.stats.items():
+                    print(f"{key}: {values}")
 
+                print(f"{"="*15}")
+
+                map.close_UI_window()
+                break
+
+
+            case "Options":
+                Menu.Options(Menu, music)
+            
+            case "Lore":
+                """Shows lore (maybe remove? Are we lazy?)"""
+            
+            case "Help":
+                """Shows controls, what inputs will be disabled for the rest of the computer during gameplay etc."""
+            
+            case "Quit Game":
+                """Quite self explanatory, does nothing, quits the game"""
+                print("Test")
+                break
 
 
 if __name__ == "__main__":
     run_game()
 
+
+# DO NOT REMOVE, IT'S NECESSARY
 
 """
 init karta och UI karta

@@ -112,7 +112,8 @@ CONSTANTS = {
         "display_all_walls": False, # default False
         "print_map": False, # default False
         "disable_console_clearing": False, # default False
-        "player_infinite_dmg": False # default False
+        "player_infinite_dmg": False, # default False
+        "show_enemy_probabilities" : True # default False
     }
 }
 
@@ -126,6 +127,6 @@ from .player_actions import get_user_action_choice
 from .vector2 import Vector2
 from .array2d import Array2D
 from .items import Item, Inventory
-from .effects import Effect
+from .effects import Effect, Buff
 from .create_walls_algorithm import CreateWallsAlgorithm
 from .main import run_game
