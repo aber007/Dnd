@@ -916,11 +916,11 @@ def run_game():
         print("\n" + "Congratulations! You escaped the castle or something.")
 
     # Shows lifetime stats
-    print(f"\n{"="*15}")
+    print(f"\n{'='*15}")
     for key, values in player.stats.items():
         print(f"{key}: {values}")
 
-    print(f"{"="*15}")
+    print(f"{'='*15}")
 
     map.close_UI_window()
 
