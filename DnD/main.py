@@ -35,7 +35,7 @@ except ImportError:
 class Entity:
     def take_damage(self, dmg : int, dmg_type = "melee") -> int:
         if isinstance(self, Enemy) and dmg_type == "melee": dmg = max(0, dmg - self.defence_melee)
-        elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence)
+        elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence); self.stats["hp lost"] += dmg
         
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
@@ -56,6 +56,16 @@ class Player(Entity):
 
         self.permanent_dmg_bonus = 0
         self.temp_dmg_factor = 1
+
+        # Fix this later, these are just temporary
+        self.stats = {
+            "hp gained": 0, # Fixed
+            "hp lost": 0, # Fixed
+            "gold earned": 0, # Fixed
+            "exp gained": 0, # Fixed
+            "dmg dealt": 0, # Fixed
+            "monsters defeated": 0, # Fixed
+        }
 
         # progression related attributes
         self.inventory = Inventory(parent=self)
@@ -104,6 +114,8 @@ class Player(Entity):
         self.hp = min(self.hp + additional_hp, self.max_hp)
         hp_delta = self.hp - hp_before
         print(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {self.hp}")
+
+        self.stats["hp gained"] += hp_delta
     
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""
@@ -565,6 +577,10 @@ class Combat:
             self.player.inventory.gold += self.enemy.gold
             self.player.inventory.exp += self.enemy.exp
             self.player.inventory.update_lvl()
+
+            self.player.stats["gold earned"] += self.enemy.gold
+            self.player.stats["exp gained"] += self.enemy.exp
+            self.player.stats["monsters defeated"] += 1
             
 
         self.player.temp_dmg_factor = CONSTANTS["player_default_temp_dmg_factor"]
@@ -664,6 +680,8 @@ class Combat:
 
             dmg *= dmg_mod * self.player.temp_dmg_factor
 
+            self.player.stats["dmg dealt"] += dmg
+
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
 
@@ -709,6 +727,7 @@ class Combat:
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
                 print(choice(INTERACTION_DATA["escape_20"]))
                 self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
+                self.player.stats["gold earned"] += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
             
             print(choice(INTERACTION_DATA["escape"]))
             fled = True
@@ -819,7 +838,7 @@ def run_game():
 
     music = Music()
 
-    while player.is_alive and player.inventory.lvl < 10:
+    while player.is_alive and player.inventory.lvl < 20:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
             clear_console()
         
@@ -858,7 +877,12 @@ def run_game():
     else:
         print("\n" + "Congratulations! You escaped the castle or something.")
 
-        #Add stats and print them here
+    # Shows lifetime stats
+    print(f"\n{"="*15}")
+    for key, values in player.stats.items():
+        print(f"{key}: {values}")
+
+    print(f"{"="*15}")
 
     map.close_UI_window()
 
