@@ -119,7 +119,8 @@ class Inventory:
         self.slots.remove(item)
         self.slots.append(None)
 
-    def update_lvl(self):
+    def update_lvl(self) -> bool:
+        """Returns wether the player leveled up"""
         new_lvl = CONSTANTS["player_exp_to_lvl_func"](self.exp)
         lvl_delta = new_lvl - self.lvl
         self.lvl = new_lvl
@@ -134,6 +135,8 @@ class Inventory:
             Log.newline()
             self.parent.on_lvl_up()
             self.parent.receive_skill_point(lvl_delta)
+        
+        return bool(lvl_delta)
 
     def get_lvl(self) -> int:
         return int(self.lvl)

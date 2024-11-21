@@ -580,7 +580,15 @@ class Combat:
 
             self.player.inventory.gold += self.enemy.gold
             self.player.inventory.exp += self.enemy.exp
-            self.player.inventory.update_lvl()
+
+            # if the player lvld up .update_lvl() would call wait_for_key
+            # if the player didnt lvl up then call wait_for_key here
+            Log.newline()
+            player_lvld_up = self.player.inventory.update_lvl()
+
+            if not player_lvld_up:
+                Log.newline()
+                wait_for_key("[Press ENTER to continue]", "enter")
             
 
         self.player.temp_dmg_factor = CONSTANTS["player_default_temp_dmg_factor"]
