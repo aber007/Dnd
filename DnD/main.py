@@ -1,4 +1,4 @@
-import os, math
+import os, math, sys
 from random import randint, choices, choice, uniform
 from time import sleep
 from .UI_map_creation import openUIMap
@@ -42,6 +42,41 @@ class Entity:
         self.is_alive = 0 < self.hp
         
         return dmg
+    
+class Menu:
+    def clear():
+        os.system("cls")
+    def menu(self, music):
+        action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
+        action_idx = get_user_action_choice("", action_options)
+        self.clear()
+
+        # Print tip to guide users to Options later
+
+        return action_options[action_idx]
+    
+    def Options(self, music: Music):
+        action_options = ["Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
+        action_idx = get_user_action_choice("", action_options)
+        self.clear()
+
+        match action_options[action_idx]:
+            case "Music Volume":
+                music.change_volume()
+                self.clear()
+
+            case "Change Difficulty maybe?":
+                print("mimimi change difficulty")
+                self.clear()
+
+            case "Add more shit later?":
+                print("absolutely not.")
+            
+            case "Return":
+                return None
+            
+    def Lore(self):
+        """Show general lore and .txt document"""
 
 class Player(Entity):
     def __init__(self, parent_map) -> None:
@@ -867,63 +902,88 @@ def clear_console():
 
 
 def run_game():
-    ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
-
-    map = Map()
-    player = Player(map)
-
-    map.open_UI_window(player_pos = player.position)
-
     music = Music()
 
-    while player.is_alive and player.inventory.lvl < 20:
-        if not CONSTANTS["debug"]["disable_console_clearing"]:
-            clear_console()
+    while True:
+
+        ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
+
+        map = Map()
+        player = Player(map)
+
+
+
+        choice = Menu.menu(Menu, music)
+
         
-        print(f"{'='*15} NEW ROUND {'='*15}", end="\n"*2)
 
-        # activate all the skills that are supposed to be ran right when a new non-combat round starts
-        player.call_skill_functions(
-                when="new_non_combat_round",
-                variables={"player": player}
-                )
+        match choice:
+            case "Start Game":
+                map.open_UI_window(player_pos = player.position)
+            
+                while player.is_alive and player.inventory.lvl < 20:
+                    if not CONSTANTS["debug"]["disable_console_clearing"]:
+                        clear_console()
+                    
+                    print(f"{'='*15} NEW ROUND {'='*15}", end="\n"*2)
 
-        # Get a list of the players currently available options and ask user to choose
-        # Retry until a valid answer has been given
-        action_options : list[str] = get_player_action_options(player, map)
-        action_idx = get_user_action_choice("Choose action: ", action_options)
+                    # activate all the skills that are supposed to be ran right when a new non-combat round starts
+                    player.call_skill_functions(
+                            when="new_non_combat_round",
+                            variables={"player": player}
+                            )
 
-        # Decide what to do based on the player's choice
-        match action_options[action_idx]:
-            case "Open chest" | "Buy from shop":
-                # interact with the current room
-                map.get_room(player.position).interact(player, map, music)
+                    # Get a list of the players currently available options and ask user to choose
+                    # Retry until a valid answer has been given
+                    action_options : list[str] = get_player_action_options(player, map)
+                    action_idx = get_user_action_choice("Choose action: ", action_options)
 
-            case "Open Inventory":
-                player.open_inventory()
+                    # Decide what to do based on the player's choice
+                    match action_options[action_idx]:
+                        case "Open chest" | "Buy from shop":
+                            # interact with the current room
+                            map.get_room(player.position).interact(player, map, music)
 
-            case _other: # all other cases, aka Open door ...
-                assert _other.startswith("Open door facing")
-                door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
-                map.move_player(direction=door_to_open, player=player, music=music)
+                        case "Open Inventory":
+                            player.open_inventory()
 
-        wait_for_key("\n[Press ENTER to continue]\n", "enter")
+                        case _other: # all other cases, aka Open door ...
+                            assert _other.startswith("Open door facing")
+                            door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
+                            map.move_player(direction=door_to_open, player=player, music=music)
 
-    if not player.is_alive:
-        print("\nGame over")
-    
-    else:
-        print("\n" + "Congratulations! You escaped the castle or something.")
+                    wait_for_key("\n[Press ENTER to continue]\n", "enter")
 
-    # Shows lifetime stats
-    print(f"\n{'='*15}")
-    for key, values in player.stats.items():
-        print(f"{key}: {values}")
+                if not player.is_alive:
+                    print("\nGame over")
+                
+                else:
+                    print("\n" + "Congratulations! You escaped the castle or something.")
 
-    print(f"{'='*15}")
+                # Shows lifetime stats
+                print(f"\n{"="*15}")
+                for key, values in player.stats.items():
+                    print(f"{key}: {values}")
 
-    map.close_UI_window()
+                print(f"{"="*15}")
 
+                map.close_UI_window()
+                break
+
+
+            case "Options":
+                Menu.Options(Menu, music)
+            
+            case "Lore":
+                """Shows lore (maybe remove? Are we lazy?)"""
+            
+            case "Help":
+                """Shows controls, what inputs will be disabled for the rest of the computer during gameplay etc."""
+            
+            case "Quit Game":
+                """Quite self explanatory, does nothing, quits the game"""
+                print("Test")
+                break
 
 
 if __name__ == "__main__":
