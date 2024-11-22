@@ -6,12 +6,6 @@ from . import CONSTANTS, Console, ANSI, PlayerInputs
 import os, time, shutil, typing, math
 from random import randint
 
-try:
-    import keyboard
-except ImportError:
-    os.system("pip install keyboard")
-    import keyboard
-
 
 def write(*s : str, sep="", end="", flush=True) -> int:
     """Similar to print() except using custom default variables\n
@@ -95,7 +89,6 @@ class ItemSelect:
 
     def loop(self):
         while self.run_loop:
-            PlayerInputs.check_inputs()
             time.sleep(1/20)
         
         PlayerInputs.unregister_all()
@@ -150,7 +143,6 @@ class Slider:
 
     def loop(self):
         while self.run_loop:
-            PlayerInputs.check_inputs()
             time.sleep(1/20)
         
         PlayerInputs.unregister_all()
@@ -207,7 +199,7 @@ def combat_bar():
     box_position = {"start": 0}
     enter_pressed = {"status": False}  # Shared variable for ENTER detection
 
-    def on_enter(event):
+    def on_enter():
         """Callback to capture ENTER key press."""
         enter_pressed["status"] = True
 
@@ -257,7 +249,7 @@ def combat_bar():
 
     # Attach the ENTER key listener
     print("\nPress ENTER on the indication to Attack")
-    keyboard.on_press_key("enter", on_enter, suppress=True)
+    PlayerInputs.register_input("Return", on_enter)
 
     # Animate the box over the line
     animate_box()
@@ -265,7 +257,8 @@ def combat_bar():
     # Return the current box position if ENTER was pressed
     write("\n")
     if enter_pressed["status"]:
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
+
         time.sleep(1)
         if box_position["start"] >= red_length and box_position["start"] < red_length+orange_length:
             return("hit")
@@ -334,7 +327,6 @@ class DodgeEnemyAttack:
         seconds_to_wait = ms/1000
 
         while time.time() - start_time < seconds_to_wait and not self.enter_pressed:
-            PlayerInputs.check_inputs()
             time.sleep(1/20)
 
     def on_finished(self):

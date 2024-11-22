@@ -502,7 +502,7 @@ class Map:
             self.player_input_queue = self.manager.Queue()
             self.UI_thread : Process | None = None
 
-            PlayerInputs.q = self.player_input_queue
+            PlayerInputs.start_thread(self.player_input_queue)
         
         def open(self, player_pos : Vector2, existing_walls):
             self.UI_thread = Process(

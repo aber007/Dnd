@@ -1,12 +1,17 @@
 from typing import Callable
-import time
+import time, threading
 
 class _PlayerInputs:
     def __init__(self) -> None:
         self.registered_inputs : dict[str,list[Callable[[None],None]]] = {}
+        self.waiting_for_key = False
+    
+    def start_thread(self, queue):
+        """This is ran at the end of Map.UI.__init__"""
+        self.q = queue
 
-        # this is set at the beginning of run_game in main.py
-        self.q = ... #UI_instance.player_input_queue
+        self.thread = threading.Thread(target=self.check_inputs_loop)
+        self.thread.start()
     
     def register_input(self, keysym : str, func : Callable[[None], None], persistent : bool = False) -> None:
         """keysym is the key used by Tcl (aka tkinter) when handling input events\n
@@ -34,6 +39,15 @@ class _PlayerInputs:
             else:
                 self.registered_inputs.pop(key)
 
+    def check_inputs_loop(self) -> None:
+        """A separate thread to automatically check for new inputs"""
+        while True:
+            # dont check for new inputs automatically if the main thread is also doing so
+            if not self.waiting_for_key:
+                self.check_inputs()
+            
+            time.sleep(1/20)
+
     def check_inputs(self) -> None:
         qsize = self.q.qsize()
 
@@ -43,12 +57,16 @@ class _PlayerInputs:
             [func() for func in funcs_to_call]
     
     def wait_for_key(self, keysym : str) -> None:
+        """Blocks the main thread until key has been pressed"""
+
+        self.waiting_for_key = True
         while True:
             qsize = self.q.qsize()
 
             for _ in range(qsize):
                 pressed_key = self.q.get()
-                if pressed_key == "Return":
+                if pressed_key == keysym:
+                    self.waiting_for_key = False
                     return
             
             time.sleep(1/20)
