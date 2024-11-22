@@ -23,7 +23,8 @@ from . import (
     Effect,
     Log,
     Console,
-    Buff
+    Buff,
+    PlayerInputs
     )
 
 try:
@@ -186,7 +187,7 @@ class Player(Entity):
             if self.current_combat == None:
                 Log.use_combat_item_outside_combat()
                 Log.newline()
-                wait_for_key("[Press ENTER to continue]", "enter")
+                wait_for_key("[Press ENTER to continue]", "Return")
 
             else:
                 dmg = selected_item.use()
@@ -261,7 +262,7 @@ class Player(Entity):
         return branch_options_prefixes, branch_options, subtexts
 
     def receive_skill_point(self, new_skill_points : int):
-        wait_for_key(f"\nYou have {new_skill_points} unspent skill points!\n\n[Press ENTER to progress the skill tree]", "enter")
+        wait_for_key(f"\nYou have {new_skill_points} unspent skill points!\n\n[Press ENTER to progress the skill tree]", "Return")
 
         for idx in range(new_skill_points):
             if not CONSTANTS["debug"]["disable_console_clearing"]:
@@ -409,17 +410,17 @@ class Map:
 
                 case ("trap", _):
                     Log.stepped_in_trap(CONSTANTS["normal_trap_min_roll_to_escape"])
-                    wait_for_key("[Press ENTER to roll dice]\n", "enter")
+                    wait_for_key("[Press ENTER to roll dice]", "Return")
                     roll = player.roll_dice()
 
-                    Log.newline()
+                    Log.newline(2)
                     if CONSTANTS["normal_trap_min_roll_to_escape"] <= roll:
                         Log.escaped_trap(roll, False)
                     else:
                         Log.escaped_trap(roll, True)
                         player.take_damage(CONSTANTS["normal_trap_dmg"])
                     
-                    wait_for_key("[Press ENTER to continue]", "enter")
+                    wait_for_key("[Press ENTER to continue]", "Return")
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -435,7 +436,7 @@ class Map:
                     self.is_cleared = True
 
                     Log.newline()
-                    wait_for_key("[Press ENTER to continue]", "enter")
+                    wait_for_key("[Press ENTER to continue]", "Return")
 
                 case "mimic_trap":
                     Log.triggered_mimic_trap()
@@ -480,7 +481,7 @@ class Map:
                                     Log.shop_insufficient_gold()
                                 
                                 Log.newline()
-                                wait_for_key("[Press ENTER to continue]", "enter")
+                                wait_for_key("[Press ENTER to continue]", "Return")
                                 Console.truncate("shop start")
                                     
                         
@@ -489,7 +490,7 @@ class Map:
                             self.is_cleared = True
                             
                             Log.newline()
-                            wait_for_key("[Press ENTER to continue]", "enter")
+                            wait_for_key("[Press ENTER to continue]", "Return")
                             break
                         
                         Console.truncate("shop start")
@@ -505,10 +506,22 @@ class Map:
 
             self.manager = Manager()
             self.command_queue = self.manager.Queue(maxsize=100)
+            self.player_input_queue = self.manager.Queue()
             self.UI_thread : Process | None = None
+
+            PlayerInputs.start_thread(self.player_input_queue)
         
         def open(self, player_pos : Vector2, existing_walls):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, existing_walls))
+            self.UI_thread = Process(
+                target=openUIMap,
+                args=(
+                    self.size,
+                    self.rooms,
+                    player_pos,
+                    existing_walls,
+                    self.command_queue,
+                    self.player_input_queue
+                ))
             self.UI_thread.start()
         
         def send_command(self, type : str, position : Vector2, *args : str):
@@ -669,7 +682,7 @@ class Combat:
 
         Log.combat_enemy_revealed(self.enemy.name_in_sentence)
         Log.newline()
-        wait_for_key("[Press ENTER to continue]", "enter")
+        wait_for_key("[Press ENTER to continue]", "Return")
         Log.clear_console()
         Log.header("COMBAT", 1)
         
@@ -719,7 +732,7 @@ class Combat:
 
             if not player_lvld_up:
                 Log.newline()
-                wait_for_key("[Press ENTER to continue]", "enter")
+                wait_for_key("[Press ENTER to continue]", "Return")
 
             self.player.stats["gold earned"] += self.enemy.gold
             self.player.stats["exp gained"] += self.enemy.exp
@@ -847,7 +860,7 @@ class Combat:
         
         Log.combat_init_flee_roll()
 
-        wait_for_key("[Press ENTER to roll dice]", "enter")
+        wait_for_key("[Press ENTER to roll dice]", "Return")
         roll = self.player.roll_dice()
         
         Log.clear_line()
@@ -959,7 +972,12 @@ def run_game():
     # ensures ItemSelect and music volume slider work properly, therefore must be first
     ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
+    map = Map()
     music = Music()
+    player = Player(map)
+
+    # since the player inputs are captured using the tkinter window, init it before main menu
+    map.open_UI_window(player_pos = player.position)
 
     # open main menu
     user_wishes_to_start_game = MainMenu(music).start()
@@ -968,11 +986,6 @@ def run_game():
         return
 
     # init the game
-    map = Map()
-    player = Player(map)
-
-    map.open_UI_window(player_pos = player.position)
-
     game_just_started = True
     while player.is_alive and player.inventory.lvl < 20:
         if not CONSTANTS["debug"]["disable_console_clearing"]:
@@ -1024,7 +1037,7 @@ def run_game():
 
     Log.newline()
 
-
+    PlayerInputs.kill_thread()
     map.close_UI_window()
 
 

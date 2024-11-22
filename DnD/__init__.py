@@ -122,6 +122,7 @@ CONSTANTS = {
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
 from .ANSI import ANSI
 from .console_io import Console
+from .player_inputs import PlayerInputs
 from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, ANSI, DodgeEnemyAttack
 from .logging import Log
 from .animation import AnimationLibrary, Animation
