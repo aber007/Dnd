@@ -16,7 +16,7 @@ def grid_coords_to_real_coords(grid : Array2D[tk.Frame], coords : Vector2):
     
 
 
-def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, existing_walls : Array2D[dict[str,bool]], command_queue, user_input_queue):
+def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, existing_walls : Array2D[dict[str,bool]], command_queue, player_input_queue):
     # used for smooth player repositioning
     anim_library = AnimationLibrary()
 
@@ -171,12 +171,25 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, existing_w
         anim_update_delay_ms = CONSTANTS["player_movement_anim_active_update_delay"] if anim_library.has_active_animations else 50
         main.after(anim_update_delay_ms, update_anims)
 
+    def on_player_input(event : tk.Event):
+        keysym = event.keysym
+
+        # if an error is thrown then the queue is offline and this thread should close
+        try:
+            player_input_queue.put(keysym)
+        except:
+            destroy()
+            return
+
+        if keysym == "Escape":
+            destroy()
+
     def destroy(_ = None):
         main.quit()
         main.destroy()
 
 
-    main.bind("<Escape>", destroy)
+    main.bind("<Key>", on_player_input)
     main.after(100, handle_command_queue)
     main.after(100, lambda : update_player_pos_tile(player_pos))
     main.after(100, update_anims)

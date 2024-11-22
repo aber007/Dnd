@@ -1,7 +1,7 @@
 # This file is dedicated to interactive terminal utils that are more advanced than just input()
 # These comments exist to clarify the difference between terminal.py, logger.py and console_io.py
 
-from . import CONSTANTS, Console, ANSI
+from . import CONSTANTS, Console, ANSI, PlayerInputs
 
 import os, time, shutil, typing, math
 from random import randint
@@ -47,9 +47,9 @@ class ItemSelect:
         self.run_loop = True
 
     def start(self) -> str:
-        keyboard.on_press_key("up", lambda _ : self.set_y_relative(-1), suppress=True)
-        keyboard.on_press_key("down", lambda _ : self.set_y_relative(+1), suppress=True)
-        keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
+        PlayerInputs.register_input("Up", lambda : self.set_y_relative(-1))
+        PlayerInputs.register_input("Down", lambda : self.set_y_relative(+1))
+        PlayerInputs.register_input("Return", lambda : setattr(self, "run_loop", False))
 
         write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n" if self.log_controls else "")
 
@@ -63,7 +63,6 @@ class ItemSelect:
 
     def list_items(self):
         # write out all items and their subtexts
-        
         write(*[item.get("prefix", "") + item["text"] + item.get("subtext", "") for item in self.items], sep="\n")
 
         # reposition the cursor to y = 0 and mark that item as selected
@@ -87,7 +86,7 @@ class ItemSelect:
         
         self.y += y_delta
         self.select_current_line()
-
+    
     def deselect_current_line(self):
         write(ANSI.Cursor.set_x_0, ANSI.Color.off, self.items[self.y].get("prefix", ""), ANSI.Color.off, self.items[self.y]["text"], ANSI.Color.off)
 
@@ -96,9 +95,10 @@ class ItemSelect:
 
     def loop(self):
         while self.run_loop:
+            PlayerInputs.check_inputs()
             time.sleep(1/20)
         
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
 
 class Slider:
     def __init__(self, length : int, on_value_changed : typing.Callable[[int], None] | None = None, log_controls : bool = False, header : str = "") -> None:

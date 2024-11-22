@@ -23,7 +23,8 @@ from . import (
     Effect,
     Log,
     Console,
-    Buff
+    Buff,
+    PlayerInputs
     )
 
 try:
@@ -498,8 +499,10 @@ class Map:
 
             self.manager = Manager()
             self.command_queue = self.manager.Queue(maxsize=100)
-            self.user_input_queue = self.manager.Queue(maxsize=100)
+            self.player_input_queue = self.manager.Queue()
             self.UI_thread : Process | None = None
+
+            PlayerInputs.q = self.player_input_queue
         
         def open(self, player_pos : Vector2, existing_walls):
             self.UI_thread = Process(
@@ -510,7 +513,7 @@ class Map:
                     player_pos,
                     existing_walls,
                     self.command_queue,
-                    self.user_input_queue
+                    self.player_input_queue
                 ))
             self.UI_thread.start()
         
@@ -963,11 +966,11 @@ def run_game():
 
     music = Music()
 
-    # open main menu
-    user_wishes_to_start_game = MainMenu(music).start()
-    if not user_wishes_to_start_game:
-        Log.write("Exiting game...")
-        return
+    # # open main menu
+    # user_wishes_to_start_game = MainMenu(music).start()
+    # if not user_wishes_to_start_game:
+    #     Log.write("Exiting game...")
+    #     return
 
     # init the game
     map = Map()
