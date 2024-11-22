@@ -287,7 +287,7 @@ class _Log:
         write(choice(INTERACTION_DATA["escape"]))
     
     def combat_init_flee_roll(_):
-        write(f"Attempting to flee, Roll {CONSTANTS["flee_min_roll_to_escape"]} or higher to succeed")
+        write(f"Attempting to flee, Roll {CONSTANTS['flee_min_roll_to_escape']} or higher to succeed")
 
     def combat_flee_roll_results(_, roll : int):
         write(f"You rolled {roll}")

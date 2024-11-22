@@ -374,7 +374,8 @@ class Map:
                     if not self.is_cleared: music.play("fight")
                 case _:       music.play("ambience")
             
-            Log.entered_room(self.type if self.type != "mimic_trap" else "chest")
+            
+
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
@@ -688,7 +689,8 @@ class Combat:
             else:
                 self.enemy_turn()
 
-            sleep(4)
+            Log.newline()
+            wait_for_key("[Press ENTER to continue]", "enter")
             Console.truncate("combat round start")
             
             enemyturn = not enemyturn
@@ -972,9 +974,12 @@ def run_game():
         
         Log.header("NEW ROUND", 1)
         
+        
         if game_just_started:
             Log.first_time_enter_spawn_room()
             game_just_started = False
+        else:
+            Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
 
         # activate all the skills that are supposed to be ran right when a new non-combat round starts
         player.call_skill_functions(
