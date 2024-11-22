@@ -16,7 +16,7 @@ def grid_coords_to_real_coords(grid : Array2D[tk.Frame], coords : Vector2):
     
 
 
-def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, command_queue, existing_walls):
+def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, existing_walls : Array2D[dict[str,bool]], command_queue, user_input_queue):
     # used for smooth player repositioning
     anim_library = AnimationLibrary()
 

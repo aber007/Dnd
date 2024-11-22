@@ -498,10 +498,20 @@ class Map:
 
             self.manager = Manager()
             self.command_queue = self.manager.Queue(maxsize=100)
+            self.user_input_queue = self.manager.Queue(maxsize=100)
             self.UI_thread : Process | None = None
         
         def open(self, player_pos : Vector2, existing_walls):
-            self.UI_thread = Process(target=openUIMap, args=(self.size, self.rooms, player_pos, self.command_queue, existing_walls))
+            self.UI_thread = Process(
+                target=openUIMap,
+                args=(
+                    self.size,
+                    self.rooms,
+                    player_pos,
+                    existing_walls,
+                    self.command_queue,
+                    self.user_input_queue
+                ))
             self.UI_thread.start()
         
         def send_command(self, type : str, position : Vector2, *args : str):
