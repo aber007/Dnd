@@ -30,9 +30,8 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, existing_w
     main = tk.Tk()
     main.title("DnD map")
     main.geometry(f"{windowsize}x{windowsize}+0+0")
+    main.resizable(0, 0)
     main.configure(bg="black")
-    main.attributes("-topmost", True)
-    main.overrideredirect(True)
 
     # Grid setup
     bg_Canvas = tk.Canvas(main, bg="gray", width=300, height=300)

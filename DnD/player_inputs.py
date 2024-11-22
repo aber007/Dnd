@@ -4,7 +4,8 @@ import time, threading
 class _PlayerInputs:
     def __init__(self) -> None:
         self.registered_inputs : dict[str,list[Callable[[None],None]]] = {}
-        self.waiting_for_key = False
+        self.waiting_for_key : bool = False
+        self.stop_thread : bool = False
     
     def start_thread(self, queue):
         """This is ran at the end of Map.UI.__init__"""
@@ -12,6 +13,9 @@ class _PlayerInputs:
 
         self.thread = threading.Thread(target=self.check_inputs_loop)
         self.thread.start()
+    
+    def kill_thread(self):
+        self.stop_thread = True
     
     def register_input(self, keysym : str, func : Callable[[None], None], persistent : bool = False) -> None:
         """keysym is the key used by Tcl (aka tkinter) when handling input events\n
@@ -41,7 +45,7 @@ class _PlayerInputs:
 
     def check_inputs_loop(self) -> None:
         """A separate thread to automatically check for new inputs"""
-        while True:
+        while not self.stop_thread:
             # dont check for new inputs automatically if the main thread is also doing so
             if not self.waiting_for_key:
                 self.check_inputs()

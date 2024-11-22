@@ -1026,7 +1026,7 @@ def run_game():
 
     Log.newline()
 
-
+    PlayerInputs.kill_thread()
     map.close_UI_window()
 
 
