@@ -113,11 +113,11 @@ class Slider:
         self.run_loop = True
 
     def start(self) -> str:
-        keyboard.on_press_key("up",    lambda _ : self.set_x(self.x_max), suppress=True)
-        keyboard.on_press_key("down",  lambda _ : self.set_x(0), suppress=True)
-        keyboard.on_press_key("right", lambda _ : self.set_x(self.x+1), suppress=True)
-        keyboard.on_press_key("left",  lambda _ : self.set_x(self.x-1), suppress=True)
-        keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
+        PlayerInputs.register_input("Up", lambda : self.set_x(self.x_max))
+        PlayerInputs.register_input("Down", lambda : self.set_x(0))
+        PlayerInputs.register_input("Right", lambda : self.set_x(self.x+1))
+        PlayerInputs.register_input("Left", lambda : self.set_x(self.x-1))
+        PlayerInputs.register_input("Return", lambda : setattr(self, "run_loop", False))
 
         write("[Press ENTER to confirm and arrow UP/DOWN/LEFT/RIGHT to navigate]\n" if self.log_controls else "")
 
@@ -150,9 +150,10 @@ class Slider:
 
     def loop(self):
         while self.run_loop:
+            PlayerInputs.check_inputs()
             time.sleep(1/20)
         
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
 
 
 class Bar:
@@ -184,7 +185,7 @@ def ensure_terminal_width(desired_width):
 
 def wait_for_key(msg: str, key : str):
     write(msg)
-    keyboard.wait(key, suppress=True)
+    PlayerInputs.wait_for_key(key)
 
 
 def combat_bar():
@@ -351,7 +352,7 @@ if __name__ == "__main__":
     return_val = menu.start()
     print(return_val)
 
-    # wait_for_key("\n[Press ENTER to continue]\n", "enter")
+    # wait_for_key("\n[Press ENTER to continue]\n", "Return")
 
     # slider = Slider(20, header="Example header")
     # return_val = slider.start()

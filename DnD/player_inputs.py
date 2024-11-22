@@ -1,4 +1,5 @@
 from typing import Callable
+import time
 
 class _PlayerInputs:
     def __init__(self) -> None:
@@ -40,6 +41,17 @@ class _PlayerInputs:
             pressed_key = self.q.get()
             funcs_to_call = self.registered_inputs.get(pressed_key, [])
             [func() for func in funcs_to_call]
+    
+    def wait_for_key(self, keysym : str) -> None:
+        while True:
+            qsize = self.q.qsize()
+
+            for _ in range(qsize):
+                pressed_key = self.q.get()
+                if pressed_key == "Return":
+                    return
+            
+            time.sleep(1/20)
 
 
 PlayerInputs = _PlayerInputs()

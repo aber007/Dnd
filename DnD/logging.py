@@ -196,7 +196,7 @@ class _Log:
         Log.header("SKILL TREE", 1)
         write(*formatted_branch_strings, sep="\n"*2, end="\n"*2)
 
-        wait_for_key("[Press ENTER to continue]", "enter")
+        wait_for_key("[Press ENTER to continue]", "Return")
 
 
     # entity related
