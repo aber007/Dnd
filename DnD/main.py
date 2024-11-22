@@ -78,6 +78,7 @@ class MainMenu:
                 
                 case "Lore":
                     """Shows lore (maybe remove? Are we lazy?)"""
+                    self.submenu_lore()
                 
                 case "Help":
                     self.submenu_help()
@@ -115,9 +116,14 @@ class MainMenu:
         # if theres text to display here use wait_for_key before the truncate call
         Console.truncate("options menu start")
     
+    
 
     # build inside these
-    def submenu_lore(self): ...
+    def submenu_lore(self): 
+        with open("../story/lore_text/visible_lore.txt", "a") as lore_file:
+            text = lore_file.read()
+            text = text.split
+        
     def submenu_help(self):
         Log.header("Help", 2)
         print("\n Controls:\n Menu navigation - Up/Down-key\n Menu selection - Enter\n Slider controls - Left/Right-key\n")
