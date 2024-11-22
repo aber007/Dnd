@@ -55,6 +55,7 @@ class MainMenu:
         
     def start(self) -> bool:
         """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
+        self.create_lore()
 
         user_wishes_to_start_game = False
 
@@ -118,12 +119,32 @@ class MainMenu:
     
     
 
-    # build inside these
-    def submenu_lore(self): 
-        with open("../story/lore_text/visible_lore.txt", "a") as lore_file:
-            text = lore_file.read()
-            text = text.split
+    def create_lore(self) -> None: 
+        self.current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
+        self.lore_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'actual_lore.txt'))
+        self.enc_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'encrypted.txt'))
+        if not os.path.isdir(self.lore_dir):
+            with open(self.lore_dir, "w") as lore_file:
+                lore_file.write("")
+                with open(self.enc_dir, "r") as enc_file:
+                    text = enc_file.read()
+                    lore_file.write(text)
+
         
+        
+    # build inside these
+    def submenu_lore(self):
+        Log.header("Lore", 1)
+        with open(self.lore_dir, "r") as lore_file:
+            lore_lines = lore_file.read().split("\n")
+        for line in lore_lines:
+            if line != ":":
+                print(line)
+            else:
+                print()
+        
+        wait_for_key("\nPress Enter to go back", "enter")
+
     def submenu_help(self):
         Log.header("Help", 2)
         print("\n Controls:\n Menu navigation - Up/Down-key\n Menu selection - Enter\n Slider controls - Left/Right-key\n")
