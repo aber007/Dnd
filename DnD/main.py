@@ -23,7 +23,6 @@ from . import (
     Effect,
     Log,
     Console,
-    Buff,
     PlayerInputs
     )
 
@@ -38,16 +37,64 @@ except ImportError:
 class Entity:
     def take_damage(self, dmg : int, dmg_type : str = "melee", source : str = "", log : bool = True) -> int:
         """source is used to specify what caused the dmg. Only used if log == True"""
-        if isinstance(self, Enemy) and dmg_type == "melee": dmg = max(0, dmg - self.defence_melee)
-        elif isinstance(self, Player):                      dmg = max(0, dmg - self.defence); self.stats["hp lost"] += dmg
+        if isinstance(self, Enemy) and dmg_type == "melee":    dmg = max(0, dmg - self.defence_melee)
+        elif isinstance(self, Player) and dmg_type == "melee": dmg = max(0, dmg - self.defence)
         
         self.hp = max(0, self.hp - dmg)
         self.is_alive = 0 < self.hp
+        
+        if self.name == "player":
+            self.stats["hp lost"] += dmg
 
         if log:
             Log.entity_took_dmg(self.name, dmg, self.hp, self.is_alive, source)
         
         return dmg
+
+    def heal(self, additional_hp : int, log : bool = True):
+        # cap the hp to max_hp
+        hp_before = self.hp
+        self.hp = min(self.hp + additional_hp, self.max_hp)
+        hp_delta = self.hp - hp_before
+
+        if log:
+            Log.entity_healed(self.name, hp_before, additional_hp, hp_delta, self.hp)
+
+        if self.name == "player":
+            self.stats["hp gained"] += hp_delta
+
+    def add_effect(self, name : str, type : str, effect : int, effect_type : str, duration : int, log : bool = True) -> Effect | None:
+        """Instantiates the Effect class and adds it to this entity's list of current effects only if an effect of the same type isnt present\n
+        Returns the Effect instance or None, depending on if the effect was successfully added\n
+        The returend Effect instance is meant to be used with Enemy.special_is_active"""
+
+        current_effect_types = [active_effect.type for active_effect in self.active_effects]
+
+        # only add the effect if an effect of the same types isnt present
+        if type not in current_effect_types:
+            effect_instance = Effect(name=name, type=type, effect=effect, effect_type=effect_type, duration=duration, target=self)
+            self.active_effects.append(effect_instance)
+            if log:
+                Log.entity_received_effect(effect_instance)
+            
+            return effect_instance
+    
+    def clear_effects(self):
+        for effect in self.active_effects:
+            effect.force_expire()
+        
+        self.active_effects = []
+    
+    def update_effects(self) -> int:
+        """Returns the amount of effects that were ticked"""
+        effects_ticked = 0
+
+        # instance the self.active_effects list since effect.tick() might remove itself from the list
+        for effect in list(self.active_effects):
+            effect.tick()
+            effects_ticked += 1
+        
+        return effects_ticked
     
 class MainMenu:
     
@@ -199,15 +246,6 @@ class Player(Entity):
             use_callable(self)
 
         return None
-
-    def heal(self, additional_hp : int):
-        # cap the hp to player_hp
-        hp_before = self.hp
-        self.hp = min(self.hp + additional_hp, self.max_hp)
-        hp_delta = self.hp - hp_before
-
-        Log.player_healed(hp_before, additional_hp, hp_delta, self.hp)
-        self.stats["hp gained"] += hp_delta
     
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""
@@ -301,59 +339,54 @@ class Player(Entity):
             return_vars.append( {"val": func(variables), "return_val_type": func.return_val_type} )
         
         return return_vars
-    
-    def update_effects(self):
-        # instance the self.active_effects list since effect.tick() might remove itself from the list
-        for effect in list(self.active_effects):
-            effect.tick()
 
 
         
 class Enemy(Entity):
-    def __init__(self, enemy_type : str, target : Player) -> None:
+    def __init__(self, enemy_type : str) -> None:
         # get the attributes of the given enemy_type and make them properties of this object
         # since the probability value won't be useful it's not added as an attribute
         [setattr(self, k, v) for k,v in ENEMY_DATA[enemy_type].items() if k != "probability"]
 
         self.is_alive = True
         self.active_effects = []
-        self.active_buffs = []
-        self.special_active = False
+
+        # the effect object that was used when this enemy last used its special ability
+        # its used to check wether the special ability is still in effect when deciding
+        #   if the special ability should trigger again
+        self.active_special_effect : Effect | None = None
     
     def attack(self, target, dmg_multiplier : int = 1) -> int:
         """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
         return target.take_damage(math.ceil(self.dmg * dmg_multiplier), log=False)
     
-    def use_special(self, special : str, player : Player) -> None:
+    def use_special(self, player : Player) -> None:
         """Runs the code for special abilities which can be used during combat"""
-        match special:
+
+        Log.newline()
+        Log.enemy_used_special(self.special_info)
+
+        match self.special:
             case "trap":
-                player.take_damage(player.defence + 2)
-                print(f"You have been hit by a trap for 2 damage")
+                player.take_damage(dmg=self.special_dmg, dmg_type="trap", source=f"{self.name} trap")
             case "berserk":
-                self.active_buffs.append(Buff(type="dmg", effect=self.dmg, duration=5, target=self))
+                self.active_special_effect = player.add_effect(name="berserk", type="dmg", effect=self.dmg, effect_type="melee", duration=5, log=False)
             case "poison":
-                player.active_effects.append(Effect(type="poison", effect=2, duration=7, target=player))
+                self.active_special_effect = player.add_effect(name="poison", type="dmg", effect=2, effect_type="effect", duration=7, log=False)
             case "fire_breath":
-                player.take_damage(ENEMY_DATA[self.name]["special_dmg"])
-                print(f"You have been hit by fire breath for 8 damage")
+                player.take_damage(dmg=self.special_dmg, dmg_type="magic", source=f"{self.name}'s fire breath")
             case "stone_skin":
-                self.hp += (self.max_hp * 0.1)
-                self.active_buffs.append(Buff(type="hp", effect=2, duration=2, target=self))
-            
-
-                
-
-    def add_effect(self, type : str, effect : int, duration : int):
-        self.active_effects.append(Effect(type=type, effect=effect, duration=duration, target=self))
-        Log.entity_received_effect(self.name, type, effect, duration)
+                self.heal(round(self.max_hp * 0.1))
+                self.active_special_effect = self.add_effect(name="stone skin", type="hp", effect=3, effect_type="", duration=3, log=False)
     
-    def update_effects(self):
-        # instance the self.active_effects list since effect.tick() might remove itself from the list
-        for effect in list(self.active_effects):
-            effect.tick()
-        for effect in list(self.active_buffs):
-            effect.tick()
+    def special_is_active(self) -> bool:
+        """Returns wether the last used special attack is still in effect"""
+
+        if self.active_special_effect == None:
+            return False
+        
+        return not self.active_special_effect.has_worn_off()
+
 
 
 
@@ -413,13 +446,13 @@ class Map:
                     wait_for_key("[Press ENTER to roll dice]", "Return")
                     roll = player.roll_dice()
 
-                    Log.newline(2)
                     if CONSTANTS["normal_trap_min_roll_to_escape"] <= roll:
                         Log.escaped_trap(roll, False)
                     else:
                         Log.escaped_trap(roll, True)
                         player.take_damage(CONSTANTS["normal_trap_dmg"])
                     
+                    Log.newline()
                     wait_for_key("[Press ENTER to continue]", "Return")
             
             # update the tile the player just entered
@@ -645,7 +678,7 @@ class Combat:
 
         # needed for mimic traps
         if force_enemy_type:
-            return Enemy(enemy_type = force_enemy_type, target = self.player)
+            return Enemy(enemy_type = force_enemy_type)
 
 
         enemy_types = list(ENEMY_DATA.keys())
@@ -668,24 +701,26 @@ class Combat:
                 spawn_probabilities[enemy_type] -= new_probability
             if CONSTANTS["debug"]["show_enemy_probabilities"] and ENEMY_DATA[enemy_type]["probability"] >= 0:
                 print(str(ENEMY_DATA[enemy_type]["name"]) + ": " + str(round(spawn_probabilities[enemy_type], 5)) + " : " + str(round(spawn_probabilities[enemy_type]-last_probability, 5))) #Not using fstring because of formatting issues
-            
-        
-            
 
 
         enemy_type_to_spawn = choices(list(spawn_probabilities.keys()), list(spawn_probabilities.values()))[0]
 
-        return Enemy(enemy_type = enemy_type_to_spawn, target = self.player)
+        return Enemy(enemy_type = enemy_type_to_spawn)
 
     def start(self, music : Music) -> None:
         self.player.current_combat = self
+        self.player.clear_effects()
 
         Log.combat_enemy_revealed(self.enemy.name_in_sentence)
         Log.newline()
+
         wait_for_key("[Press ENTER to continue]", "Return")
         Log.clear_console()
-        Log.header("COMBAT", 1)
         
+        Log.header("COMBAT", 1)
+        Console.save_cursor_position("combat round start")
+        sleep(1)
+
         enemyturn = choice([True, False])
 
         
@@ -693,13 +728,12 @@ class Combat:
         while self.player.is_alive and self.enemy.is_alive and not fled:
             self.turn += 1
 
-            Console.save_cursor_position("combat round start")
-
-            if self.turn == 1: sleep(1)
             Log.header(f"Turn {self.turn}", 2)
 
-            self.enemy.update_effects()
-            self.player.update_effects()
+            effects_ticked = self.enemy.update_effects()
+            effects_ticked += self.player.update_effects()
+            if 0 < effects_ticked:
+                Log.newline()
 
             self.write_hp_bars()
 
@@ -762,7 +796,7 @@ class Combat:
             enemy_bar_length = round(CONSTANTS["hp_bar_max_length"] * max_hp_ratio)
         else:
             enemy_bar_length = CONSTANTS["hp_bar_max_length"]
-            player_bar_length = round(CONSTANTS["hp_bar_max_length"] * max_hp_ratio)
+            player_bar_length = round(CONSTANTS["hp_bar_max_length"] * (1/max_hp_ratio))
 
         # Write the health bars to terminal
         Bar(
@@ -786,6 +820,8 @@ class Combat:
     def player_turn(self) -> bool:
         """If the player attempted to flee: return the result, otherwise False"""
 
+        Console.save_cursor_position("player turn start")
+
         fled = False
         action_completed = False  # Loop control variable to retry actions
         while not action_completed:
@@ -794,11 +830,13 @@ class Combat:
 
             match action_options[action_idx]:
                 case "Use item / Attack":
+                    Console.truncate("player turn start")
                     action_completed = self.player_use_item_attack()
                     if action_completed:
-                        break # skip Log.clear_lines
+                        return fled
 
                 case "Attempt to Flee":
+                    Console.truncate("player turn start")
                     return self.player_attempt_to_flee()
         
         return fled
@@ -899,14 +937,9 @@ class Combat:
         Log.newline()
         Log.enemy_attack(self.enemy.name, dmg_dealt_to_player)
         Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
-        
-        if self.player.is_alive and uniform(0, 1) < self.enemy.special_chance:
-            Log.newline()
-            print(self.enemy.special_info)
-            self.enemy.use_special(self.enemy.special, player=self.player)
 
-            # *player takes dmg from the special*
-
+        if self.player.is_alive and not self.enemy.special_is_active() and uniform(0, 1) < self.enemy.special_chance:
+            self.enemy.use_special(player=self.player)
 
 
 def get_player_action_options(player : Player, map : Map) -> list[str]:
