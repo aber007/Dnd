@@ -22,11 +22,16 @@ class ANSI:
         set_xy_0 = "\033[H"
     
     class Color:
-        rgb_fg = lambda r,g,b: f"\u001b[38;2;{r};{g};{b}m"
-        rgb_bg = lambda r,g,b: f"\u001b[48;2;{r};{g};{b}m"
+        rgb_fg = lambda r,g,b: f"\033[38;2;{r};{g};{b}m"
+        rgb_bg = lambda r,g,b: f"\033[48;2;{r};{g};{b}m"
         selected_bg = rgb_bg(255,255,255)
         selected_fg = rgb_fg(0,0,0)
-        off = "\u001b[0m"
+        off = "\033[0m"
+    
+    class Text:
+        off = "\033[0m"
+        single_underline = "\033[4m"
+        double_underline = "\033[21m"
     
     # clear_terminal = "\033[2J"
     # clear_terminal_buffer = "\033[3J"

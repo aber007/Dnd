@@ -42,14 +42,16 @@ class _Log:
         Console.write(*s, sep="", end="\n")
 
     def header(_, content : str, lvl : int) -> int:
+        underline_str = ANSI.Text.double_underline if lvl == 1 else ANSI.Text.single_underline if lvl == 2 else ""
+
         length_left = (CONSTANTS["header_length"]-len(content)) // 2
         length_right = length_left + 1 if len(content) % 2 == 0 else length_left
         match lvl:
             case 1:
-                return write(ANSI.clear_line, "="*length_left, f" {content} ", "="*length_right, end="\n"*2)
+                return write(ANSI.clear_line, "="*length_left, f" {underline_str}{content}{ANSI.Text.off} ", "="*length_right, end="\n"*2)
             
             case 2:
-                return write(ANSI.clear_line, "-"*(length_left-1), f") {content} (", "-"*(length_right-1), end="\n"*2)
+                return write(ANSI.clear_line, "-"*(length_left-1), f") {underline_str}{content}{ANSI.Text.off} (", "-"*(length_right-1), end="\n"*2)
             
     def end(_):
         length = CONSTANTS["header_length"] + 2

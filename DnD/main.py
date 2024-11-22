@@ -125,7 +125,7 @@ class MainMenu:
         print(" The controls mentioned will not be usable\n outside of the game when playing.\n")
         Log.end()
 
-        wait_for_key("Press Enter to go back", "enter")
+        wait_for_key("Press ENTER to go back", "Return")
 
 
 class Player(Entity):
@@ -709,7 +709,7 @@ class Combat:
                 self.enemy_turn()
 
             Log.newline()
-            wait_for_key("[Press ENTER to continue]", "enter")
+            wait_for_key("[Press ENTER to continue]", "Return")
             Console.truncate("combat round start")
             
             enemyturn = not enemyturn
