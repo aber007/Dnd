@@ -290,14 +290,13 @@ class DodgeEnemyAttack:
     
     def start(self):
         """Returns the enemy's damage factor"""
-
-
+        
         # Decide the time before the bar turns green
         wait_time = self.times["waiting"] + randint(-self.times["waiting_range"], self.times["waiting_range"])
 
         write("Press ENTER when the bar is green or orange to dodge\n")
         time.sleep(1)
-        keyboard.on_press_key("enter", lambda _ : setattr(self, "enter_pressed", True), suppress=True)
+        PlayerInputs.register_input("Return", lambda : setattr(self, "enter_pressed", True))
 
         # make the bar red and wait for wait_time or enter_pressed
         write(self.colors["red"], " "*self.length, ANSI.Color.off)
@@ -335,13 +334,14 @@ class DodgeEnemyAttack:
         seconds_to_wait = ms/1000
 
         while time.time() - start_time < seconds_to_wait and not self.enter_pressed:
+            PlayerInputs.check_inputs()
             time.sleep(1/20)
 
     def on_finished(self):
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
         time.sleep(1)
 
-    
+
 
 if __name__ == "__main__":
     ensure_terminal_width(100)
