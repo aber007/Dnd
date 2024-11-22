@@ -42,12 +42,18 @@ class _Log:
         Console.write(*s, sep="", end="\n")
 
     def header(_, content : str, lvl : int) -> int:
+        length_left = (CONSTANTS["header_length"]-len(content)) // 2
+        length_right = length_left + 1 if len(content) % 2 == 0 else length_left
         match lvl:
             case 1:
-                return write(ANSI.clear_line, "="*15, f" {content} ", "="*15, end="\n"*2)
+                return write(ANSI.clear_line, "="*length_left, f" {content} ", "="*length_right, end="\n"*2)
             
             case 2:
-                return write(ANSI.clear_line, "-"*15, f") {content} (", "-"*15, end="\n"*2)
+                return write(ANSI.clear_line, "-"*(length_left-1), f") {content} (", "-"*(length_right-1), end="\n"*2)
+            
+    def end(_):
+        length = CONSTANTS["header_length"] + 2
+        return write(ANSI.clear_line, "="*length, end="\n"*2) 
     
     def newline(_, count : int = 1) -> int:
         return write("\n"*count, end="")

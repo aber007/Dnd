@@ -119,10 +119,10 @@ class MainMenu:
     # build inside these
     def submenu_lore(self): ...
     def submenu_help(self):
-        print(f"{"="*17} Help {"="*18}")
+        Log.header("Help", 2)
         print("\n Controls:\n Menu navigation - Up/Down-key\n Menu selection - Enter\n Slider controls - Left/Right-key\n")
         print(" The controls mentioned will not be usable\n outside of the game when playing.\n")
-        print(f"{"="*41}\n")
+        Log.end()
 
         wait_for_key("Press Enter to go back", "enter")
 

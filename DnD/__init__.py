@@ -106,6 +106,8 @@ CONSTANTS = {
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 110,
 
+    "header_length": 39,
+
     # change these when debugging
     "debug": {
         "set_all_map_tiles_discovered": False, # default False
