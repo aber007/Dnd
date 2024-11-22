@@ -108,10 +108,7 @@ class _Log:
         return write("You have no items to use!")
 
 
-    # player related
-    def player_healed(_, hp_before : int, additional_hp : int, hp_delta : int, current_hp : int):
-        write(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {current_hp}")
-    
+    # player related    
     def player_max_hp_increased(_, previous_max_hp : int, current_max_hp : int):
         write(f"The player's max HP has increased! Max HP: {previous_max_hp} -> {current_max_hp}")
     
@@ -221,18 +218,33 @@ class _Log:
             )
             )
 
-    def entity_received_effect(_, entity_name : str, effect_type : str, dmg : int, duration : int):
-        write(f"The {entity_name} has been hit by a {effect_type} effect, dealing {dmg} DMG for {duration} rounds")
-    
-    def effect_tick(_, target_name : str, effect_type : str, dmg : int, duration : int):
+    def entity_healed(_, entity_name, hp_before : int, additional_hp : int, hp_delta : int, current_hp : int):
         write(
-            f"The {target_name} was hurt for {dmg} DMG from the {effect_type} effect.",
+            f"The {entity_name} was healed for {additional_hp} HP",
             (
-                f"Duration remaining: {duration}" if duration != 0 else
-                f"The {effect_type} effect wore off"
+                f" (capped at {hp_delta} HP). " if additional_hp != hp_delta else
+                ". "
+            ),
+            f"HP: {hp_before} -> {current_hp}"
             )
-            )
+
+    def entity_received_effect(_, effect_instance):
+        action_str = {"hp": "healing", "dmg": "dealing"}[effect_instance.type]
+        effect_suffix_str = effect_instance.type.upper()
+
+        write(f"The {effect_instance.target.name} has been hit by a {effect_instance.name} effect, {action_str} {effect_instance.effect} {effect_suffix_str} for {effect_instance.duration} rounds")
     
+    def effect_tick(_, effect_instance):
+        action_str = {"hp": "healed", "dmg": "damaged"}[effect_instance.type]
+        effect_suffix_str = effect_instance.type.upper()
+
+        write(
+            f"The {effect_instance.target.name} was {action_str} for {effect_instance.effect} {effect_suffix_str} from the {effect_instance.name} effect.",
+            (
+                f"Duration remaining: {effect_instance.duration}" if effect_instance.duration != 0 else
+                f"The {effect_instance.name} effect wore off"
+            ),
+            sep=" ")
 
     # room related
     def first_time_enter_spawn_room(_):
@@ -250,7 +262,7 @@ class _Log:
         write(f"You stepped in a trap! Roll at least {min_roll_to_escape} to save yourself")
     
     def escaped_trap(_, roll : int, harmed : bool):
-        write(f"You rolled {roll} and", ('managed to escape unharmed' if not harmed else 'was harmed by the trap while escaping'), sep=" ")
+        write(f"{ANSI.clear_line}You rolled {roll} and", ('managed to escape unharmed' if not harmed else 'was harmed by the trap while escaping'), sep=" ")
 
     def shop_display_current_gold(_, gold : int) -> int:
         return write(f"Current gold: {gold}")
@@ -314,10 +326,14 @@ class _Log:
                 )
     
     def combat_enemy_revealed(_, enemy_name_in_sentence : str):
-        write(f"{enemy_name_in_sentence.capitalize()} appeared!")
+        enemy_name_in_sentence = enemy_name_in_sentence[0].upper() + enemy_name_in_sentence[1:]
+        write(f"{enemy_name_in_sentence} appeared!")
     
     def player_skill_damaged_enemy(_, enemy_name : str, dmg : int):
         write(f"A skill of yours dealt {dmg} damage to the {enemy_name}")
+    
+    def enemy_used_special(_, special_info : str):
+        write(special_info)
 
 
 Log = _Log()

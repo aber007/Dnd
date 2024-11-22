@@ -130,6 +130,6 @@ from .player_actions import get_user_action_choice
 from .vector2 import Vector2
 from .array2d import Array2D
 from .items import Item, Inventory
-from .effects import Effect, Buff
+from .effects import Effect
 from .create_walls_algorithm import CreateWallsAlgorithm
 from .main import run_game
