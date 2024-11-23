@@ -247,13 +247,19 @@ class _Log:
             sep=" ")
 
     # room related
-    def first_time_enter_spawn_room(_):
-        write(choice(INTERACTION_DATA["start"]))
+    def first_time_enter_spawn_room(_) -> str:
+        """Returns the text choice if this needs to be saved"""
+        text_choice = choice(INTERACTION_DATA["start"])
+        write(text_choice)
+        return text_choice
 
-    def entered_room(_, room_type : str):
+    def entered_room(_, room_type : str) -> str:
+        """Returns the text choice if this needs to be saved"""
         text_options = INTERACTION_DATA.get(room_type, None)
         if text_options != None:
-            write(choice(text_options))
+            text_choice = choice(text_options)
+            write(text_choice)
+            return text_choice
     
     def triggered_mimic_trap(_):
         write(choice(INTERACTION_DATA["mimic_trap"]))

@@ -98,19 +98,23 @@ class Entity:
     
 class MainMenu:
     
-    def __init__(self, music : Music) -> None:
+    def __init__(self, music : Music, game_started : bool) -> None:
         self.music = music
+        self.game_started = game_started
         
     def start(self) -> bool:
         """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
 
         user_wishes_to_start_game = False
-
+        Console.clear()
         Log.header("MAIN MENU", 1)
         Console.save_cursor_position("main menu start")
 
         while True:
-            action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
+            if self.game_started:
+                action_options = ["Continue Game", "Options", "Lore", "Help", "Quit Game"]
+            else:
+                action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
             action_idx = get_user_action_choice("", action_options)
             
             # remove the ItemSelect remains
@@ -120,6 +124,9 @@ class MainMenu:
                 case "Start Game":
                     user_wishes_to_start_game = True
                     break
+                
+                case "Continue Game":
+                    return True
 
                 case "Options":
                     self.submenu_options()
@@ -967,7 +974,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 player_action_options = [
                     "Open chest",
                     *door_options,
-                    "Open Inventory"
+                    "Open Inventory",
                 ]
             else:
                 player_action_options = default_action_options
@@ -983,7 +990,7 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
                 player_action_options = [
                     "Open chest",
                     *door_options,
-                    "Open Inventory"
+                    "Open Inventory",
                 ]
             # if the mimic has been defeated
             else:
@@ -993,87 +1000,109 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
             player_action_options = [
                 "Buy from shop",
                 "Open Inventory",
-                *door_options
+                *door_options,
             ]
-
+    player_action_options.append("Main Menu")
     return player_action_options
 
 
+
 def run_game():
-    Console.clear()
+    try:
+        Console.clear()
+        game_in_progress = False
 
-    # ensures ItemSelect and music volume slider work properly, therefore must be first
-    ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
+        # ensures ItemSelect and music volume slider work properly, therefore must be first
+        ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
-    map = Map()
-    music = Music()
-    player = Player(map)
+        map = Map()
+        music = Music()
+        player = Player(map)
 
-    # since the player inputs are captured using the tkinter window, init it before main menu
-    map.open_UI_window(player_pos = player.position)
+            
+            
 
-    # open main menu
-    user_wishes_to_start_game = MainMenu(music).start()
-    if not user_wishes_to_start_game:
-        Log.write("Exiting game...")
-        return
+        # since the player inputs are captured using the tkinter window, init it before main menu
+        map.open_UI_window(player_pos = player.position)
 
-    # init the game
-    game_just_started = True
-    while player.is_alive and player.inventory.lvl < 20:
-        if not CONSTANTS["debug"]["disable_console_clearing"]:
-            Log.clear_console()
-        
-        Log.header("NEW ROUND", 1)
-        
-        
-        if game_just_started:
-            Log.first_time_enter_spawn_room()
-            game_just_started = False
-        else:
-            Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
+        # open main menu
+        user_wishes_to_start_game = MainMenu(music, game_in_progress).start()
+        if not user_wishes_to_start_game:
+            Log.write("Exiting game...")
+            raise SystemExit
 
-        # activate all the skills that are supposed to be ran right when a new non-combat round starts
-        player.call_skill_functions(
-                when="new_non_combat_round",
-                variables={"player": player}
-                )
+        # init the game
+        game_just_started = True
+        game_in_progress = True
+        menu_last_visited = False
 
-        # Get a list of the players currently available options and ask user to choose
-        # Retry until a valid answer has been given
-        action_options : list[str] = get_player_action_options(player, map)
-        action_idx = get_user_action_choice("Choose action: ", action_options)
+        in_game_manu = MainMenu(music, game_in_progress)
 
-        # Decide what to do based on the player's choice
-        match action_options[action_idx]:
-            case "Open chest" | "Buy from shop":
-                # interact with the current room
-                map.get_room(player.position).interact(player, map, music)
+        while player.is_alive and player.inventory.lvl < 20:
+            if not CONSTANTS["debug"]["disable_console_clearing"]:
+                Log.clear_console()
+            
+            Log.header("NEW ROUND", 1)
+            
+            if game_just_started:
+                last_info = Log.first_time_enter_spawn_room()
+                game_just_started = False
+            elif menu_last_visited:
+                menu_last_visited = False
+                last_info = last_info or Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
+                Log.write(last_info)
+            else:
+                last_info = Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
 
-            case "Open Inventory":
-                player.open_inventory()
+            # activate all the skills that are supposed to be ran right when a new non-combat round starts
+            player.call_skill_functions(
+                    when="new_non_combat_round",
+                    variables={"player": player}
+                    )
 
-            case _other: # all other cases, aka Open door ...
-                assert _other.startswith("Open door facing")
-                door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
-                map.move_player(direction=door_to_open, player=player, music=music)
+            # Get a list of the players currently available options and ask user to choose
+            # Retry until a valid answer has been given
+            action_options : list[str] = get_player_action_options(player, map)
+            action_idx = get_user_action_choice("Choose action: ", action_options)
+
+            # Decide what to do based on the player's choice
+            match action_options[action_idx]:
+                case "Open chest" | "Buy from shop":
+                    # interact with the current room
+                    map.get_room(player.position).interact(player, map, music)
+
+                case "Open Inventory":
+                    player.open_inventory()
+
+                case "Main Menu":
+                    if not in_game_manu.start():
+                        Log.write("Exiting game...")
+                        raise SystemExit
+                    menu_last_visited = True
+
+                case _other: # all other cases, aka Open door ...
+                    assert _other.startswith("Open door facing")
+                    door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
+                    map.move_player(direction=door_to_open, player=player, music=music)
 
 
-    Log.game_over(player.is_alive)
+        Log.game_over(player.is_alive)
 
 
-    # Shows lifetime stats
-    Log.newline()
-    Log.header("GAME STATS", 1)
-    for key, values in player.stats.items():
-        print(f"{key}: {values}")
+        # Shows lifetime stats
+        Log.newline()
+        Log.header("GAME STATS", 1)
+        for key, values in player.stats.items():
+            print(f"{key}: {values}")
 
-    Log.newline()
+        Log.newline()
+        raise SystemExit
+    except SystemExit:
+        Console.clear()
+        PlayerInputs.kill_thread()
+        map.close_UI_window()
 
-    PlayerInputs.kill_thread()
-    map.close_UI_window()
-
-
+    
 
 
 
