@@ -329,7 +329,7 @@ class Map:
 
             self.is_cleared : bool = False
 
-        def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
+        def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
             # on_enter room log message
@@ -343,16 +343,14 @@ class Map:
             # set music
             match self.type:
                 case "shop":
-                    music.play("shop")
+                    Music.play("shop")
                 
                 case "enemy": 
-                    if not self.is_cleared:
-                        music.play("fight")
-                    else:
-                        music.play("ambience")
+                    if self.is_cleared:
+                        Music.play("ambience")
                 
                 case _:
-                    music.play("ambience")
+                    Music.play("ambience")
 
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
@@ -361,12 +359,12 @@ class Map:
                 case ("enemy", True):
                     combat_instance = Combat(player, map)
                     self.enemy_type = combat_instance.enemy.name
-                    combat_instance.start(music=music)
+                    combat_instance.start()
                     Log.clear_last_room_entered_text()
                 
                 case ("enemy", False):
                     if not self.is_cleared:
-                        Combat(player, map, force_enemy_type=self.enemy_type).start(music=music)
+                        Combat(player, map, force_enemy_type=self.enemy_type).start()
                         Log.clear_last_room_entered_text()
 
                 case ("chest", True):
@@ -413,7 +411,7 @@ class Map:
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
 
-        def interact(self, player : Player, map, music : Music) -> None:
+        def interact(self, player : Player, map) -> None:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
@@ -431,8 +429,7 @@ class Map:
                     player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
 
                     if player.is_alive:
-                        music.play("fight")
-                        Combat(player, map, force_enemy_type = "Mimic").start(music=music)
+                        Combat(player, map, force_enemy_type = "Mimic").start()
                     else:
                         Log.newline()
                         wait_for_key("[Press ENTER to continue]", "Return")
@@ -610,7 +607,7 @@ class Map:
 
 
 
-    def move_player(self, direction : str, player : Player, music : Music) -> None:
+    def move_player(self, direction : str, player : Player) -> None:
         """Move the player in the given direction"""
 
         player.position += CONSTANTS["directional_coord_offsets"][direction]
@@ -622,7 +619,7 @@ class Map:
         self.UI_instance.send_command("tile", player.position, self.decide_room_color(player.position))
         self.UI_instance.send_command("pp", player.position)
 
-        new_current_room.on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room, music=music)
+        new_current_room.on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
 
 
 
@@ -667,9 +664,11 @@ class Combat:
 
         return Enemy(enemy_type = enemy_type_to_spawn)
 
-    def start(self, music : Music) -> None:
+    def start(self) -> None:
         self.player.current_combat = self
         self.player.clear_effects()
+
+        Music.play("fight")
 
         Log.combat_enemy_revealed(self.enemy.name_in_sentence)
         Log.newline()
@@ -741,7 +740,7 @@ class Combat:
 
         self.player.temp_dmg_factor = CONSTANTS["player_default_temp_dmg_factor"]
         self.player.current_combat = None
-        music.play("ambience")
+        Music.play("ambience")
 
     def update_effects(self) -> bool:
         """Returns wether both the player and the enemy survived"""
@@ -985,14 +984,13 @@ def run_game():
         ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
         map = Map()
-        music = Music()
         player = Player(map)
 
         # since the player inputs are captured using the tkinter window, init it before main menu
         map.open_UI_window(player_pos = player.position)
 
         # open main menu
-        MainMenu(music, game_started=False).start()
+        MainMenu(game_started=False).start()
         
 
         # init the game
@@ -1004,7 +1002,7 @@ def run_game():
         game_just_started = True
 
         # setup the version of MainMenu to display for the user during the game
-        in_game_menu = MainMenu(music, game_started=True)
+        in_game_menu = MainMenu(game_started=True)
 
         while player.is_alive and player.inventory.lvl < 20:
             Log.clear_console()
@@ -1031,7 +1029,7 @@ def run_game():
             match action_options[action_idx]:
                 case "Open chest" | "Buy from shop":
                     # interact with the current room
-                    map.get_room(player.position).interact(player, map, music)
+                    map.get_room(player.position).interact(player, map)
 
                 case "Open Inventory":
                     player.open_inventory()
@@ -1044,10 +1042,10 @@ def run_game():
                 case _other: # all other cases, aka Open door ...
                     assert _other.startswith("Open door facing")
                     door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
-                    map.move_player(direction=door_to_open, player=player, music=music)
+                    map.move_player(direction=door_to_open, player=player)
 
         # Shows lifetime stats
-        music.play("ambience")
+        Music.play("ambience")
 
         Console.clear()
         Log.header("GAME WON" if player.is_alive else "GAME OVER", 1)

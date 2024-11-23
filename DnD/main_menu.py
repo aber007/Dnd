@@ -2,8 +2,7 @@ from . import Console, Log, Lore, Music, get_user_action_choice, wait_for_key
 
 class MainMenu:
     
-    def __init__(self, music : Music, game_started : bool) -> None:
-        self.music = music
+    def __init__(self, game_started : bool) -> None:
         self.game_started = game_started
         
     def start(self):
@@ -45,12 +44,12 @@ class MainMenu:
     def submenu_options(self):
         Log.header("OPTIONS", 2)
 
-        action_options = ["Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
+        action_options = ["Change Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
         action_idx = get_user_action_choice("", action_options)
         
         match action_options[action_idx]:
-            case "Music Volume":
-                self.music.change_volume()
+            case "Change Music Volume":
+                Music.change_volume()
 
             case "Change Difficulty maybe?":
                 print("mimimi change difficulty")

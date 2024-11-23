@@ -2,7 +2,7 @@
 
 from . import CONSTANTS, Slider
 from random import shuffle
-import os
+import os, math
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 try:
     import pygame
@@ -13,7 +13,7 @@ except:
 # Initialize pygame mixer
 pygame.mixer.init()
 
-class Music:
+class _Music:
 
     def __init__(self):
         self.ambience_playlist = ["ambience1.mp3", "ambience2.mp3", "ambience3maybe.mp3", "ambience4.mp3", "ambience5.mp3"] ; shuffle(self.ambience_playlist)
@@ -30,14 +30,21 @@ class Music:
 
   
     def change_volume(self):
-        if CONSTANTS["music_enabled"]:
-            self.play("ambience")
-            # the +1 adds a step where the volume is 0
-            slider_steps = round(1 / CONSTANTS["music_slider_step_volume_percent"]) + 1
-            slider_on_value_changed = lambda val : pygame.mixer.music.set_volume(max(0, (val/(slider_steps-1)) * CONSTANTS["music_max_volume_percent"]))
-            Slider(slider_steps, slider_on_value_changed, header="Choose music volume").start()
+        if not CONSTANTS["music_enabled"]:
+            return
         
+        if self.current_song == "":
+            self.play("ambience")
 
+        # the +1 adds a step where the volume is 0
+        slider_steps = round(1 / CONSTANTS["music_slider_step_volume_percent"]) + 1
+        slider_on_value_changed = lambda val : pygame.mixer.music.set_volume(max(0, (val/(slider_steps-1)) * CONSTANTS["music_max_volume_percent"]))
+        Slider(
+            length=slider_steps,
+            on_value_changed=slider_on_value_changed,
+            header="Choose music volume",
+            starting_x=math.ceil((pygame.mixer.music.get_volume()*(slider_steps-1))/CONSTANTS["music_max_volume_percent"])
+            ).start()
 
 
     def choose_song(self, new_song_type : str) -> str:
@@ -91,3 +98,5 @@ class Music:
     
     def get_current_song(self):
         return self.current_song
+
+Music = _Music()
