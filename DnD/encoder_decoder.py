@@ -92,6 +92,7 @@ class Cipher:
             print("You have found all pieces of the letter")
             return None
         decryption_key = int(choice(possible_notes))
+        print(f"You found piece {decryption_key}")
 
         #Update found notes
         pages_data[str(decryption_key)] = True

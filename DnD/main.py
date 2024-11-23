@@ -104,6 +104,7 @@ class MainMenu:
         
     def start(self) -> bool:
         """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
+
         self.create_lore()
 
         user_wishes_to_start_game = False
@@ -179,7 +180,7 @@ class MainMenu:
         self.lore_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'actual_lore.txt'))
         self.enc_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'encrypted.txt'))
         self.found_pages = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'pages.json'))
-        if not os.path.isdir(self.lore_dir):
+        if not os.path.isfile(self.lore_dir):
             import json
             with open(self.lore_dir, "w") as lore_file:
                 lore_file.write("")
@@ -208,8 +209,8 @@ class MainMenu:
                 print(line)
             else:
                 print()
-        
-        wait_for_key("\nPress Enter to go back", "enter")
+        print()
+        wait_for_key("Press ENTER to go back", "Return")
 
     def submenu_help(self):
         Log.header("Help", 2)
