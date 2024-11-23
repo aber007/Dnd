@@ -114,7 +114,7 @@
         "Entering the empty hallway, the stone walls echo with each of your footsteps as you move forward.",
         "You step into the room, and a lone, unpolished sword lies abandoned on the floor, its hilt worn and chipped from years of disuse."
     ],
-    "start": [
+    "room_default": [
         "Stepping across the threshold, you immediately feel the cool, stale air of the room.",
         "As you enter, the musty scent of old wood and stone greets you, filling your lungs.",
         "The moment you push open the door, a sudden silence envelops you, broken only by the echo of your own breathing.",

@@ -30,6 +30,7 @@ class _Log:
     
     def __init__(self) -> None:
         self.auto_flush = True
+        self.last_room_entered_text : str = ""
         
 
     def flush(_):
@@ -261,19 +262,28 @@ class _Log:
             ))
 
     # room related
-    def first_time_enter_spawn_room(_) -> str:
-        """Returns the text choice if this needs to be saved"""
-        text_choice = choice(INTERACTION_DATA["start"])
+    def first_time_enter_spawn_room(self):
+        text_choice = choice(INTERACTION_DATA["room_default"])
         write(text_choice)
-        return text_choice
+        self.last_room_entered_text = text_choice
 
-    def entered_room(_, room_type : str) -> str:
-        """Returns the text choice if this needs to be saved"""
+    def entered_room(self, room_type : str):
+        """Writes text to console but also saves it to last_room_entered_text\n
+        The recall_last_room_entered_text is expected to be used at the beginning of the next round"""
         text_options = INTERACTION_DATA.get(room_type, None)
-        if text_options != None:
-            text_choice = choice(text_options)
-            write(text_choice)
-            return text_choice
+        if text_options == None:
+            text_options = INTERACTION_DATA.get("room_default")
+        
+        text_choice = choice(text_options)
+        write(text_choice)
+        self.last_room_entered_text = text_choice
+    
+    def recall_last_room_entered_text(self):
+        if self.last_room_entered_text != "":
+            write(self.last_room_entered_text)
+    
+    def clear_last_room_entered_text(self):
+        self.last_room_entered_text = ""
     
     def triggered_mimic_trap(_):
         write(choice(INTERACTION_DATA["mimic_trap"]))

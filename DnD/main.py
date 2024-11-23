@@ -103,10 +103,7 @@ class MainMenu:
         self.music = music
         self.game_started = game_started
         
-    def start(self) -> bool:
-        """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
-
-        user_wishes_to_start_game = False
+    def start(self):
         Console.clear()
         Log.header("MAIN MENU", 1)
         Console.save_cursor_position("main menu start")
@@ -140,16 +137,13 @@ class MainMenu:
                     self.submenu_help()
                 
                 case "Quit Game":
-                    break
+                    exit_game()
             
             # remove the remains of eg. the options header
             Console.truncate("main menu start")
         
-        return user_wishes_to_start_game
-
         # Print tip to guide users to Options later
 
-    
     def submenu_options(self):
         Log.header("OPTIONS", 2)
         Console.save_cursor_position("options menu start")
@@ -316,10 +310,8 @@ class Player(Entity):
     def receive_skill_point(self, new_skill_points : int):
         wait_for_key(f"\nYou have {new_skill_points} unspent skill points!\n\n[Press ENTER to progress the skill tree]", "Return")
 
-        for idx in range(new_skill_points):
-            if not CONSTANTS["debug"]["disable_console_clearing"]:
-                Log.clear_console()
-            
+        for _ in range(new_skill_points):
+            Log.clear_console()
             Log.header("SPEND SKILL POINTS", 1)
 
             branch_options_prefixes, branch_options, subtexts = self._get_skill_tree_progression_options()
@@ -416,13 +408,23 @@ class Map:
 
             self.horus_was_used : bool = False
             self.chest_item : Item | None = None
-            self.is_cleared : bool = False
             self.enemy_type : str | None = None
             self.shop_items : list[Item] = []
+
+            self.is_cleared : bool = False
 
         def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
+            # on_enter room log message
+            if self.type == "enemy" and self.is_cleared:
+                Log.entered_room("room_default")
+            elif self.type == "mimic_trap":
+                Log.entered_room("chest")
+            else:
+                Log.entered_room(self.type)
+
+            # set music
             match self.type:
                 case "shop":
                     music.play("shop")
@@ -430,6 +432,8 @@ class Map:
                 case "enemy": 
                     if not self.is_cleared:
                         music.play("fight")
+                    else:
+                        music.play("ambience")
                 
                 case _:
                     music.play("ambience")
@@ -442,10 +446,12 @@ class Map:
                     combat_instance = Combat(player, map)
                     self.enemy_type = combat_instance.enemy.name
                     combat_instance.start(music=music)
+                    Log.clear_last_room_entered_text()
                 
                 case ("enemy", False):
                     if not self.is_cleared:
                         Combat(player, map, force_enemy_type=self.enemy_type).start(music=music)
+                        Log.clear_last_room_entered_text()
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
@@ -486,6 +492,7 @@ class Map:
                     
                     Log.newline()
                     wait_for_key("[Press ENTER to continue]", "Return")
+                    Log.clear_last_room_entered_text()
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
@@ -1052,15 +1059,16 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
     return player_action_options
 
 
+def exit_game():
+    Log.write("Exiting game...")
+    raise SystemExit
 
 
 
 def run_game():
     try:
         Console.clear()
-        game_in_progress = False
         
-
         # ensures ItemSelect and music volume slider work properly, therefore must be first
         ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
@@ -1072,42 +1080,38 @@ def run_game():
         map.open_UI_window(player_pos = player.position)
 
         # open main menu
-        user_wishes_to_start_game = MainMenu(music, game_in_progress).start()
-        if not user_wishes_to_start_game:
-            Log.write("Exiting game...")
-            raise SystemExit
+        MainMenu(music, game_started=False).start()
+        
 
         # init the game
-        game_just_started = True
-        game_in_progress = True
-        menu_last_visited = False
 
-        in_game_manu = MainMenu(music, game_in_progress)
+        # if the player didnt do a 'game action', eg. opened main menu or
+        #    opened and closed their inventory: dont call skill functions and
+        #    write the same 'entered room' message as last round
+        supress_new_round = False
+        game_just_started = True
+
+        # setup the version of MainMenu to display for the user during the game
+        in_game_menu = MainMenu(music, game_started=True)
 
         while player.is_alive and player.inventory.lvl < 20:
-            if not CONSTANTS["debug"]["disable_console_clearing"]:
-                Log.clear_console()
-            
+            Log.clear_console()
             Log.header("NEW ROUND", 1)
             
             if game_just_started:
-                last_info = Log.first_time_enter_spawn_room()
+                Log.first_time_enter_spawn_room()
                 game_just_started = False
-            elif menu_last_visited:
-                menu_last_visited = False
-                last_info = last_info or Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
-                Log.write(last_info)
+            
             else:
-                last_info = Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
+                # in enter_room, instead of the text being written to console it gets set to an attribute,
+                # at the beginning of the next round (right now) write the text to console
+                Log.recall_last_room_entered_text()
 
-            # activate all the skills that are supposed to be ran right when a new non-combat round starts
-            player.call_skill_functions(
-                    when="new_non_combat_round",
-                    variables={"player": player}
-                    )
+            # activate all the skills that are supposed to be ran right when a new non-combat round starts BUT only if suppress_new_round is false
+            if not supress_new_round: player.call_skill_functions(when="new_non_combat_round", variables={"player": player})
+            else: supress_new_round = False
 
             # Get a list of the players currently available options and ask user to choose
-            # Retry until a valid answer has been given
             action_options : list[str] = get_player_action_options(player, map)
             action_idx = get_user_action_choice("Choose action: ", action_options)
 
@@ -1119,18 +1123,16 @@ def run_game():
 
                 case "Open Inventory":
                     player.open_inventory()
+                    supress_new_round = True
 
                 case "Main Menu":
-                    if not in_game_manu.start():
-                        Log.write("Exiting game...")
-                        raise SystemExit
-                    menu_last_visited = True
+                    in_game_menu.start()
+                    supress_new_round = True
 
                 case _other: # all other cases, aka Open door ...
                     assert _other.startswith("Open door facing")
                     door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
                     map.move_player(direction=door_to_open, player=player, music=music)
-
 
         # Shows lifetime stats
         music.play("ambience")
