@@ -176,12 +176,14 @@ class MainMenu:
         Log.header("Lore", 2)
         Log.write_lore_pages(Lore.get_pages())
         Log.newline()
+        Log.end()
+
         wait_for_key("Press ENTER to go back", "Return")
 
     def submenu_help(self):
         Log.header("Help", 2)
-        print("\n Controls:\n Menu navigation - Up/Down-key\n Menu selection - Enter\n Slider controls - Left/Right-key\n")
-        print(" The controls mentioned will not be usable\n outside of the game when playing.\n")
+        Log.write_controls()
+        Log.newline()
         Log.end()
 
         wait_for_key("Press ENTER to go back", "Return")

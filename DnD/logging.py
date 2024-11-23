@@ -80,6 +80,14 @@ class _Log:
         else:
             write("Game over")
     
+    def write_controls(_):
+        write(
+            "  Menu navigation - Up/Down-key",
+            "  Menu selection - Enter",
+            "  Slider controls - Left/Right-key",
+            sep="\n"
+        )
+    
 
     # item related
     def use_combat_item_outside_combat(_, ) -> int:
