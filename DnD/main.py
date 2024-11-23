@@ -105,6 +105,8 @@ class MainMenu:
     def start(self) -> bool:
         """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
 
+        self.create_lore()
+
         user_wishes_to_start_game = False
         Console.clear()
         Log.header("MAIN MENU", 1)
@@ -133,6 +135,7 @@ class MainMenu:
                 
                 case "Lore":
                     """Shows lore (maybe remove? Are we lazy?)"""
+                    self.submenu_lore()
                 
                 case "Help":
                     self.submenu_help()
@@ -170,9 +173,45 @@ class MainMenu:
         # if theres text to display here use wait_for_key before the truncate call
         Console.truncate("options menu start")
     
+    
 
+    def create_lore(self) -> None: 
+        self.current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
+        self.lore_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'actual_lore.txt'))
+        self.enc_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'encrypted.txt'))
+        self.found_pages = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'pages.json'))
+        if not os.path.isfile(self.lore_dir):
+            import json
+            with open(self.lore_dir, "w") as lore_file:
+                lore_file.write("")
+                with open(self.enc_dir, "r") as enc_file:
+                    text = enc_file.read()
+                    lore_file.write(text)
+            pages_data = {
+                "1" : False,
+                "2" : False,
+                "3" : False,
+                "4" : False,
+                "5" : False
+            }
+            with open(self.found_pages, 'w') as outfile:
+                json.dump(pages_data, outfile)
+
+        
+        
     # build inside these
-    def submenu_lore(self): ...
+    def submenu_lore(self):
+        Log.header("Lore", 1)
+        with open(self.lore_dir, "r") as lore_file:
+            lore_lines = lore_file.read().split("\n")
+        for line in lore_lines:
+            if line != ":":
+                print(line)
+            else:
+                print()
+        print()
+        wait_for_key("Press ENTER to go back", "Return")
+
     def submenu_help(self):
         Log.header("Help", 2)
         print("\n Controls:\n Menu navigation - Up/Down-key\n Menu selection - Enter\n Slider controls - Left/Right-key\n")

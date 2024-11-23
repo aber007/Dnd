@@ -1,3 +1,5 @@
 # python temp files
 __pycache__
 *.pyc
+story/lore_text/actual_lore.txt
+story/lore_text/pages.json
