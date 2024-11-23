@@ -1,16 +1,10 @@
 # This file is dedicated to interactive terminal utils that are more advanced than just input()
 # These comments exist to clarify the difference between terminal.py, logger.py and console_io.py
 
-from . import CONSTANTS, Console, ANSI
+from . import CONSTANTS, Console, ANSI, PlayerInputs
 
 import os, time, shutil, typing, math
 from random import randint
-
-try:
-    import keyboard
-except ImportError:
-    os.system("pip install keyboard")
-    import keyboard
 
 
 def write(*s : str, sep="", end="", flush=True) -> int:
@@ -47,9 +41,9 @@ class ItemSelect:
         self.run_loop = True
 
     def start(self) -> str:
-        keyboard.on_press_key("up", lambda _ : self.set_y_relative(-1), suppress=True)
-        keyboard.on_press_key("down", lambda _ : self.set_y_relative(+1), suppress=True)
-        keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
+        PlayerInputs.register_input("Up", lambda : self.set_y_relative(-1))
+        PlayerInputs.register_input("Down", lambda : self.set_y_relative(+1))
+        PlayerInputs.register_input("Return", lambda : setattr(self, "run_loop", False))
 
         write("[Press ENTER to confirm and arrow UP/DOWN to navigate]\n" if self.log_controls else "")
 
@@ -63,7 +57,6 @@ class ItemSelect:
 
     def list_items(self):
         # write out all items and their subtexts
-        
         write(*[item.get("prefix", "") + item["text"] + item.get("subtext", "") for item in self.items], sep="\n")
 
         # reposition the cursor to y = 0 and mark that item as selected
@@ -87,7 +80,7 @@ class ItemSelect:
         
         self.y += y_delta
         self.select_current_line()
-
+    
     def deselect_current_line(self):
         write(ANSI.Cursor.set_x_0, ANSI.Color.off, self.items[self.y].get("prefix", ""), ANSI.Color.off, self.items[self.y]["text"], ANSI.Color.off)
 
@@ -98,7 +91,7 @@ class ItemSelect:
         while self.run_loop:
             time.sleep(1/20)
         
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
 
 class Slider:
     def __init__(self, length : int, on_value_changed : typing.Callable[[int], None] | None = None, log_controls : bool = False, header : str = "") -> None:
@@ -113,11 +106,11 @@ class Slider:
         self.run_loop = True
 
     def start(self) -> str:
-        keyboard.on_press_key("up",    lambda _ : self.set_x(self.x_max), suppress=True)
-        keyboard.on_press_key("down",  lambda _ : self.set_x(0), suppress=True)
-        keyboard.on_press_key("right", lambda _ : self.set_x(self.x+1), suppress=True)
-        keyboard.on_press_key("left",  lambda _ : self.set_x(self.x-1), suppress=True)
-        keyboard.on_press_key("enter", lambda _ : setattr(self, "run_loop", False), suppress=True)
+        PlayerInputs.register_input("Up", lambda : self.set_x(self.x_max))
+        PlayerInputs.register_input("Down", lambda : self.set_x(0))
+        PlayerInputs.register_input("Right", lambda : self.set_x(self.x+1))
+        PlayerInputs.register_input("Left", lambda : self.set_x(self.x-1))
+        PlayerInputs.register_input("Return", lambda : setattr(self, "run_loop", False))
 
         write("[Press ENTER to confirm and arrow UP/DOWN/LEFT/RIGHT to navigate]\n" if self.log_controls else "")
 
@@ -152,7 +145,7 @@ class Slider:
         while self.run_loop:
             time.sleep(1/20)
         
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
 
 
 class Bar:
@@ -184,7 +177,7 @@ def ensure_terminal_width(desired_width):
 
 def wait_for_key(msg: str, key : str):
     write(msg)
-    keyboard.wait(key, suppress=True)
+    PlayerInputs.wait_for_key(key)
 
 
 def combat_bar():
@@ -206,7 +199,7 @@ def combat_bar():
     box_position = {"start": 0}
     enter_pressed = {"status": False}  # Shared variable for ENTER detection
 
-    def on_enter(event):
+    def on_enter():
         """Callback to capture ENTER key press."""
         enter_pressed["status"] = True
 
@@ -256,7 +249,7 @@ def combat_bar():
 
     # Attach the ENTER key listener
     print("\nPress ENTER on the indication to Attack")
-    keyboard.on_press_key("enter", on_enter, suppress=True)
+    PlayerInputs.register_input("Return", on_enter)
 
     # Animate the box over the line
     animate_box()
@@ -264,7 +257,8 @@ def combat_bar():
     # Return the current box position if ENTER was pressed
     write("\n")
     if enter_pressed["status"]:
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
+
         time.sleep(1)
         if box_position["start"] >= red_length and box_position["start"] < red_length+orange_length:
             return("hit")
@@ -289,14 +283,13 @@ class DodgeEnemyAttack:
     
     def start(self):
         """Returns the enemy's damage factor"""
-
-
+        
         # Decide the time before the bar turns green
         wait_time = self.times["waiting"] + randint(-self.times["waiting_range"], self.times["waiting_range"])
 
         write("Press ENTER when the bar is green or orange to dodge\n")
         time.sleep(1)
-        keyboard.on_press_key("enter", lambda _ : setattr(self, "enter_pressed", True), suppress=True)
+        PlayerInputs.register_input("Return", lambda : setattr(self, "enter_pressed", True))
 
         # make the bar red and wait for wait_time or enter_pressed
         write(self.colors["red"], " "*self.length, ANSI.Color.off)
@@ -337,10 +330,10 @@ class DodgeEnemyAttack:
             time.sleep(1/20)
 
     def on_finished(self):
-        keyboard.unhook_all()
+        PlayerInputs.unregister_all()
         time.sleep(1)
 
-    
+
 
 if __name__ == "__main__":
     ensure_terminal_width(100)
@@ -351,7 +344,7 @@ if __name__ == "__main__":
     return_val = menu.start()
     print(return_val)
 
-    # wait_for_key("\n[Press ENTER to continue]\n", "enter")
+    # wait_for_key("\n[Press ENTER to continue]\n", "Return")
 
     # slider = Slider(20, header="Example header")
     # return_val = slider.start()

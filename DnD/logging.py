@@ -42,14 +42,16 @@ class _Log:
         Console.write(*s, sep="", end="\n")
 
     def header(_, content : str, lvl : int) -> int:
+        underline_str = ANSI.Text.double_underline if lvl == 1 else ANSI.Text.single_underline if lvl == 2 else ""
+
         length_left = (CONSTANTS["header_length"]-len(content)) // 2
         length_right = length_left + 1 if len(content) % 2 == 0 else length_left
         match lvl:
             case 1:
-                return write(ANSI.clear_line, "="*length_left, f" {content} ", "="*length_right, end="\n"*2)
+                return write(ANSI.clear_line, "="*length_left, f" {underline_str}{content}{ANSI.Text.off} ", "="*length_right, end="\n"*2)
             
             case 2:
-                return write(ANSI.clear_line, "-"*(length_left-1), f") {content} (", "-"*(length_right-1), end="\n"*2)
+                return write(ANSI.clear_line, "-"*(length_left-1), f") {underline_str}{content}{ANSI.Text.off} (", "-"*(length_right-1), end="\n"*2)
             
     def end(_):
         length = CONSTANTS["header_length"] + 2
@@ -106,10 +108,7 @@ class _Log:
         return write("You have no items to use!")
 
 
-    # player related
-    def player_healed(_, hp_before : int, additional_hp : int, hp_delta : int, current_hp : int):
-        write(f"The player was healed for {additional_hp} HP{f' (capped at {hp_delta} HP)' if additional_hp != hp_delta else ''}. HP: {hp_before} -> {current_hp}")
-    
+    # player related    
     def player_max_hp_increased(_, previous_max_hp : int, current_max_hp : int):
         write(f"The player's max HP has increased! Max HP: {previous_max_hp} -> {current_max_hp}")
     
@@ -202,7 +201,7 @@ class _Log:
         Log.header("SKILL TREE", 1)
         write(*formatted_branch_strings, sep="\n"*2, end="\n"*2)
 
-        wait_for_key("[Press ENTER to continue]", "enter")
+        wait_for_key("[Press ENTER to continue]", "Return")
 
 
     # entity related
@@ -219,27 +218,48 @@ class _Log:
             )
             )
 
-    def entity_received_effect(_, entity_name : str, effect_type : str, dmg : int, duration : int):
-        write(f"The {entity_name} has been hit by a {effect_type} effect, dealing {dmg} DMG for {duration} rounds")
-    
-    def effect_tick(_, target_name : str, effect_type : str, dmg : int, duration : int):
+    def entity_healed(_, entity_name, hp_before : int, additional_hp : int, hp_delta : int, current_hp : int):
         write(
-            f"The {target_name} was hurt for {dmg} DMG from the {effect_type} effect.",
+            f"The {entity_name} was healed for {additional_hp} HP",
             (
-                f"Duration remaining: {duration}" if duration != 0 else
-                f"The {effect_type} effect wore off"
+                f" (capped at {hp_delta} HP). " if additional_hp != hp_delta else
+                ". "
+            ),
+            f"HP: {hp_before} -> {current_hp}"
             )
-            )
+
+    def entity_received_effect(_, effect_instance):
+        action_str = {"hp": "healing", "dmg": "dealing"}[effect_instance.type]
+        effect_suffix_str = effect_instance.type.upper()
+
+        write(f"The {effect_instance.target.name} has been hit by a {effect_instance.name} effect, {action_str} {effect_instance.effect} {effect_suffix_str} for {effect_instance.duration} rounds")
     
+    def effect_tick(_, effect_instance):
+        action_str = {"hp": "healed", "dmg": "damaged"}[effect_instance.type]
+        effect_suffix_str = effect_instance.type.upper()
+
+        write(
+            f"The {effect_instance.target.name} was {action_str} for {effect_instance.effect} {effect_suffix_str} from the {effect_instance.name} effect.",
+            (
+                f"Duration remaining: {effect_instance.duration}" if effect_instance.duration != 0 else
+                f"The {effect_instance.name} effect wore off"
+            ),
+            sep=" ")
 
     # room related
-    def first_time_enter_spawn_room(_):
-        write(choice(INTERACTION_DATA["start"]))
+    def first_time_enter_spawn_room(_) -> str:
+        """Returns the text choice if this needs to be saved"""
+        text_choice = choice(INTERACTION_DATA["start"])
+        write(text_choice)
+        return text_choice
 
-    def entered_room(_, room_type : str):
+    def entered_room(_, room_type : str) -> str:
+        """Returns the text choice if this needs to be saved"""
         text_options = INTERACTION_DATA.get(room_type, None)
         if text_options != None:
-            write(choice(text_options))
+            text_choice = choice(text_options)
+            write(text_choice)
+            return text_choice
     
     def triggered_mimic_trap(_):
         write(choice(INTERACTION_DATA["mimic_trap"]))
@@ -248,7 +268,7 @@ class _Log:
         write(f"You stepped in a trap! Roll at least {min_roll_to_escape} to save yourself")
     
     def escaped_trap(_, roll : int, harmed : bool):
-        write(f"You rolled {roll} and", ('managed to escape unharmed' if not harmed else 'was harmed by the trap while escaping'), sep=" ")
+        write(f"{ANSI.clear_line}You rolled {roll} and", ('managed to escape unharmed' if not harmed else 'was harmed by the trap while escaping'), sep=" ")
 
     def shop_display_current_gold(_, gold : int) -> int:
         return write(f"Current gold: {gold}")
@@ -312,10 +332,14 @@ class _Log:
                 )
     
     def combat_enemy_revealed(_, enemy_name_in_sentence : str):
-        write(f"{enemy_name_in_sentence.capitalize()} appeared!")
+        enemy_name_in_sentence = enemy_name_in_sentence[0].upper() + enemy_name_in_sentence[1:]
+        write(f"{enemy_name_in_sentence} appeared!")
     
     def player_skill_damaged_enemy(_, enemy_name : str, dmg : int):
         write(f"A skill of yours dealt {dmg} damage to the {enemy_name}")
+    
+    def enemy_used_special(_, special_info : str):
+        write(special_info)
 
 
 Log = _Log()
