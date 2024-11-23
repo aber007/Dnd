@@ -1,77 +1,77 @@
 import os
 import json
 from random import choice
+
+
+def is_upper(s : str) -> bool:
+    """Returns bool wether the entire string is uppercase"""
+    return s == s.upper()
+
+def wrap(min_val : int, val : int, max_val : int) -> int:
+    """Wraps val to be whin min_val (incl.) and max_val (excl.)\n
+    Recursive wrapping is supported, meaning 0, -5, 2 -> 1 works\n
+    0, 0, 6 -> 0\n
+    0, -1, 6 -> 5\n
+    0, -2, 6 -> 4\n
+    0, 7, 6 -> 1\n
+    0, 8, 6 -> 2"""
+
+    if min_val <= val < max_val:
+        return val
+    
+    elif max_val <= val:
+        return wrap(min_val, val - max_val, max_val)
+    
+    elif val < min_val:
+        return wrap(min_val, max_val - abs(val), max_val)
+
 class Cipher:
     alphabet = list("abcdefghijklmnopqrstuvwxyz")
     test = "test"
     testsimple = "aaabbb cccddd..."
     shift = 7
 
-    def encoder(self, str : str):
-        words = str.split()
-        for word in range(len(words)):
-            string = list(words[word])
+    def encode(self, s : str, shift : int | None = None) -> str:
+        """Pass shift to override the shift attribute stored in self"""
 
-            for i in range(len(string)):
-                try:
-                    try:
-                        letterpos = self.alphabet.index(string[i])
-                        uppercase = False
-                    except ValueError:
-                        letterpos = self.alphabet.index(string[i].lower())
-                        uppercase = True
+        if shift == None:
+            shift = self.shift
 
-                    if letterpos + self.shift >= len(self.alphabet):
-                        if uppercase:
-                            string[i] = self.alphabet[letterpos + self.shift - len(self.alphabet)].upper()
-                        else:
-                            string[i] = self.alphabet[letterpos + self.shift - len(self.alphabet)]
-                    else:
-                        if uppercase:
-                            string[i] = self.alphabet[letterpos + self.shift].upper()
-                        else:
-                            string[i] = self.alphabet[letterpos + self.shift]
-                except ValueError:
-                    string[i] = string[i]
-                
-                uppercase = False
+        words = s.split()
+        shifted_words = []
 
-            words[word] = "".join(string)
+        for word in words:
+            chars_in_word = list(word)
+            shifted_chars = []
 
-        return " ".join(words)
+            # go through each character in the word and encrypt it
+            for char in chars_in_word:
+                # if the character isnt in the alphabet, eg. ".", dont modify it
+                if char.lower() not in self.alphabet:
+                    shifted_chars.append(char)
+                    continue
+
+                uppercase = is_upper(char)
+                alph_idx = self.alphabet.index(char.lower())
+
+                # the idx of the current character + shift
+                # the resulting idx exceeding the length of self.alphabet is accounted for
+                shifted_alph_idx = wrap(0, alph_idx + shift, len(self.alphabet))
+                resulting_char = self.alphabet[shifted_alph_idx]
+                resulting_char = resulting_char.upper() if uppercase else resulting_char
+
+                shifted_chars.append(resulting_char)
+
+            # merge all the encrypted characters into an encrypted word
+            shifted_words.append("".join(shifted_chars))
+
+        # merge all the encrypted words
+        return " ".join(shifted_words)
     
 
-    def decoder(self, str : str):
-        words = str.split()
-        for word in range(len(words)):
-            string = list(words[word])
+    def decode(self, s : str) -> str:
+        return self.encode(s = s, shift = -self.shift)
 
-            for i in range(len(string)):
-                try:
-                    try:
-                        letterpos = self.alphabet.index(string[i])
-                        uppercase = False
-                    except:
-                        letterpos = self.alphabet.index(string[i].lower())
-                        uppercase = True
-
-                    if letterpos - self.shift < 0:
-                        if uppercase:
-                            string[i] = self.alphabet[letterpos - self.shift + len(self.alphabet)].upper()
-                        else:
-                            string[i] = self.alphabet[letterpos - self.shift + len(self.alphabet)]
-                    else:
-                        if uppercase:
-                            string[i] = self.alphabet[letterpos - self.shift].upper()
-                        else:
-                            string[i] = self.alphabet[letterpos - self.shift]
-                except:
-                    string[i] = string[i]
-                
-
-            words[word] = "".join(string)
-
-        return " ".join(words)
     
     def update_lore(self) -> None:
         """Updates a random non found part of the lore to be readable"""
@@ -123,8 +123,15 @@ class Cipher:
 if __name__ == "__main__":
     
     cipher = Cipher()
-    import os
     cipher.update_lore()
+
+
+    # text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris a bibendum leo. ttt sss"
+    # print(text)
+    # encoded = cipher.encode(text)
+    # print(encoded)
+    # decoded = cipher.decode(encoded)
+    # print(decoded)
     
     # current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
     # lore_dir = os.path.abspath(os.path.join(current_dir, '..', 'story', 'lore_text', 'actual_lore.txt'))

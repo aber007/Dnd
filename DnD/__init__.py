@@ -132,5 +132,5 @@ from .array2d import Array2D
 from .items import Item, Inventory
 from .effects import Effect
 from .create_walls_algorithm import CreateWallsAlgorithm
-from .main import run_game
 from .encoder_decoder import Cipher
+from .main import run_game
