@@ -1,6 +1,5 @@
 import time
 from typing import Callable
-from multiprocessing import Process, Manager
 
 class Animation:
     def __init__(

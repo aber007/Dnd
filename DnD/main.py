@@ -1,25 +1,26 @@
 import os, math
 from random import randint, choices, choice, uniform
 from time import sleep
-from .UI_map_creation import openUIMap
-from .ambience import Music
-from .terminal import combat_bar
 from . import (
     CONSTANTS,
     ITEM_DATA,
     ENEMY_DATA,
     SKILL_TREE_DATA,
+    openUIMap,
     Item,
     Inventory,
     Lore,
+    Music,
     Vector2,
     Array2D,
     get_user_action_choice,
     ensure_terminal_width,
     wait_for_key,
+    MainMenu,
     Bar,
     ANSI,
     CreateWallsAlgorithm,
+    combat_bar,
     DodgeEnemyAttack,
     Effect,
     Log,
@@ -96,91 +97,6 @@ class Entity:
             effects_ticked += 1
         
         return effects_ticked
-    
-class MainMenu:
-    
-    def __init__(self, music : Music, game_started : bool) -> None:
-        self.music = music
-        self.game_started = game_started
-        
-    def start(self):
-        Console.clear()
-        Log.header("MAIN MENU", 1)
-        Console.save_cursor_position("main menu start")
-
-        while True:
-            if self.game_started:
-                action_options = ["Continue Game", "Options", "Lore", "Help", "Quit Game"]
-            else:
-                action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
-            action_idx = get_user_action_choice("", action_options)
-            
-            # remove the ItemSelect remains
-            Console.truncate("main menu start")
-
-            match action_options[action_idx]:
-                case "Start Game":
-                    user_wishes_to_start_game = True
-                    break
-                
-                case "Continue Game":
-                    return True
-
-                case "Options":
-                    self.submenu_options()
-                
-                case "Lore":
-                    """Shows lore (maybe remove? Are we lazy?)"""
-                    self.submenu_lore()
-                
-                case "Help":
-                    self.submenu_help()
-                
-                case "Quit Game":
-                    exit_game()
-            
-            # remove the remains of eg. the options header
-            Console.truncate("main menu start")
-        
-        # Print tip to guide users to Options later
-
-    def submenu_options(self):
-        Log.header("OPTIONS", 2)
-        Console.save_cursor_position("options menu start")
-
-        action_options = ["Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
-        action_idx = get_user_action_choice("", action_options)
-        
-        Console.truncate("options menu start")
-
-        match action_options[action_idx]:
-            case "Music Volume":
-                self.music.change_volume()
-
-            case "Change Difficulty maybe?":
-                print("mimimi change difficulty")
-
-            case "Add more shit later?":
-                print("absolutely not.")
-        
-        # if theres text to display here use wait_for_key before the truncate call
-        Console.truncate("options menu start")
-    
-    def submenu_lore(self):
-        Log.header("Lore", 2)
-        Log.write_lore_pages(Lore.get_pages())
-        Log.newline()
-        Log.end()
-
-        wait_for_key("Press ENTER to go back", "Return")
-
-    def submenu_help(self):
-        Log.header("Help", 2)
-        Log.write_controls()
-        Log.newline()
-        Log.end()
-
-        wait_for_key("Press ENTER to go back", "Return")
 
 
 class Player(Entity):
@@ -1058,10 +974,6 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
     player_action_options.append("Main Menu")
     return player_action_options
 
-
-def exit_game():
-    Log.write("Exiting game...")
-    raise SystemExit
 
 
 
