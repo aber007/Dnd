@@ -78,7 +78,7 @@ class _Log:
         if won:
             write("Congratulations! You escaped the castle or something")
         else:
-            write("Game over")
+            write("Despite your best efforts, you ultimately failed to achieve your goals")
     
     def write_controls(_):
         write(
@@ -87,6 +87,9 @@ class _Log:
             "  Slider controls - Left/Right-key",
             sep="\n"
         )
+    
+    def show_game_stats(_, stats : dict[str, int]):
+        write(*[f"  {k} : {v}" for k,v in stats.items()], sep="\n")
     
 
     # item related
@@ -247,12 +250,15 @@ class _Log:
         effect_suffix_str = effect_instance.type.upper()
 
         write(
-            f"The {effect_instance.target.name} was {action_str} for {effect_instance.effect} {effect_suffix_str} from the {effect_instance.name} effect.",
+            f"The {effect_instance.target.name} was {action_str} for {effect_instance.effect} {effect_suffix_str} from the {effect_instance.name} effect",
             (
-                f"Duration remaining: {effect_instance.duration}" if effect_instance.duration != 0 else
-                f"The {effect_instance.name} effect wore off"
+                " and died in the process." if not effect_instance.target.is_alive else
+                "."
             ),
-            sep=" ")
+            (
+                f" Duration remaining: {effect_instance.duration}" if effect_instance.duration != 0 else
+                f" The {effect_instance.name} effect wore off"
+            ))
 
     # room related
     def first_time_enter_spawn_room(_) -> str:
@@ -305,14 +311,14 @@ class _Log:
             sep="\n"
             )
     
-    def enemy_attack(_, enemy_name : str, dmg : int):
-        write(f"The {enemy_name} attacked you for {dmg} damage")
+    def enemy_attack(_, enemy_name : str):
+        write(f"The {enemy_name} saw an opportunity and charged at you")
     
-    def enemy_attack_while_fleeing(_, enemy_name : str, dmg : int):
-        write(f"The {enemy_name} managed to hit you for {dmg} damage while fleeing")
+    def enemy_attack_while_fleeing(_, enemy_name : str):
+        write(f"The {enemy_name} managed to hit you while fleeing")
     
-    def enemy_attack_unsuccessful_flee(_, dmg : int):
-        write(f"You failed to flee and took {dmg} damage")
+    def enemy_attack_unsuccessful_flee(_, enemy_name : str):
+        write(f"The {enemy_name} stopped your attempt to flee with a perfectly timed attack")
 
     def combat_perfect_flee(_):
         write(choice(INTERACTION_DATA["escape_20"]))
@@ -348,6 +354,9 @@ class _Log:
     
     def enemy_used_special(_, special_info : str):
         write(special_info)
+    
+    def combat_player_died(_):
+        write("The combat encounter ended with your disgraceful death-your corpse left to rot in a nearby ditch, and your dreams left forever unachieved.")
 
 
     # lore related

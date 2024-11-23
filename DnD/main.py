@@ -84,7 +84,7 @@ class Entity:
         for effect in self.active_effects:
             effect.force_expire()
         
-        self.active_effects = []
+        self.active_effects : list[Effect] = []
     
     def update_effects(self) -> int:
         """Returns the amount of effects that were ticked"""
@@ -370,9 +370,10 @@ class Enemy(Entity):
         #   if the special ability should trigger again
         self.active_special_effect : Effect | None = None
     
-    def attack(self, target, dmg_multiplier : int = 1) -> int:
-        """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
-        return target.take_damage(math.ceil(self.dmg * dmg_multiplier), log=False)
+    def attack(self, target : Entity, dmg_multiplier : int = 1, hide_source : bool = False) -> int:
+        """Attack target with base damage * dmg_multiplier. Use hide_source to stop the take_damage log call from displaying source. The damage dealt is returned"""
+        source = self.name if not hide_source else ""
+        return target.take_damage(math.ceil(self.dmg * dmg_multiplier), source=source)
     
     def use_special(self, player : Player) -> None:
         """Runs the code for special abilities which can be used during combat"""
@@ -416,6 +417,7 @@ class Map:
             self.horus_was_used : bool = False
             self.chest_item : Item | None = None
             self.is_cleared : bool = False
+            self.enemy_type : str | None = None
             self.shop_items : list[Item] = []
 
         def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
@@ -431,16 +433,19 @@ class Map:
                 
                 case _:
                     music.play("ambience")
-            
-            
 
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
-                case ("enemy", _):
-                    if not map.get_room(player.position).is_cleared:
-                        Combat(player, map).start(music=music)
+                case ("enemy", True):
+                    combat_instance = Combat(player, map)
+                    self.enemy_type = combat_instance.enemy.name
+                    combat_instance.start(music=music)
+                
+                case ("enemy", False):
+                    if not self.is_cleared:
+                        Combat(player, map, force_enemy_type=self.enemy_type).start(music=music)
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
@@ -476,6 +481,7 @@ class Map:
                         Log.escaped_trap(roll, False)
                     else:
                         Log.escaped_trap(roll, True)
+                        Log.newline()
                         player.take_damage(CONSTANTS["normal_trap_dmg"])
                     
                     Log.newline()
@@ -500,8 +506,13 @@ class Map:
                 case "mimic_trap":
                     Log.triggered_mimic_trap()
                     player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
-                    music.play("fight")
-                    Combat(player, map, force_enemy_type = "Mimic").start(music=music)
+
+                    if player.is_alive:
+                        music.play("fight")
+                        Combat(player, map, force_enemy_type = "Mimic").start(music=music)
+                    else:
+                        Log.newline()
+                        wait_for_key("[Press ENTER to continue]", "Return")
 
                 case "shop":
                     Log.clear_console()
@@ -756,10 +767,9 @@ class Combat:
 
             Log.header(f"Turn {self.turn}", 2)
 
-            effects_ticked = self.enemy.update_effects()
-            effects_ticked += self.player.update_effects()
-            if 0 < effects_ticked:
-                Log.newline()
+            someone_died = not self.update_effects()
+            if someone_died:
+                break
 
             self.write_hp_bars()
 
@@ -774,10 +784,12 @@ class Combat:
             
             enemyturn = not enemyturn
         
-        # if the combat ended and the enemy died: mark the room as cleared
-        if not self.enemy.is_alive:
-            Log.clear_console()
-            Log.header("COMBAT COMPLETED", 1)
+
+        Log.clear_console()
+        Log.header("COMBAT COMPLETED", 1)
+
+        # if the combat ended with the player alive and the enemy dead: mark the room as cleared
+        if self.player.is_alive and not self.enemy.is_alive:
             Log.enemy_defeated(self.enemy.name, self.enemy.gold, self.enemy.exp)
 
             self.map.get_room(self.player.position).is_cleared = True
@@ -797,11 +809,26 @@ class Combat:
             self.player.stats["gold earned"] += self.enemy.gold
             self.player.stats["exp gained"] += self.enemy.exp
             self.player.stats["monsters defeated"] += 1
+        
+        elif not fled:
+            Log.combat_player_died()
+            Log.newline()
+            wait_for_key("[Press ENTER to continue]", "Return")
             
 
         self.player.temp_dmg_factor = CONSTANTS["player_default_temp_dmg_factor"]
         self.player.current_combat = None
         music.play("ambience")
+
+    def update_effects(self) -> bool:
+        """Returns wether both the player and the enemy survived"""
+
+        effects_ticked = self.enemy.update_effects()
+        effects_ticked += self.player.update_effects()
+        if 0 < effects_ticked:
+            Log.newline()
+        
+        return self.player.is_alive and self.enemy.is_alive
 
     def write_hp_bars(self):
         # Figure out which prefix is longer then make sure the shorter one gets padding to compensate
@@ -935,13 +962,15 @@ class Combat:
         if CONSTANTS["flee_min_roll_to_escape"] <= roll:
             # if the enemy hit you on your way out
             if roll < CONSTANTS["flee_min_roll_to_escape_unharmed"]:
-                dmg_dealt_to_player = self.enemy.attack(target=self.player)
-                Log.enemy_attack_while_fleeing(self.enemy.name, dmg_dealt_to_player)
-                Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
+                Log.enemy_attack_while_fleeing(self.enemy.name)
+                self.enemy.attack(target=self.player)
+                Log.newline()
+                return False
             
             # if you escaped with coins
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
                 Log.combat_perfect_flee()
+                Log.newline()
                 self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
                 self.player.stats["gold earned"] += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
             
@@ -950,19 +979,17 @@ class Combat:
 
         # if you didnt escape
         else:
-            dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
-            Log.enemy_attack_unsuccessful_flee(dmg_dealt_to_player)
-            Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
-        
+            Log.enemy_attack_unsuccessful_flee(self.enemy.name)
+            self.enemy.attack(target=self.player, dmg_multiplier=2, hide_source=True)
+
         return fled
     
     def enemy_turn(self):
         dmg_factor = DodgeEnemyAttack().start()
-        dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=dmg_factor)
-
+        
         Log.newline()
-        Log.enemy_attack(self.enemy.name, dmg_dealt_to_player)
-        Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
+        Log.enemy_attack(self.enemy.name)
+        self.enemy.attack(target=self.player, dmg_multiplier=dmg_factor)
 
         if self.player.is_alive and not self.enemy.special_is_active() and uniform(0, 1) < self.enemy.special_chance:
             self.enemy.use_special(player=self.player)
@@ -1023,6 +1050,8 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
             ]
     player_action_options.append("Main Menu")
     return player_action_options
+
+
 
 
 
@@ -1103,19 +1132,23 @@ def run_game():
                     map.move_player(direction=door_to_open, player=player, music=music)
 
 
-        Log.game_over(player.is_alive)
-
-
         # Shows lifetime stats
-        Log.newline()
-        Log.header("GAME STATS", 1)
-        for key, values in player.stats.items():
-            print(f"{key}: {values}")
+        music.play("ambience")
 
-        Log.newline()
-        raise SystemExit
-    except SystemExit:
         Console.clear()
+        Log.header("GAME WON" if player.is_alive else "GAME OVER", 1)
+        Log.game_over(player.is_alive)
+        Log.newline()
+
+        Log.header("GAME STATS", 2)
+        Log.show_game_stats(player.stats)
+        Log.newline()
+
+        wait_for_key("[Press ENTER to close game]", "Return")
+        raise SystemExit
+    
+    except SystemExit:
+        Console.clear(final=True)
         PlayerInputs.kill_thread()
         map.close_UI_window()
 

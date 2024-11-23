@@ -180,9 +180,6 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, existing_w
             destroy()
             return
 
-        if keysym == "Escape":
-            destroy()
-
     def destroy(_ = None):
         main.quit()
         main.destroy()
