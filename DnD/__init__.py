@@ -132,3 +132,4 @@ from .items import Item, Inventory
 from .effects import Effect, Buff
 from .create_walls_algorithm import CreateWallsAlgorithm
 from .main import run_game
+from .encoder_decoder import Cipher

@@ -93,6 +93,12 @@ class Inventory:
 
         item.parent_inventory = self
 
+        if item.name == "Note":
+            from . import Cipher
+            cipher = Cipher()
+            cipher.update_lore()
+            return
+
         if self.is_full():
             Log.newline()
             Log.received_item_inventory_full()

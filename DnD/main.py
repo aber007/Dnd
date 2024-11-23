@@ -123,12 +123,23 @@ class MainMenu:
         self.current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
         self.lore_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'actual_lore.txt'))
         self.enc_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'encrypted.txt'))
+        self.found_pages = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'pages.json'))
         if not os.path.isdir(self.lore_dir):
+            import json
             with open(self.lore_dir, "w") as lore_file:
                 lore_file.write("")
                 with open(self.enc_dir, "r") as enc_file:
                     text = enc_file.read()
                     lore_file.write(text)
+            pages_data = {
+                "1" : False,
+                "2" : False,
+                "3" : False,
+                "4" : False,
+                "5" : False
+            }
+            with open(self.found_pages, 'w') as outfile:
+                json.dump(pages_data, outfile)
 
         
         

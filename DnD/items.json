@@ -97,5 +97,16 @@
         "durability": 3,
         "description": "Use it to burn your enemies",
         "base_price" : 25
-    }
+    },
+    "note":{
+        "name": "Note",
+        "probability": 1,
+        "name_in_sentence": "a torn up piece of a letter",
+        "type": "lore",
+        "offensive": false,
+        "effect": 0,
+        "durability": 0,
+        "description": "Check lore for more information",
+        "base_price" : 75
+    } 
 }
