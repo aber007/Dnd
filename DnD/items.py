@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice, Log, Console
+from . import CONSTANTS, ITEM_DATA, get_user_action_choice, Log, Console, Lore
 
 
 def eye_of_horus(player):
@@ -94,9 +94,7 @@ class Inventory:
         item.parent_inventory = self
 
         if item.name == "Note":
-            from . import Cipher
-            cipher = Cipher()
-            cipher.update_lore()
+            Lore.discovered_page()
             return
 
         if self.is_full():

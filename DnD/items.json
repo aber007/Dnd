@@ -106,7 +106,7 @@
         "offensive": false,
         "effect": 0,
         "durability": 0,
-        "description": "Check lore for more information",
+        "description": "Check Main Menu -> Lore for more information",
         "base_price" : 75
     } 
 }
