@@ -63,6 +63,7 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
     "skill_tree_config_file": "./skill_tree.json",
+    "encrypted_lore_file": "./story/lore_text/encrypted_pages.json",
 
     "music_enabled": True,
     "music_max_volume_percent": 0.75,
@@ -115,7 +116,7 @@ CONSTANTS = {
         "print_map": False, # default False
         "disable_console_clearing": False, # default False
         "player_infinite_dmg": False, # default False
-        "show_enemy_probabilities" : True # default False
+        "show_enemy_probabilities" : False # default False
     }
 }
 
@@ -129,8 +130,8 @@ from .animation import AnimationLibrary, Animation
 from .player_actions import get_user_action_choice
 from .vector2 import Vector2
 from .array2d import Array2D
+from .lore import Lore
 from .items import Item, Inventory
 from .effects import Effect
 from .create_walls_algorithm import CreateWallsAlgorithm
 from .main import run_game
-from .encoder_decoder import Cipher

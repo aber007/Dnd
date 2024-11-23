@@ -342,4 +342,14 @@ class _Log:
         write(special_info)
 
 
+    # lore related
+    def found_lore_letter_page(_, idx : str):
+        write(f"You found page {int(idx)+1}")
+    
+    def found_irrelevant_lore_letter_page(_):
+        write(f"The letter this page belonged to seems irrelevant")
+    
+    def write_lore_pages(_, pages : list[str]):
+        write(*pages, sep="\n"*2)
+
 Log = _Log()

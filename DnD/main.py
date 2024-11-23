@@ -11,6 +11,7 @@ from . import (
     SKILL_TREE_DATA,
     Item,
     Inventory,
+    Lore,
     Vector2,
     Array2D,
     get_user_action_choice,
@@ -105,8 +106,6 @@ class MainMenu:
     def start(self) -> bool:
         """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
 
-        self.create_lore()
-
         user_wishes_to_start_game = False
         Console.clear()
         Log.header("MAIN MENU", 1)
@@ -173,43 +172,10 @@ class MainMenu:
         # if theres text to display here use wait_for_key before the truncate call
         Console.truncate("options menu start")
     
-    
-
-    def create_lore(self) -> None: 
-        self.current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
-        self.lore_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'actual_lore.txt'))
-        self.enc_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'encrypted.txt'))
-        self.found_pages = os.path.abspath(os.path.join(self.current_dir, '..', 'story', 'lore_text', 'pages.json'))
-        if not os.path.isfile(self.lore_dir):
-            import json
-            with open(self.lore_dir, "w") as lore_file:
-                lore_file.write("")
-                with open(self.enc_dir, "r") as enc_file:
-                    text = enc_file.read()
-                    lore_file.write(text)
-            pages_data = {
-                "1" : False,
-                "2" : False,
-                "3" : False,
-                "4" : False,
-                "5" : False
-            }
-            with open(self.found_pages, 'w') as outfile:
-                json.dump(pages_data, outfile)
-
-        
-        
-    # build inside these
     def submenu_lore(self):
-        Log.header("Lore", 1)
-        with open(self.lore_dir, "r") as lore_file:
-            lore_lines = lore_file.read().split("\n")
-        for line in lore_lines:
-            if line != ":":
-                print(line)
-            else:
-                print()
-        print()
+        Log.header("Lore", 2)
+        Log.write_lore_pages(Lore.get_pages())
+        Log.newline()
         wait_for_key("Press ENTER to go back", "Return")
 
     def submenu_help(self):
@@ -456,9 +422,13 @@ class Map:
             match self.type:
                 case "shop":
                     music.play("shop")
+                
                 case "enemy": 
-                    if not self.is_cleared: music.play("fight")
-                case _:       music.play("ambience")
+                    if not self.is_cleared:
+                        music.play("fight")
+                
+                case _:
+                    music.play("ambience")
             
             
 
@@ -472,6 +442,10 @@ class Map:
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
+
+                    if Lore.all_pages_discovered():
+                        possible_items.remove("note")
+
                     item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
                     chosen_chest_item_id = choices(possible_items, item_probabilites)[0]
 
@@ -479,6 +453,10 @@ class Map:
 
                 case ("shop", True):
                     possible_items = list(ITEM_DATA.keys())
+
+                    if Lore.all_pages_discovered():
+                        possible_items.remove("note")
+
                     item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
 
                     shop_item_ids = choices(possible_items, item_probabilites, k=CONSTANTS["shop_item_count"])
@@ -1050,6 +1028,7 @@ def run_game():
     try:
         Console.clear()
         game_in_progress = False
+        
 
         # ensures ItemSelect and music volume slider work properly, therefore must be first
         ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
@@ -1057,9 +1036,6 @@ def run_game():
         map = Map()
         music = Music()
         player = Player(map)
-
-            
-            
 
         # since the player inputs are captured using the tkinter window, init it before main menu
         map.open_UI_window(player_pos = player.position)
