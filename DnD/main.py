@@ -851,7 +851,7 @@ class Combat:
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
 
-            self.enemy.take_damage(dmg)
+            self.enemy.take_damage(round(dmg))
 
             # activate all the skills that are supposed to be ran after the attack fires
             return_vars = self.player.call_skill_functions(
