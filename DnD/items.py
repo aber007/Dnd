@@ -61,7 +61,7 @@ class Item:
 
     
     def __str__(self):
-        return self.name
+        return self.name[0].upper() + self.name[1:]
 
 
 
@@ -71,7 +71,9 @@ class Inventory:
         self.size = CONSTANTS["player_inventory_size"]
         self.chosen_weapon = None
         self.slots : list[Item | None] = [None] * self.size # this length should never change
-        self.slots[0] = Item("sharp_twig")
+        
+        self.receive_item(Item("sharp_twig"), supress_log=True)
+        self.receive_item(Item("the_eye_of_horus"), supress_log=True)
 
         self.gold = CONSTANTS["player_starting_gold"]
         self.exp = CONSTANTS["player_starting_exp"]
@@ -88,8 +90,9 @@ class Inventory:
         else:
             return [item for item in self.slots if item != None]
 
-    def receive_item(self, item : Item):
-        Log.received_item(item.name_in_sentence, item.description)
+    def receive_item(self, item : Item, supress_log : bool = False):
+        if not supress_log:
+            Log.received_item(item.name_in_sentence, item.description)
 
         item.parent_inventory = self
 
@@ -98,18 +101,19 @@ class Inventory:
             return
 
         if self.is_full():
-            Log.newline()
-            Log.received_item_inventory_full()
+            if not supress_log:
+                Log.newline()
+                Log.received_item_inventory_full()
             action_options = self.get_items() + [f"New item: {item}"]
             action_idx = get_user_action_choice("Choose item to throw out: ", action_options)
             selected_item = action_options[action_idx]
 
             # if the selected item is the last option, aka the new item
             if selected_item == action_options[-1]:
-                Log.item_thrown_out(item.name)
+                if not supress_log: Log.item_thrown_out(item.name)
                 return
             else:
-                Log.item_thrown_out(selected_item.name)
+                if not supress_log: Log.item_thrown_out(selected_item.name)
                 self.remove_item(selected_item)
         
         # set the first found empty slot to the received item
