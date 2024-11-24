@@ -64,6 +64,7 @@ CONSTANTS = {
     "interaction_text_file": "./interaction_texts.json",
     "skill_tree_config_file": "./skill_tree.json",
     "encrypted_lore_file": "./story/lore_text/encrypted_pages.json",
+    "discovered_pages_file": "./story/lore_text/discovered_pages.json",
 
     "music_enabled": True,
     "music_max_volume_percent": 0.75,
