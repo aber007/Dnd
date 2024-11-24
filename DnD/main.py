@@ -446,7 +446,7 @@ class Map:
                         Console.save_cursor_position("shop start")
                         Log.shop_display_current_gold(player.inventory.gold)
                         
-                        shop_options = [f"{item.name}: {item.current_price} gold" for idx,item in enumerate(self.shop_items)]
+                        shop_options = [f"{item}: {item.current_price} gold" for item in self.shop_items]
                         shop_options += ["Open Inventory", "Leave"]
                         shop_option_idx = get_user_action_choice("Choose item to buy: ", shop_options, start_y=shop_option_idx)
 
@@ -557,7 +557,7 @@ class Map:
             Log.Debug.print_map()
 
         self.UI_instance = Map.UI(self.size, self.rooms)
-    
+
     def get_doors_in_room(self, x, y) -> list[str]:
         room_doors = []
 
@@ -571,21 +571,20 @@ class Map:
             room_doors.append("W")
 
         return room_doors
-    
+
     def open_UI_window(self, player_pos : Vector2) -> None:
         """Opens the playable map in a separate window"""
 
         # Press the map and then escape to close the window
         self.UI_instance.open(player_pos, self.existing_walls)
-        
-    
+
     def close_UI_window(self) -> None:
         self.UI_instance.close()
 
     def get_room(self, position : Vector2) -> Room:
         """Using an x and a y value, return a room at that position"""
         return self.rooms[position]
-    
+
     def decide_room_color(self, room_position : Vector2) -> str:
         room : Map.Room = self.get_room(room_position)
         colors = CONSTANTS["room_ui_colors"]
@@ -604,8 +603,6 @@ class Map:
 
             case _:
                 return colors["discovered"] if room.is_cleared else colors[room.type]
-
-
 
     def move_player(self, direction : str, player : Player) -> None:
         """Move the player in the given direction"""
@@ -925,51 +922,24 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
     default_action_options = [*door_options, "Open Inventory"]
 
-
-    match current_room.type:
-        case "empty":
-            player_action_options = default_action_options
-
-        case "enemy":
-            # when the player moves, if the new room contains an enemy, a combat interaction is started right away, blocking main until finished
-            # if we are here the enemy has already been slain
-            player_action_options = default_action_options
+    match current_room.type, current_room.is_cleared:
+        case ("chest" | "mimic_trap", False):
+            player_action_options = [
+                "Open chest",
+                *door_options,
+                "Open Inventory",
+            ]
         
-        case "chest":
-            # when the player moves, if the new room contains a chest, the room.chest_item property gets set right away
-            # if is_cleared is True then the chest has already been looted
-            if not current_room.is_cleared:
-                player_action_options = [
-                    "Open chest",
-                    *door_options,
-                    "Open Inventory",
-                ]
-            else:
-                player_action_options = default_action_options
-
-        case "trap":
-            # when the player moves, if the new room contains a trap, the damage dialog is prompted right away
-            # at this point the trap has been dealt with
-            player_action_options = default_action_options
-
-        case "mimic_trap":
-            # if the mimic hasn't been triggered yet the room should look like a chest room
-            if not current_room.is_cleared:
-                player_action_options = [
-                    "Open chest",
-                    *door_options,
-                    "Open Inventory",
-                ]
-            # if the mimic has been defeated
-            else:
-                player_action_options = default_action_options
-        
-        case "shop":
+        case ("shop", False):
             player_action_options = [
                 "Buy from shop",
                 "Open Inventory",
                 *door_options,
             ]
+        
+        case (_, _):
+            player_action_options = default_action_options
+
     player_action_options.append("Main Menu")
     return player_action_options
 
@@ -1013,7 +983,7 @@ def run_game():
                 game_just_started = False
             
             else:
-                # in enter_room, instead of the text being written to console it gets set to an attribute,
+                # in enter_room the text gets written to console and set to an attribute,
                 # at the beginning of the next round (right now) write the text to console
                 Log.recall_last_room_entered_text()
 

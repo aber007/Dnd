@@ -113,7 +113,7 @@ class _Log:
         write(f"{item_name} was thrown out")
     
     def list_inventory_items(_, items_in_inventory : list[any]) -> int:
-        item_strings = [f"Slot {idx+1}) {item.name if item != None else ''}" for idx,item in enumerate(items_in_inventory)]
+        item_strings = [f"Slot {idx+1}) {str(item) if item != None else ''}" for idx,item in enumerate(items_in_inventory)]
         return write(*item_strings, sep="\n")
     
     def inventory_empty(_, ) -> int:

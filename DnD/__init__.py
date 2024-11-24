@@ -124,7 +124,7 @@ from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TR
 from .ANSI import ANSI
 from .console_io import Console
 from .player_inputs import PlayerInputs
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, combat_bar, Bar, ANSI, DodgeEnemyAttack
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, combat_bar, Bar, DodgeEnemyAttack
 from .ambience import Music
 from .logging import Log
 from .lore import Lore
