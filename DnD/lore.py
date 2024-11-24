@@ -73,7 +73,7 @@ class _Lore:
         self.encryption_shift = 7
 
         with open(CONSTANTS["encrypted_lore_file"], "r") as f:
-            self.pages : dict[str, str] = json.loads(f.read())
+            self.pages : dict[str, list[str]] = json.loads(f.read())
 
         self.load_discovered_pages()
     
@@ -93,6 +93,11 @@ class _Lore:
         """Saves the lore progress to a user specific file"""
         with open(CONSTANTS["discovered_pages_file"], "w") as f:
             json.dump(self.discovered_pages, f)
+
+    def decode_page(self, page_idx : int) -> None:
+        """Decode each line on the given page one by one"""
+        lines = self.pages[page_idx]
+        self.pages[page_idx] = [Cipher.decode(line, self.encryption_shift) for line in lines]
 
     def all_pages_discovered(self) -> bool:
         return all(self.discovered_pages.values())
@@ -115,12 +120,12 @@ class _Lore:
         page_idx = choice(self.get_undiscovered_pages())
 
         self.discovered_pages[page_idx] = True
-        self.pages[page_idx] = Cipher.decode(self.pages[page_idx], self.encryption_shift)
+        self.decode_page(page_idx)
 
         self.save_discovered_pages()
         Log.found_lore_letter_page(page_idx)
     
-    def get_pages(self) -> list[str]:
+    def get_pages(self) -> list[list[str]]:
         return self.pages.values()
 
 
