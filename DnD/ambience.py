@@ -23,8 +23,8 @@ class _Music:
         self.current_song = ""
         self.current_song_type = ""
 
-        self.current_dir = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
-        self.story_dir = os.path.abspath(os.path.join(self.current_dir, '..', 'story'))
+        self.current_dir = os.path.dirname(__file__) if "__file__" in globals() else os.getcwd()
+        self.music_dir = os.path.abspath(os.path.join(self.current_dir, "..", "story", "music"))
 
         pygame.mixer.music.set_volume(0)
 
@@ -63,7 +63,7 @@ class _Music:
             shuffle(new_song_type_playlist)
             file_name = new_song_type_playlist[0]
         
-        return os.path.join(self.story_dir, file_name)
+        return os.path.join(self.music_dir, file_name)
 
 
     def play(self, new_song_type : str, force : bool = False):
