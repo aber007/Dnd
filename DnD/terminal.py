@@ -94,10 +94,11 @@ class ItemSelect:
         PlayerInputs.unregister_all()
 
 class Slider:
-    def __init__(self, length : int, on_value_changed : typing.Callable[[int], None] | None = None, log_controls : bool = False, header : str = "") -> None:
+    def __init__(self, length : int, on_value_changed : typing.Callable[[int], None] | None = None, log_controls : bool = False, header : str = "", starting_x : int = 0) -> None:
         self.length = length
         self.x = 0
         self.x_max = length-1
+        self.starting_x = starting_x
 
         self.on_value_changed = on_value_changed
         self.log_controls = log_controls
@@ -115,7 +116,7 @@ class Slider:
         write("[Press ENTER to confirm and arrow UP/DOWN/LEFT/RIGHT to navigate]\n" if self.log_controls else "")
 
         self.write_header()
-        self.set_x(0)
+        self.set_x(self.starting_x)
 
         self.loop()
 

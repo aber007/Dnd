@@ -35,7 +35,7 @@ class _Console:
         
         self.write_to_console(self.io.getvalue())
 
-    def clear(self, custom_console : bool = True, output_console : bool = True) -> int:
+    def clear(self, custom_console : bool = True, output_console : bool = True, final : bool = False) -> int:
         """Clear the contents of the custom console (this object) and the output console (the one player sees) depending on the given args"""
         if custom_console:
             self.io.truncate(0)
@@ -43,6 +43,9 @@ class _Console:
         
         if output_console:
             self.write_to_console(ANSI.cls + ANSI.Cursor.hide)
+        
+        if final:
+            self.write_to_console(ANSI.Cursor.show)
 
     def save_cursor_position(self, key : str) -> None:
         """Stores the current position of the cursor for later use\n

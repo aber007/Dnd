@@ -114,7 +114,6 @@ CONSTANTS = {
         "set_all_map_tiles_discovered": False, # default False
         "display_all_walls": False, # default False
         "print_map": False, # default False
-        "disable_console_clearing": False, # default False
         "player_infinite_dmg": False, # default False
         "show_enemy_probabilities" : False # default False
     }
@@ -124,13 +123,16 @@ from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TR
 from .ANSI import ANSI
 from .console_io import Console
 from .player_inputs import PlayerInputs
-from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, Bar, ANSI, DodgeEnemyAttack
+from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, combat_bar, Bar, ANSI, DodgeEnemyAttack
+from .ambience import Music
 from .logging import Log
-from .animation import AnimationLibrary, Animation
+from .lore import Lore
 from .player_actions import get_user_action_choice
+from .main_menu import MainMenu
+from .animation import AnimationLibrary, Animation
 from .vector2 import Vector2
 from .array2d import Array2D
-from .lore import Lore
+from .UI_map_creation import openUIMap
 from .items import Item, Inventory
 from .effects import Effect
 from .create_walls_algorithm import CreateWallsAlgorithm

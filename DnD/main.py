@@ -1,25 +1,26 @@
 import os, math
 from random import randint, choices, choice, uniform
 from time import sleep
-from .UI_map_creation import openUIMap
-from .ambience import Music
-from .terminal import combat_bar
 from . import (
     CONSTANTS,
     ITEM_DATA,
     ENEMY_DATA,
     SKILL_TREE_DATA,
+    openUIMap,
     Item,
     Inventory,
     Lore,
+    Music,
     Vector2,
     Array2D,
     get_user_action_choice,
     ensure_terminal_width,
     wait_for_key,
+    MainMenu,
     Bar,
     ANSI,
     CreateWallsAlgorithm,
+    combat_bar,
     DodgeEnemyAttack,
     Effect,
     Log,
@@ -84,7 +85,7 @@ class Entity:
         for effect in self.active_effects:
             effect.force_expire()
         
-        self.active_effects = []
+        self.active_effects : list[Effect] = []
     
     def update_effects(self) -> int:
         """Returns the amount of effects that were ticked"""
@@ -96,97 +97,6 @@ class Entity:
             effects_ticked += 1
         
         return effects_ticked
-    
-class MainMenu:
-    
-    def __init__(self, music : Music, game_started : bool) -> None:
-        self.music = music
-        self.game_started = game_started
-        
-    def start(self) -> bool:
-        """Returns bool wether to start the game or not. If false then the user chose to quit the game"""
-
-        user_wishes_to_start_game = False
-        Console.clear()
-        Log.header("MAIN MENU", 1)
-        Console.save_cursor_position("main menu start")
-
-        while True:
-            if self.game_started:
-                action_options = ["Continue Game", "Options", "Lore", "Help", "Quit Game"]
-            else:
-                action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
-            action_idx = get_user_action_choice("", action_options)
-            
-            # remove the ItemSelect remains
-            Console.truncate("main menu start")
-
-            match action_options[action_idx]:
-                case "Start Game":
-                    user_wishes_to_start_game = True
-                    break
-                
-                case "Continue Game":
-                    return True
-
-                case "Options":
-                    self.submenu_options()
-                
-                case "Lore":
-                    """Shows lore (maybe remove? Are we lazy?)"""
-                    self.submenu_lore()
-                
-                case "Help":
-                    self.submenu_help()
-                
-                case "Quit Game":
-                    break
-            
-            # remove the remains of eg. the options header
-            Console.truncate("main menu start")
-        
-        return user_wishes_to_start_game
-
-        # Print tip to guide users to Options later
-
-    
-    def submenu_options(self):
-        Log.header("OPTIONS", 2)
-        Console.save_cursor_position("options menu start")
-
-        action_options = ["Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
-        action_idx = get_user_action_choice("", action_options)
-        
-        Console.truncate("options menu start")
-
-        match action_options[action_idx]:
-            case "Music Volume":
-                self.music.change_volume()
-
-            case "Change Difficulty maybe?":
-                print("mimimi change difficulty")
-
-            case "Add more shit later?":
-                print("absolutely not.")
-        
-        # if theres text to display here use wait_for_key before the truncate call
-        Console.truncate("options menu start")
-    
-    def submenu_lore(self):
-        Log.header("Lore", 2)
-        Log.write_lore_pages(Lore.get_pages())
-        Log.newline()
-        Log.end()
-
-        wait_for_key("Press ENTER to go back", "Return")
-
-    def submenu_help(self):
-        Log.header("Help", 2)
-        Log.write_controls()
-        Log.newline()
-        Log.end()
-
-        wait_for_key("Press ENTER to go back", "Return")
 
 
 class Player(Entity):
@@ -316,10 +226,8 @@ class Player(Entity):
     def receive_skill_point(self, new_skill_points : int):
         wait_for_key(f"\nYou have {new_skill_points} unspent skill points!\n\n[Press ENTER to progress the skill tree]", "Return")
 
-        for idx in range(new_skill_points):
-            if not CONSTANTS["debug"]["disable_console_clearing"]:
-                Log.clear_console()
-            
+        for _ in range(new_skill_points):
+            Log.clear_console()
             Log.header("SPEND SKILL POINTS", 1)
 
             branch_options_prefixes, branch_options, subtexts = self._get_skill_tree_progression_options()
@@ -370,9 +278,10 @@ class Enemy(Entity):
         #   if the special ability should trigger again
         self.active_special_effect : Effect | None = None
     
-    def attack(self, target, dmg_multiplier : int = 1) -> int:
-        """Attack target with base damage * dmg_multiplier. The damage dealt is returned"""
-        return target.take_damage(math.ceil(self.dmg * dmg_multiplier), log=False)
+    def attack(self, target : Entity, dmg_multiplier : int = 1, hide_source : bool = False) -> int:
+        """Attack target with base damage * dmg_multiplier. Use hide_source to stop the take_damage log call from displaying source. The damage dealt is returned"""
+        source = self.name if not hide_source else ""
+        return target.take_damage(math.ceil(self.dmg * dmg_multiplier), source=source)
     
     def use_special(self, player : Player) -> None:
         """Runs the code for special abilities which can be used during combat"""
@@ -415,32 +324,48 @@ class Map:
 
             self.horus_was_used : bool = False
             self.chest_item : Item | None = None
-            self.is_cleared : bool = False
+            self.enemy_type : str | None = None
             self.shop_items : list[Item] = []
 
-        def on_enter(self, player : Player, map, first_time_entering_room : bool, music : Music) -> None:
+            self.is_cleared : bool = False
+
+        def on_enter(self, player : Player, map, first_time_entering_room : bool) -> None:
             """Called right when the player enters the room. E.g. starts the trap interaction or decides a chest's item etc"""
 
+            # on_enter room log message
+            if self.type == "enemy" and self.is_cleared:
+                Log.entered_room("room_default")
+            elif self.type == "mimic_trap":
+                Log.entered_room("chest")
+            else:
+                Log.entered_room(self.type)
+
+            # set music
             match self.type:
                 case "shop":
-                    music.play("shop")
+                    Music.play("shop")
                 
                 case "enemy": 
-                    if not self.is_cleared:
-                        music.play("fight")
+                    if self.is_cleared:
+                        Music.play("ambience")
                 
                 case _:
-                    music.play("ambience")
-            
-            
+                    Music.play("ambience")
 
 
             # the enemy spawn, chest_item decision and shop decisions should only happen once
             # the non-mimic trap should always trigger its dialog
             match (self.type, first_time_entering_room):
-                case ("enemy", _):
-                    if not map.get_room(player.position).is_cleared:
-                        Combat(player, map).start(music=music)
+                case ("enemy", True):
+                    combat_instance = Combat(player, map)
+                    self.enemy_type = combat_instance.enemy.name
+                    combat_instance.start()
+                    Log.clear_last_room_entered_text()
+                
+                case ("enemy", False):
+                    if not self.is_cleared:
+                        Combat(player, map, force_enemy_type=self.enemy_type).start()
+                        Log.clear_last_room_entered_text()
 
                 case ("chest", True):
                     possible_items = list(ITEM_DATA.keys())
@@ -476,15 +401,17 @@ class Map:
                         Log.escaped_trap(roll, False)
                     else:
                         Log.escaped_trap(roll, True)
+                        Log.newline()
                         player.take_damage(CONSTANTS["normal_trap_dmg"])
                     
                     Log.newline()
                     wait_for_key("[Press ENTER to continue]", "Return")
+                    Log.clear_last_room_entered_text()
             
             # update the tile the player just entered
             player.parent_map.UI_instance.send_command("tile", player.position, player.parent_map.decide_room_color(player.position))
 
-        def interact(self, player : Player, map, music : Music) -> None:
+        def interact(self, player : Player, map) -> None:
             """Called when the player chooses to interact with a room. E.g. opening a chest or opening a shop etc\n
             This is especially useful when dealing with the mimic trap as appears to be a chest room, thus tricking the player into interacting"""
 
@@ -500,8 +427,12 @@ class Map:
                 case "mimic_trap":
                     Log.triggered_mimic_trap()
                     player.take_damage(CONSTANTS["mimic_trap_ambush_dmg"], source="Mimic ambush")
-                    music.play("fight")
-                    Combat(player, map, force_enemy_type = "Mimic").start(music=music)
+
+                    if player.is_alive:
+                        Combat(player, map, force_enemy_type = "Mimic").start()
+                    else:
+                        Log.newline()
+                        wait_for_key("[Press ENTER to continue]", "Return")
 
                 case "shop":
                     Log.clear_console()
@@ -676,7 +607,7 @@ class Map:
 
 
 
-    def move_player(self, direction : str, player : Player, music : Music) -> None:
+    def move_player(self, direction : str, player : Player) -> None:
         """Move the player in the given direction"""
 
         player.position += CONSTANTS["directional_coord_offsets"][direction]
@@ -688,7 +619,7 @@ class Map:
         self.UI_instance.send_command("tile", player.position, self.decide_room_color(player.position))
         self.UI_instance.send_command("pp", player.position)
 
-        new_current_room.on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room, music=music)
+        new_current_room.on_enter(player = player, map = self, first_time_entering_room = first_time_entering_room)
 
 
 
@@ -733,9 +664,11 @@ class Combat:
 
         return Enemy(enemy_type = enemy_type_to_spawn)
 
-    def start(self, music : Music) -> None:
+    def start(self) -> None:
         self.player.current_combat = self
         self.player.clear_effects()
+
+        Music.play("fight")
 
         Log.combat_enemy_revealed(self.enemy.name_in_sentence)
         Log.newline()
@@ -756,10 +689,9 @@ class Combat:
 
             Log.header(f"Turn {self.turn}", 2)
 
-            effects_ticked = self.enemy.update_effects()
-            effects_ticked += self.player.update_effects()
-            if 0 < effects_ticked:
-                Log.newline()
+            someone_died = not self.update_effects()
+            if someone_died:
+                break
 
             self.write_hp_bars()
 
@@ -774,10 +706,12 @@ class Combat:
             
             enemyturn = not enemyturn
         
-        # if the combat ended and the enemy died: mark the room as cleared
-        if not self.enemy.is_alive:
-            Log.clear_console()
-            Log.header("COMBAT COMPLETED", 1)
+
+        Log.clear_console()
+        Log.header("COMBAT COMPLETED", 1)
+
+        # if the combat ended with the player alive and the enemy dead: mark the room as cleared
+        if self.player.is_alive and not self.enemy.is_alive:
             Log.enemy_defeated(self.enemy.name, self.enemy.gold, self.enemy.exp)
 
             self.map.get_room(self.player.position).is_cleared = True
@@ -797,11 +731,26 @@ class Combat:
             self.player.stats["gold earned"] += self.enemy.gold
             self.player.stats["exp gained"] += self.enemy.exp
             self.player.stats["monsters defeated"] += 1
+        
+        elif not fled:
+            Log.combat_player_died()
+            Log.newline()
+            wait_for_key("[Press ENTER to continue]", "Return")
             
 
         self.player.temp_dmg_factor = CONSTANTS["player_default_temp_dmg_factor"]
         self.player.current_combat = None
-        music.play("ambience")
+        Music.play("ambience")
+
+    def update_effects(self) -> bool:
+        """Returns wether both the player and the enemy survived"""
+
+        effects_ticked = self.enemy.update_effects()
+        effects_ticked += self.player.update_effects()
+        if 0 < effects_ticked:
+            Log.newline()
+        
+        return self.player.is_alive and self.enemy.is_alive
 
     def write_hp_bars(self):
         # Figure out which prefix is longer then make sure the shorter one gets padding to compensate
@@ -935,13 +884,15 @@ class Combat:
         if CONSTANTS["flee_min_roll_to_escape"] <= roll:
             # if the enemy hit you on your way out
             if roll < CONSTANTS["flee_min_roll_to_escape_unharmed"]:
-                dmg_dealt_to_player = self.enemy.attack(target=self.player)
-                Log.enemy_attack_while_fleeing(self.enemy.name, dmg_dealt_to_player)
-                Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
+                Log.enemy_attack_while_fleeing(self.enemy.name)
+                self.enemy.attack(target=self.player)
+                Log.newline()
+                return False
             
             # if you escaped with coins
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
                 Log.combat_perfect_flee()
+                Log.newline()
                 self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
                 self.player.stats["gold earned"] += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
             
@@ -950,19 +901,17 @@ class Combat:
 
         # if you didnt escape
         else:
-            dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=2)
-            Log.enemy_attack_unsuccessful_flee(dmg_dealt_to_player)
-            Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
-        
+            Log.enemy_attack_unsuccessful_flee(self.enemy.name)
+            self.enemy.attack(target=self.player, dmg_multiplier=2, hide_source=True)
+
         return fled
     
     def enemy_turn(self):
         dmg_factor = DodgeEnemyAttack().start()
-        dmg_dealt_to_player = self.enemy.attack(target=self.player, dmg_multiplier=dmg_factor)
-
+        
         Log.newline()
-        Log.enemy_attack(self.enemy.name, dmg_dealt_to_player)
-        Log.entity_took_dmg(self.player.name, dmg_dealt_to_player, self.player.hp, self.player.is_alive)
+        Log.enemy_attack(self.enemy.name)
+        self.enemy.attack(target=self.player, dmg_multiplier=dmg_factor)
 
         if self.player.is_alive and not self.enemy.special_is_active() and uniform(0, 1) < self.enemy.special_chance:
             self.enemy.use_special(player=self.player)
@@ -1026,59 +975,53 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
 
 
 
+
 def run_game():
     try:
         Console.clear()
-        game_in_progress = False
         
-
         # ensures ItemSelect and music volume slider work properly, therefore must be first
         ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
         map = Map()
-        music = Music()
         player = Player(map)
 
         # since the player inputs are captured using the tkinter window, init it before main menu
         map.open_UI_window(player_pos = player.position)
 
         # open main menu
-        user_wishes_to_start_game = MainMenu(music, game_in_progress).start()
-        if not user_wishes_to_start_game:
-            Log.write("Exiting game...")
-            raise SystemExit
+        MainMenu(game_started=False).start()
+        
 
         # init the game
-        game_just_started = True
-        game_in_progress = True
-        menu_last_visited = False
 
-        in_game_manu = MainMenu(music, game_in_progress)
+        # if the player didnt do a 'game action', eg. opened main menu or
+        #    opened and closed their inventory: dont call skill functions and
+        #    write the same 'entered room' message as last round
+        supress_new_round = False
+        game_just_started = True
+
+        # setup the version of MainMenu to display for the user during the game
+        in_game_menu = MainMenu(game_started=True)
 
         while player.is_alive and player.inventory.lvl < 20:
-            if not CONSTANTS["debug"]["disable_console_clearing"]:
-                Log.clear_console()
-            
+            Log.clear_console()
             Log.header("NEW ROUND", 1)
             
             if game_just_started:
-                last_info = Log.first_time_enter_spawn_room()
+                Log.first_time_enter_spawn_room()
                 game_just_started = False
-            elif menu_last_visited:
-                menu_last_visited = False
-                last_info = last_info or Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
-                Log.write(last_info)
+            
             else:
-                last_info = Log.entered_room(map.get_room(player.position).type if map.get_room(player.position).type != "mimic_trap" else "chest")
+                # in enter_room, instead of the text being written to console it gets set to an attribute,
+                # at the beginning of the next round (right now) write the text to console
+                Log.recall_last_room_entered_text()
 
-            # activate all the skills that are supposed to be ran right when a new non-combat round starts
-            player.call_skill_functions(
-                    when="new_non_combat_round",
-                    variables={"player": player}
-                    )
+            # activate all the skills that are supposed to be ran right when a new non-combat round starts BUT only if suppress_new_round is false
+            if not supress_new_round: player.call_skill_functions(when="new_non_combat_round", variables={"player": player})
+            else: supress_new_round = False
 
             # Get a list of the players currently available options and ask user to choose
-            # Retry until a valid answer has been given
             action_options : list[str] = get_player_action_options(player, map)
             action_idx = get_user_action_choice("Choose action: ", action_options)
 
@@ -1086,36 +1029,38 @@ def run_game():
             match action_options[action_idx]:
                 case "Open chest" | "Buy from shop":
                     # interact with the current room
-                    map.get_room(player.position).interact(player, map, music)
+                    map.get_room(player.position).interact(player, map)
 
                 case "Open Inventory":
                     player.open_inventory()
+                    supress_new_round = True
 
                 case "Main Menu":
-                    if not in_game_manu.start():
-                        Log.write("Exiting game...")
-                        raise SystemExit
-                    menu_last_visited = True
+                    in_game_menu.start()
+                    supress_new_round = True
 
                 case _other: # all other cases, aka Open door ...
                     assert _other.startswith("Open door facing")
                     door_to_open = _other.rsplit(" ", 1)[-1] # _other = "Open door facing N" -> door_to_open = "N"
-                    map.move_player(direction=door_to_open, player=player, music=music)
-
-
-        Log.game_over(player.is_alive)
-
+                    map.move_player(direction=door_to_open, player=player)
 
         # Shows lifetime stats
-        Log.newline()
-        Log.header("GAME STATS", 1)
-        for key, values in player.stats.items():
-            print(f"{key}: {values}")
+        Music.play("ambience")
 
-        Log.newline()
-        raise SystemExit
-    except SystemExit:
         Console.clear()
+        Log.header("GAME WON" if player.is_alive else "GAME OVER", 1)
+        Log.game_over(player.is_alive)
+        Log.newline()
+
+        Log.header("GAME STATS", 2)
+        Log.show_game_stats(player.stats)
+        Log.newline()
+
+        wait_for_key("[Press ENTER to close game]", "Return")
+        raise SystemExit
+    
+    except SystemExit:
+        Console.clear(final=True)
         PlayerInputs.kill_thread()
         map.close_UI_window()
 
