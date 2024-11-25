@@ -122,19 +122,22 @@ CONSTANTS = {
 
 from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
 from .ANSI import ANSI
-from .console_io import Console
 from .player_inputs import PlayerInputs
+from .animation import AnimationLibrary, Animation
+from .vector2 import Vector2
+from .array2d import Array2D
+from .create_walls_algorithm import CreateWallsAlgorithm
+from .console_io import Console
 from .terminal import ensure_terminal_width, wait_for_key, ItemSelect, Slider, combat_bar, Bar, DodgeEnemyAttack
 from .ambience import Music
 from .logging import Log
 from .lore import Lore
+from .effects import Effect
 from .player_actions import get_user_action_choice
 from .main_menu import MainMenu
-from .animation import AnimationLibrary, Animation
-from .vector2 import Vector2
-from .array2d import Array2D
 from .UI_map_creation import openUIMap
 from .items import Item, Inventory
-from .effects import Effect
-from .create_walls_algorithm import CreateWallsAlgorithm
+from .entities import Player, Enemy
+from .combat import Combat
+from .map import Map
 from .main import run_game
