@@ -44,18 +44,12 @@ class MainMenu:
     def submenu_options(self):
         Log.header("OPTIONS", 2)
 
-        action_options = ["Change Music Volume", "Change Difficulty maybe?", "Add more shit later?", "Return"]
+        action_options = ["Change Music Volume", "Return"]
         action_idx = get_user_action_choice("", action_options)
         
         match action_options[action_idx]:
             case "Change Music Volume":
                 Music.change_volume()
-
-            case "Change Difficulty maybe?":
-                print("mimimi change difficulty")
-
-            case "Add more shit later?":
-                print("absolutely not.")
     
     def submenu_lore(self):
         Log.header("Lore", 2)
