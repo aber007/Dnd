@@ -16,10 +16,10 @@
         },
         "3": {
             "name": "Syphon",
-            "description": "When attacking an enemy, heal for 5% of your max HP",
+            "description": "When attacking an enemy, heal for 1% of your max HP",
             "trigger_when": "after_attack",
             "return_val": null,
-            "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.05))"
+            "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.01))"
         },
         "4": {
             "name": "Relentless Onslaught",
@@ -46,26 +46,26 @@
         },
         "3": {
             "name": "Leyline Attunement",
-            "description": "Permanently regenerate 10% of your max HP at the start of every non-combat round",
+            "description": "Permanently regenerate 4% of your max HP at the start of every non-combat round",
             "trigger_when": "new_non_combat_round",
             "return_val": null,
-            "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.1))"
+            "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.04))"
         }
     },
     "DMG": {
         "1": {
             "name": "Precise Aim",
-            "description": "Permanently deal 4 more DMG",
+            "description": "Permanently deal 1 more DMG",
             "trigger_when": "now",
             "return_val": null,
-            "func": "lambda locals: setattr(locals[\"player\"], \"permanent_dmg_bonus\", locals[\"player\"].permanent_dmg_bonus + 4)"
+            "func": "lambda locals: setattr(locals[\"player\"], \"permanent_dmg_bonus\", locals[\"player\"].permanent_dmg_bonus + 1)"
         },
         "2": {
             "name": "Honed Instincts",
-            "description": "Permanently deal 8 more DMG",
+            "description": "Permanently deal 2 more DMG",
             "trigger_when": "now",
             "return_val": null,
-            "func": "lambda locals: setattr(locals[\"player\"], \"permanent_dmg_bonus\", locals[\"player\"].permanent_dmg_bonus + 8)"
+            "func": "lambda locals: setattr(locals[\"player\"], \"permanent_dmg_bonus\", locals[\"player\"].permanent_dmg_bonus + 2)"
         },
         "3": {
             "name": "Bloodlust",
@@ -78,10 +78,10 @@
     "Impermanent": {
         "HP": {
             "name": "HP boost",
-            "description": "Heal for 30% of your max HP",
+            "description": "Heal for 25% of your max HP",
             "trigger_when": "now",
             "return_val": null,
-            "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.3))"
+            "func": "lambda locals: locals[\"player\"].heal(round(locals[\"player\"].max_hp*0.25))"
         },
         "DMG": {
             "name": "DMG boost",
