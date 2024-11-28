@@ -12,9 +12,9 @@
         "defence_melee": 1,
         "defence_ranged": 0,
         "defence_magic": -1,
-        "exp": 5,
+        "exp": 500,
         "gold": 5,
-        "probability": 0.2
+        "probability": 1
 
     },
     "Skeleton Warrior": {
