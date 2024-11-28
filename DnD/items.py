@@ -15,7 +15,10 @@ def eye_of_horus(player):
     selected_room = map.get_room(selected_room_coords)
 
     selected_room.horus_was_used = True
-    map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][selected_room.type])
+    if selected_room.is_cleared:
+        map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"]["discovered"])
+    else:
+        map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][selected_room.type])
     Log.used_eye_of_horus(selected_direction, CONSTANTS['room_contains_text'][selected_room.type])
 
 class Item:

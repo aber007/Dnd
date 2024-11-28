@@ -1,5 +1,5 @@
 import math
-from random import randint
+from random import randint, uniform
 from . import (
     CONSTANTS,
     ENEMY_DATA,

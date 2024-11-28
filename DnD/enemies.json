@@ -75,7 +75,7 @@
         "special": "fire_breath",
         "special_chance": 0.3,
         "special_info": "The Dragon used fire breath, dealing 8 dmg to the player",
-        "special_dmg": 16,
+        "special_dmg": 8,
         "defence_melee": 5,
         "defence_ranged": 5,
         "defence_magic": 5,

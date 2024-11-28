@@ -41,8 +41,8 @@ CONSTANTS = {
     "player_starting_lvl": 0,
     "player_default_temp_dmg_factor": 1,
     
-    "player_exp_to_lvl_func": lambda exp: int(exp**0.25),
-    "player_lvl_to_exp_func": lambda lvl: int(lvl**4),
+    "player_exp_to_lvl_func": lambda exp: int(exp**(1/2.6)),
+    "player_lvl_to_exp_func": lambda lvl: int(lvl**2.6),
     "player_lvl_to_bonus_hp_additive_func": lambda lvl: lvl,
     "player_lvl_to_bonus_dmg_additive_func": lambda lvl: lvl,
     
