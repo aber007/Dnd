@@ -73,7 +73,7 @@ def run_game():
         # setup the version of MainMenu to display for the user during the game
         in_game_menu = MainMenu(game_started=True)
 
-        while player.is_alive and player.inventory.lvl < 20:
+        while player.is_alive and player.inventory.lvl < 100:
             Log.clear_console()
             Log.header("NEW ROUND", 1)
             
