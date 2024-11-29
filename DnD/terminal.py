@@ -127,8 +127,7 @@ class Slider:
         # 8 is the len of " - ┤" and "├ +"
         slider_width = 8 + self.length
 
-        pad_len = (slider_width - len(self.header))//2
-        header_w_padding = f"{' '*pad_len}{self.header}"
+        header_w_padding = self.header.center(slider_width, " ")
         write(header_w_padding, "\n", flush=False)
 
     def set_x(self, new_x):
