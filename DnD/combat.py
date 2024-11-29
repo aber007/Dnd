@@ -122,9 +122,9 @@ class Combat:
                 Log.newline()
                 wait_for_key("[Press ENTER to continue]", "Return")
 
-            self.player.stats["gold earned"] += self.enemy.gold
-            self.player.stats["exp gained"] += self.enemy.exp
-            self.player.stats["monsters defeated"] += 1
+            self.player.stats["Gold earned"] += self.enemy.gold
+            self.player.stats["EXP gained"] += self.enemy.exp
+            self.player.stats["Monsters defeated"] += 1
         
         elif not fled:
             Log.combat_player_died()
@@ -240,7 +240,7 @@ class Combat:
 
             dmg *= dmg_factor * self.player.temp_dmg_factor
 
-            self.player.stats["dmg dealt"] += dmg
+            self.player.stats["DMG dealt"] += dmg
 
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
@@ -289,7 +289,7 @@ class Combat:
                 Log.newline()
                 gold_earned = round(self.enemy.gold * CONSTANTS["flee_20_coins_to_receive_factor"])
                 self.player.inventory.gold += gold_earned
-                self.player.stats["gold earned"] += gold_earned
+                self.player.stats["Gold earned"] += gold_earned
             
             Log.combat_flee_successful()
             fled = True
