@@ -86,7 +86,7 @@ class _Log:
         write(
             "  Menu navigation - Up/Down-key",
             "  Menu selection - Enter",
-            "  Slider controls - Left/Right-key",
+            "  Slider controls - Up/Down/Left/Right-key",
             sep="\n"
         )
     
