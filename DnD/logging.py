@@ -86,6 +86,8 @@ class _Log:
             "  Menu navigation - Up/Down-key",
             "  Menu selection - Enter",
             "  Slider controls - Left/Right-key",
+            "",
+            "  Map focus is required for controls to work",
             sep="\n"
         )
     

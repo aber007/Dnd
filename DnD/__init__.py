@@ -44,7 +44,7 @@ CONSTANTS = {
     "player_exp_to_lvl_func": lambda exp: int(exp**(1/2.6)),
     "player_lvl_to_exp_func": lambda lvl: int(lvl**2.6),
     "player_lvl_to_bonus_hp_additive_func": lambda lvl: lvl,
-    "player_lvl_to_bonus_dmg_additive_func": lambda lvl: lvl,
+    "player_lvl_to_bonus_dmg_additive_func": lambda lvl: lvl // 2,
     
     "player_movement_anim_duration": 0.2,
     "player_movement_anim_active_update_delay": 5,
