@@ -66,10 +66,9 @@ class ItemSelect:
         # reposition the cursor to the given start y
         self.set_y_relative(self.start_y - self.y)
     
-    def set_y_relative(self, y_delta):
-        # make sure we're not moving out of range
-        if not (0 <= self.y + y_delta <= self.y_max):
-            return
+    def set_y_relative(self, inp_y_delta):
+        destination = self.wrap(0, self.y + inp_y_delta, self.y_max+1)
+        y_delta = destination - self.y
 
         self.deselect_current_line()
 
@@ -86,6 +85,24 @@ class ItemSelect:
 
     def select_current_line(self):
         write(ANSI.Cursor.set_x_0, ANSI.Color.off, self.items[self.y].get("prefix", ""), ANSI.Color.off, ANSI.Color.selected_bg, ANSI.Color.selected_fg, self.items[self.y]["text"], ANSI.Color.off)
+
+    def wrap(self, min_val : int, val : int, max_val : int) -> int:
+        """Wraps val to be whin min_val (incl.) and max_val (excl.)\n
+        Recursive wrapping is supported, meaning 0, -5, 2 -> 1 works\n
+        0, 0, 6 -> 0\n
+        0, -1, 6 -> 5\n
+        0, -2, 6 -> 4\n
+        0, 7, 6 -> 1\n
+        0, 8, 6 -> 2"""
+
+        if min_val <= val < max_val:
+            return val
+        
+        elif max_val <= val:
+            return self.wrap(min_val, val - max_val, max_val)
+        
+        elif val < min_val:
+            return self.wrap(min_val, max_val - abs(val), max_val)
 
     def loop(self):
         while self.run_loop:
