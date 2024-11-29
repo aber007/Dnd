@@ -101,8 +101,8 @@ class _Log:
     def used_eye_of_horus(_, selected_direction : str, room_contains_text : str):
         write(f"The Eye of Horus shows you that the room behind the door facing {selected_direction} contains {room_contains_text}")
     
-    def item_broke(_, item_name : str):
-        write(f"{item_name} broke and is now useless!")
+    def item_broke(_):
+        write(f"The item broke and is now useless!")
     
     def received_item(_, name_in_sentence : str, description : str):
         write(f"You recieved {name_in_sentence}", description, sep="\n")

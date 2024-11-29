@@ -127,8 +127,10 @@ class Player(Entity):
 
         return dice_result
 
-    def open_inventory(self) -> tuple[int, str] | None:
-        """If any damage was dealt, return tuple[dmg, item name_in_sentence] or None"""
+    def open_inventory(self) -> tuple[int, Item] | Item | None:
+        """If any damage was dealt, return tuple[dmg, Item]\n
+        If an item was used that didnt deal dmg, return Item\n
+        If no item was used return None"""
 
         selected_item : Item | None = self.inventory.open()
 
@@ -143,14 +145,14 @@ class Player(Entity):
 
             else:
                 dmg = selected_item.use()
-                return (dmg, selected_item.name_in_sentence)
+                return dmg, selected_item
 
         else:
             # non offensive items always return a callable where the argument 'player' is expected
             use_callable = selected_item.use()
             use_callable(self)
 
-        return None
+        return selected_item
     
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""

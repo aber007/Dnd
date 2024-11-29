@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, ROOM_DATA, get_user_action_choice, Log, Console, Lore
+from . import CONSTANTS, ITEM_DATA, ROOM_DATA, get_user_action_choice, wait_for_key, Log, Console, Lore
 
 
 def eye_of_horus(player):
@@ -57,11 +57,13 @@ class Item:
         
         self.durability -= 1
         if self.durability == 0:
-            Log.item_broke(self.name)
+            Log.item_broke()
             self.parent_inventory.remove_item(self)
         
         return return_val
 
+    def is_broken(self) -> bool:
+        return not 0 < self.durability
     
     def __str__(self):
         return self.name[0].upper() + self.name[1:]
@@ -212,6 +214,8 @@ class Inventory:
 
         else:
             Log.inventory_empty()
+            Log.newline()
+            wait_for_key("[Press ENTER to continue]", "Return")
         
         Console.truncate("select item start")
         return selected_item

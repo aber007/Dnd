@@ -214,16 +214,17 @@ class Combat:
         """Returns wether the player sucessfully used an item or not, aka action_completed"""
         action_completed = False
 
-        # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
+        # item_return is either tuple[dmg done, item] or Item or None
         item_return = self.player.open_inventory()
-        if item_return is not None:
-            dmg, item_name_in_sentence = item_return
+        
+        if isinstance(item_return, tuple):
+            dmg, item = item_return
             dmg += self.player.permanent_dmg_bonus
 
             dmg_mod = combat_bar()
             dmg_factor = {"miss": 0, "hit": 1, "hit_x2": 2}[dmg_mod]
 
-            Log.combat_player_attack_mod(dmg_factor, self.enemy.name, item_name_in_sentence)
+            Log.combat_player_attack_mod(dmg_factor, self.enemy.name, item.name_in_sentence)
             Log.newline()
 
             # if the player missed the enemy mark this turn as completed
@@ -259,6 +260,16 @@ class Combat:
 
             action_completed = True
         
+        # get the item that was used from item_return then log item_broke if the item broke
+        if item_return is not None:
+            if isinstance(item_return, tuple):
+                _, item = item_return
+            else:
+                item = item_return
+            
+            if item.is_broken():
+                Log.item_broke()
+
         return action_completed
 
     def player_attempt_to_flee(self) -> bool:
