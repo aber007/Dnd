@@ -1,32 +1,5 @@
 CONSTANTS = {
     "map_base_size": 10, #Base size over 20 is not recommended
-    "room_probabilities": {
-        "empty": 0.25,
-        "enemy": 0.4,
-        "chest": 0.25,
-        "trap": 0.05,
-        "mimic_trap": 0.05,
-        "shop": 0.1
-    },
-    "room_ui_colors": {
-        "default" : "gray",
-        "discovered": "light gray",
-        "empty": "light gray",
-        "enemy": "red",
-        "chest": "yellow",
-        "trap": "dark green",
-        "mimic_trap": "light green",
-        "shop": "blue",
-    },
-    "room_contains_text": {
-        "empty": "nothing",
-        "enemy": "an enemy",
-        "chest": "a chest",
-        "trap": "a trap",
-        "mimic_trap": "a Mimic trap",
-        "shop": "a shop"
-    },
-
     "remove_door_percent": 0.2,
 
     "normal_trap_dmg": 3,
@@ -65,6 +38,7 @@ CONSTANTS = {
     "skill_tree_config_file": "./skill_tree.json",
     "encrypted_lore_file": "./story/lore_text/encrypted_pages.json",
     "discovered_pages_file": "./story/lore_text/discovered_pages.json",
+    "rooms_config_file": "./rooms.json",
 
     "music_enabled": True,
     "music_max_volume_percent": 0.75,
@@ -106,7 +80,7 @@ CONSTANTS = {
     "skill_tree_cross_color": [255,0,0],
 
     "use_fancy_item_selection": True,
-    "min_desired_terminal_width": 110,
+    "min_desired_terminal_width": 120,
 
     "header_length": 39,
 
@@ -122,7 +96,7 @@ CONSTANTS = {
     }
 }
 
-from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA
+from .load_config_files import ITEM_DATA, ENEMY_DATA, INTERACTION_DATA, SKILL_TREE_DATA, ROOM_DATA
 from .ANSI import ANSI
 from .player_inputs import PlayerInputs
 from .animation import AnimationLibrary, Animation

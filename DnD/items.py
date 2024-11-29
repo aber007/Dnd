@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice, Log, Console, Lore
+from . import CONSTANTS, ITEM_DATA, ROOM_DATA, get_user_action_choice, Log, Console, Lore
 
 
 def eye_of_horus(player):
@@ -16,10 +16,10 @@ def eye_of_horus(player):
 
     selected_room.horus_was_used = True
     if selected_room.is_cleared:
-        map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"]["discovered"])
+        map.UI_instance.send_command("tile", selected_room_coords, ROOM_DATA["ui_colors"]["discovered"])
     else:
-        map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][selected_room.type])
-    Log.used_eye_of_horus(selected_direction, CONSTANTS['room_contains_text'][selected_room.type])
+        map.UI_instance.send_command("tile", selected_room_coords, ROOM_DATA["ui_colors"][selected_room.type])
+    Log.used_eye_of_horus(selected_direction, ROOM_DATA["contains_text"][selected_room.type])
 
 class Item:
     def __init__(self, item_id : str) -> None:

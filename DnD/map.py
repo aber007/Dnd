@@ -3,6 +3,7 @@ from random import randint, choices
 from . import (
     CONSTANTS,
     ITEM_DATA,
+    ROOM_DATA,
     openUIMap,
     Item,
     Lore,
@@ -252,8 +253,8 @@ class Map:
 
         self.starting_position = Vector2(double=self.size//2)
         self.existing_walls : Array2D[dict[str,bool]] = CreateWallsAlgorithm(self.size, self.starting_position).start()
-        room_types = list(CONSTANTS["room_probabilities"].keys())
-        probabilities = list(CONSTANTS["room_probabilities"].values())
+        room_types = list(ROOM_DATA["probabilities"].keys())
+        probabilities = list(ROOM_DATA["probabilities"].values())
 
         # Initialize 2D array
         self.rooms : Array2D = Array2D.create_frame_by_size(width = self.size, height = self.size)
@@ -302,7 +303,7 @@ class Map:
 
     def decide_room_color(self, room_position : Vector2) -> str:
         room : Map.Room = self.get_room(room_position)
-        colors = CONSTANTS["room_ui_colors"]
+        colors = ROOM_DATA["ui_colors"]
 
         match room.type:
             case "empty":
