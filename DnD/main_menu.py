@@ -5,6 +5,7 @@ class MainMenu:
     def __init__(self, game_started : bool) -> None:
         self.game_started = game_started
         self.difficulty = "escape"
+        self.difficulty_str = "Escape the castle"
         
         
     def start(self):
@@ -59,20 +60,25 @@ class MainMenu:
             case "Change Music Volume":
                 Console.truncate("option menu start")
                 Music.change_volume()
+            
             case "Change Difficulty":
                 Log.header("Choose Difficulty", 2)
+                Log.show_current_difficulty(self.difficulty_str)
+
                 difficulty_options = ["Escape the castle", "Reach lvl 10"]
                 action_idx = get_user_action_choice("", difficulty_options)
+                
                 Log.write(f"Difficulty set to: {difficulty_options[action_idx]}")
+                Log.newline()
                 wait_for_key("Press ENTER to go back", "Return")
+                
+                self.difficulty_str = difficulty_options[action_idx]
                 match difficulty_options[action_idx]:
                     case "Escape the castle":
                         self.difficulty = "escape"
                     case "Reach lvl 10":
                         self.difficulty = "lvl"
-                
 
-    
     def submenu_lore(self):
         Log.header("Lore", 2)
         Log.write_lore_pages(Lore.get_pages())

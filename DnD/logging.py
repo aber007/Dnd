@@ -95,6 +95,9 @@ class _Log:
     def show_game_stats(_, stats : dict[str, int]):
         write(*[f"  {k} : {v}" for k,v in stats.items()], sep="\n")
     
+    def show_current_difficulty(_, difficulty : str):
+        write(f"Current difficulty: {difficulty}")
+    
 
     # item related
     def use_combat_item_outside_combat(_, ) -> int:
