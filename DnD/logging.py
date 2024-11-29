@@ -85,8 +85,8 @@ class _Log:
     def write_controls(_):
         write(
             "  Menu navigation - Up/Down-key",
-            "  Menu selection - Enter",
             "  Slider controls - Up/Down/Left/Right-key",
+            "  Confirm selection - Enter",
             sep="\n"
         )
     
