@@ -122,9 +122,9 @@ class Combat:
                 Log.newline()
                 wait_for_key("[Press ENTER to continue]", "Return")
 
-            self.player.stats["gold earned"] += self.enemy.gold
-            self.player.stats["exp gained"] += self.enemy.exp
-            self.player.stats["monsters defeated"] += 1
+            self.player.stats["Gold earned"] += self.enemy.gold
+            self.player.stats["EXP gained"] += self.enemy.exp
+            self.player.stats["Monsters defeated"] += 1
         
         elif not fled:
             Log.combat_player_died()
@@ -194,19 +194,22 @@ class Combat:
         fled = False
         action_completed = False  # Loop control variable to retry actions
         while not action_completed:
-            action_options = ["Use item / Attack", "Attempt to Flee"]
+            action_options = ["Use item / Attack", "Attempt to Flee", "Surrender"]
             action_idx = get_user_action_choice("Choose action: ", action_options)
 
+            Console.truncate("player turn start")
             match action_options[action_idx]:
                 case "Use item / Attack":
-                    Console.truncate("player turn start")
                     action_completed = self.player_use_item_attack()
                     if action_completed:
                         return fled
 
                 case "Attempt to Flee":
-                    Console.truncate("player turn start")
                     return self.player_attempt_to_flee()
+                
+                case "Surrender":
+                    return self.player_surrender()
+
         
         return fled
 
@@ -214,16 +217,17 @@ class Combat:
         """Returns wether the player sucessfully used an item or not, aka action_completed"""
         action_completed = False
 
-        # item_return is either tuple[dmg done, item name_in_sentence] or None, depending on if any damage was done
+        # item_return is either tuple[dmg done, item] or Item or None
         item_return = self.player.open_inventory()
-        if item_return is not None:
-            dmg, item_name_in_sentence = item_return
+        
+        if isinstance(item_return, tuple):
+            dmg, item = item_return
             dmg += self.player.permanent_dmg_bonus
 
             dmg_mod = combat_bar()
             dmg_factor = {"miss": 0, "hit": 1, "hit_x2": 2}[dmg_mod]
 
-            Log.combat_player_attack_mod(dmg_factor, self.enemy.name, item_name_in_sentence)
+            Log.combat_player_attack_mod(dmg_factor, self.enemy.name, item.name_in_sentence)
             Log.newline()
 
             # if the player missed the enemy mark this turn as completed
@@ -240,7 +244,7 @@ class Combat:
 
             dmg *= dmg_factor * self.player.temp_dmg_factor
 
-            self.player.stats["dmg dealt"] += dmg
+            self.player.stats["DMG dealt"] += dmg
 
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
@@ -259,6 +263,16 @@ class Combat:
 
             action_completed = True
         
+        # get the item that was used from item_return then log item_broke if the item broke
+        if item_return is not None:
+            if isinstance(item_return, tuple):
+                _, item = item_return
+            else:
+                item = item_return
+            
+            if item.is_broken():
+                Log.item_broke()
+
         return action_completed
 
     def player_attempt_to_flee(self) -> bool:
@@ -287,8 +301,9 @@ class Combat:
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
                 Log.combat_perfect_flee()
                 Log.newline()
-                self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
-                self.player.stats["gold earned"] += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
+                gold_earned = round(self.enemy.gold * CONSTANTS["flee_20_coins_to_receive_factor"])
+                self.player.inventory.gold += gold_earned
+                self.player.stats["Gold earned"] += gold_earned
             
             Log.combat_flee_successful()
             fled = True
@@ -300,6 +315,11 @@ class Combat:
 
         return fled
     
+    def player_surrender(self) -> None:
+        Log.combat_player_surrender()
+        self.player.take_damage(dmg=self.player.hp, dmg_type="raw", source=self.enemy.name, log=True)
+    
+
     def enemy_turn(self):
         dmg_factor = DodgeEnemyAttack().start()
         

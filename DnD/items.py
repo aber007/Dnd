@@ -1,4 +1,4 @@
-from . import CONSTANTS, ITEM_DATA, get_user_action_choice, Log, Console, Lore
+from . import CONSTANTS, ITEM_DATA, ROOM_DATA, get_user_action_choice, wait_for_key, Log, Console, Lore
 
 
 def eye_of_horus(player):
@@ -16,10 +16,10 @@ def eye_of_horus(player):
 
     selected_room.horus_was_used = True
     if selected_room.is_cleared:
-        map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"]["discovered"])
+        map.UI_instance.send_command("tile", selected_room_coords, ROOM_DATA["ui_colors"]["discovered"])
     else:
-        map.UI_instance.send_command("tile", selected_room_coords, CONSTANTS["room_ui_colors"][selected_room.type])
-    Log.used_eye_of_horus(selected_direction, CONSTANTS['room_contains_text'][selected_room.type])
+        map.UI_instance.send_command("tile", selected_room_coords, ROOM_DATA["ui_colors"][selected_room.type])
+    Log.used_eye_of_horus(selected_direction, ROOM_DATA["contains_text"][selected_room.type])
 
 class Item:
     def __init__(self, item_id : str) -> None:
@@ -49,7 +49,7 @@ class Item:
                         return_val = eye_of_horus
                     
                     case "breath_of_life":
-                        return_val = lambda player: player.heal(self.effect + (player.hp//10))
+                        return_val = lambda player: player.add_effect(name="Breath of Life", type="hp", effect=self.effect + round(player.hp*0.1), effect_type="", duration=1, log=True)
                     
                     case "breath_of_fire":
                         return_val = self.effect
@@ -57,11 +57,13 @@ class Item:
         
         self.durability -= 1
         if self.durability == 0:
-            Log.item_broke(self.name)
+            Log.item_broke()
             self.parent_inventory.remove_item(self)
         
         return return_val
 
+    def is_broken(self) -> bool:
+        return not 0 < self.durability
     
     def __str__(self):
         return self.name[0].upper() + self.name[1:]
@@ -76,7 +78,6 @@ class Inventory:
         self.slots : list[Item | None] = [None] * self.size # this length should never change
         
         self.receive_item(Item("sharp_twig"), supress_log=True)
-        self.receive_item(Item("the_eye_of_horus"), supress_log=True)
 
         self.gold = CONSTANTS["player_starting_gold"]
         self.exp = CONSTANTS["player_starting_exp"]
@@ -212,6 +213,8 @@ class Inventory:
 
         else:
             Log.inventory_empty()
+            Log.newline()
+            wait_for_key("[Press ENTER to continue]", "Return")
         
         Console.truncate("select item start")
         return selected_item

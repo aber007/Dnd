@@ -45,14 +45,15 @@ class _Log:
     def header(_, content : str, lvl : int) -> int:
         underline_str = ANSI.Text.double_underline if lvl == 1 else ANSI.Text.single_underline if lvl == 2 else ""
 
-        length_left = (CONSTANTS["header_length"]-len(content)) // 2
-        length_right = length_left + 1 if len(content) % 2 == 0 else length_left
         match lvl:
             case 1:
-                return write(ANSI.clear_line, "="*length_left, f" {underline_str}{content}{ANSI.Text.off} ", "="*length_right, end="\n"*2)
-            
+                content = f" {underline_str}{content}{ANSI.Text.off} "
+                text = content.center(CONSTANTS["header_length"], "=")
             case 2:
-                return write(ANSI.clear_line, "-"*(length_left-1), f") {underline_str}{content}{ANSI.Text.off} (", "-"*(length_right-1), end="\n"*2)
+                content = f") {underline_str}{content}{ANSI.Text.off} ("
+                text = content.center(CONSTANTS["header_length"], "-")
+        
+        write(ANSI.clear_line, text, end="\n"*2)
             
     def end(_):
         length = CONSTANTS["header_length"] + 2
@@ -84,8 +85,8 @@ class _Log:
     def write_controls(_):
         write(
             "  Menu navigation - Up/Down-key",
-            "  Menu selection - Enter",
-            "  Slider controls - Left/Right-key",
+            "  Slider controls - Up/Down/Left/Right-key",
+            "  Confirm selection - Enter",
             "",
             "  Map focus is required for controls to work",
             sep="\n"
@@ -102,8 +103,8 @@ class _Log:
     def used_eye_of_horus(_, selected_direction : str, room_contains_text : str):
         write(f"The Eye of Horus shows you that the room behind the door facing {selected_direction} contains {room_contains_text}")
     
-    def item_broke(_, item_name : str):
-        write(f"{item_name} broke and is now useless!")
+    def item_broke(_):
+        write(f"The item broke and is now useless!")
     
     def received_item(_, name_in_sentence : str, description : str):
         write(f"You recieved {name_in_sentence}", description, sep="\n")
@@ -220,7 +221,6 @@ class _Log:
 
     # entity related
     def entity_took_dmg(_, entity_name : str, dmg : int, hp_remaining : int, is_alive : int, source : str = ""):
-        entity_pronoun = "you" if entity_name == "player" else "it"
         write(
             f"The {entity_name} took {dmg} damage",
             (
@@ -228,7 +228,7 @@ class _Log:
             ),
             (
                 f". {hp_remaining} HP remaining" if is_alive else
-                f", killing {entity_pronoun} in the process"
+                f" and died in the process"
             )
             )
 
@@ -248,6 +248,9 @@ class _Log:
 
         write(f"The {effect_instance.target.name} has been hit by a {effect_instance.name} effect, {action_str} {effect_instance.effect} {effect_suffix_str} for {effect_instance.duration} rounds")
     
+    def entity_received_already_present_effect(_, effect_name):
+        write(f"The {effect_name} effect application was unsuccessful")
+
     def effect_tick(_, effect_instance):
         action_str = {"hp": "healed", "dmg": "damaged"}[effect_instance.type]
         effect_suffix_str = effect_instance.type.upper()
@@ -367,6 +370,9 @@ class _Log:
     def enemy_used_special(_, special_info : str):
         write(special_info)
     
+    def combat_player_surrender(_):
+        write("With your final bit of energy exerted, and with apathy towards life itself, you lay down your weapon and accept your fate.")
+
     def combat_player_died(_):
         write("The combat encounter ended with your disgraceful death-your corpse left to rot in a nearby ditch, and your dreams left forever unachieved.")
 

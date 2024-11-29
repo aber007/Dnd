@@ -43,11 +43,11 @@ class MainMenu:
             
             # remove the remains of eg. the options header
             Console.truncate("main menu start")
-        
-        # Print tip to guide users to Options later
 
     def submenu_options(self):
         Log.header("OPTIONS", 2)
+        Console.save_cursor_position("option menu start")
+
         if self.game_started:
             action_options = ["Change Music Volume", "Return"]
         else:
@@ -57,6 +57,7 @@ class MainMenu:
         
         match action_options[action_idx]:
             case "Change Music Volume":
+                Console.truncate("option menu start")
                 Music.change_volume()
             case "Change Difficulty":
                 Log.header("Choose Difficulty", 2)

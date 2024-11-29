@@ -1,0 +1,28 @@
+{
+    "probabilities": {
+        "empty": 0.25,
+        "enemy": 0.4,
+        "chest": 0.25,
+        "trap": 0.05,
+        "mimic_trap": 0.05,
+        "shop": 0.1
+    },
+    "ui_colors": {
+        "default" : "gray",
+        "discovered": "light gray",
+        "empty": "light gray",
+        "enemy": "red",
+        "chest": "yellow",
+        "trap": "dark green",
+        "mimic_trap": "light green",
+        "shop": "blue"
+    },
+    "contains_text": {
+        "empty": "nothing",
+        "enemy": "an enemy",
+        "chest": "a chest",
+        "trap": "a trap",
+        "mimic_trap": "a Mimic trap",
+        "shop": "a shop"
+    }
+}

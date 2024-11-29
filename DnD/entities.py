@@ -24,7 +24,7 @@ class Entity:
         self.is_alive = 0 < self.hp
         
         if self.name == "player":
-            self.stats["hp lost"] += dmg
+            self.stats["HP lost"] += dmg
 
         if log:
             Log.entity_took_dmg(self.name, dmg, self.hp, self.is_alive, source)
@@ -41,7 +41,7 @@ class Entity:
             Log.entity_healed(self.name, hp_before, additional_hp, hp_delta, self.hp)
 
         if self.name == "player":
-            self.stats["hp gained"] += hp_delta
+            self.stats["HP gained"] += hp_delta
 
     def add_effect(self, name : str, type : str, effect : int, effect_type : str, duration : int, log : bool = True) -> Effect | None:
         """Instantiates the Effect class and adds it to this entity's list of current effects only if an effect of the same type isnt present\n
@@ -58,6 +58,9 @@ class Entity:
                 Log.entity_received_effect(effect_instance)
             
             return effect_instance
+        
+        else:
+            Log.entity_received_already_present_effect(name)
     
     def clear_effects(self):
         for effect in self.active_effects:
@@ -96,12 +99,12 @@ class Player(Entity):
 
         # Fix this later, these are just temporary
         self.stats = {
-            "hp gained": 0, # Fixed
-            "hp lost": 0, # Fixed
-            "gold earned": 0, # Fixed
-            "exp gained": 0, # Fixed
-            "dmg dealt": 0, # Fixed
-            "monsters defeated": 0, # Fixed
+            "HP gained": 0,
+            "HP lost": 0,
+            "Gold earned": 0,
+            "EXP gained": 0,
+            "DMG dealt": 0,
+            "Monsters defeated": 0
         }
 
         # progression related attributes
@@ -124,8 +127,10 @@ class Player(Entity):
 
         return dice_result
 
-    def open_inventory(self) -> tuple[int, str] | None:
-        """If any damage was dealt, return tuple[dmg, item name_in_sentence] or None"""
+    def open_inventory(self) -> tuple[int, Item] | Item | None:
+        """If any damage was dealt, return tuple[dmg, Item]\n
+        If an item was used that didnt deal dmg, return Item\n
+        If no item was used return None"""
 
         selected_item : Item | None = self.inventory.open()
 
@@ -140,14 +145,14 @@ class Player(Entity):
 
             else:
                 dmg = selected_item.use()
-                return (dmg, selected_item.name_in_sentence)
+                return dmg, selected_item
 
         else:
             # non offensive items always return a callable where the argument 'player' is expected
             use_callable = selected_item.use()
             use_callable(self)
 
-        return None
+        return selected_item
     
     def on_lvl_up(self):
         """Set the players bonus health and dmg based on the current lvl"""

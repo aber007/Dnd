@@ -1,5 +1,5 @@
+from . import CONSTANTS, ROOM_DATA, Array2D, Vector2, Animation, AnimationLibrary
 import os
-from . import CONSTANTS, Array2D, Vector2, Animation, AnimationLibrary
 try:
     import tkinter as tk
 except ImportError:
@@ -60,10 +60,10 @@ def openUIMap(size : int, rooms : Array2D[any], player_pos : Vector2, existing_w
     # Initial grid color update
     for x, y, room in rooms:
         if not room.discovered and not CONSTANTS["debug"]["set_all_map_tiles_discovered"]:
-            grid[x,y].configure(bg=CONSTANTS["room_ui_colors"]["default"])
+            grid[x,y].configure(bg=ROOM_DATA["ui_colors"]["default"])
         
         else:
-            grid[x,y].configure(bg=CONSTANTS["room_ui_colors"][room.type])
+            grid[x,y].configure(bg=ROOM_DATA["ui_colors"][room.type])
 
     
     def place_doors_in_room(room_position : Vector2) -> None:
