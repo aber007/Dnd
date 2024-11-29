@@ -78,7 +78,6 @@ class Inventory:
         self.slots : list[Item | None] = [None] * self.size # this length should never change
         
         self.receive_item(Item("sharp_twig"), supress_log=True)
-        self.receive_item(Item("the_eye_of_horus"), supress_log=True)
 
         self.gold = CONSTANTS["player_starting_gold"]
         self.exp = CONSTANTS["player_starting_exp"]

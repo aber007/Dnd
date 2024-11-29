@@ -86,13 +86,13 @@ CONSTANTS = {
 
     "player_input_thread_update_rate": 1/30,
 
-    # change these when debugging
+    # change these when debugging. Every settings default is False
     "debug": {
-        "set_all_map_tiles_discovered": False, # default False
-        "display_all_walls": False, # default False
-        "print_map": False, # default False
-        "player_infinite_dmg": False, # default False
-        "show_enemy_probabilities" : False # default False
+        "set_all_map_tiles_discovered": False,
+        "display_all_walls": False,
+        "print_map": False,
+        "player_infinite_dmg": False,
+        "show_enemy_probabilities" : False
     }
 }
 
