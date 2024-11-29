@@ -194,19 +194,22 @@ class Combat:
         fled = False
         action_completed = False  # Loop control variable to retry actions
         while not action_completed:
-            action_options = ["Use item / Attack", "Attempt to Flee"]
+            action_options = ["Use item / Attack", "Attempt to Flee", "Surrender"]
             action_idx = get_user_action_choice("Choose action: ", action_options)
 
+            Console.truncate("player turn start")
             match action_options[action_idx]:
                 case "Use item / Attack":
-                    Console.truncate("player turn start")
                     action_completed = self.player_use_item_attack()
                     if action_completed:
                         return fled
 
                 case "Attempt to Flee":
-                    Console.truncate("player turn start")
                     return self.player_attempt_to_flee()
+                
+                case "Surrender":
+                    return self.player_surrender()
+
         
         return fled
 
@@ -312,6 +315,11 @@ class Combat:
 
         return fled
     
+    def player_surrender(self) -> None:
+        Log.combat_player_surrender()
+        self.player.take_damage(dmg=self.player.hp, dmg_type="raw", source=self.enemy.name, log=True)
+    
+
     def enemy_turn(self):
         dmg_factor = DodgeEnemyAttack().start()
         

@@ -368,6 +368,9 @@ class _Log:
     def enemy_used_special(_, special_info : str):
         write(special_info)
     
+    def combat_player_surrender(_):
+        write("With your final bit of energy exerted, and with apathy towards life itself, you lay down your weapon and accept your fate.")
+
     def combat_player_died(_):
         write("The combat encounter ended with your disgraceful death-your corpse left to rot in a nearby ditch, and your dreams left forever unachieved.")
 
