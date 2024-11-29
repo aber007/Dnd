@@ -281,7 +281,7 @@ class Combat:
                 Log.enemy_attack_while_fleeing(self.enemy.name)
                 self.enemy.attack(target=self.player)
                 Log.newline()
-                return False
+                return True
             
             # if you escaped with coins
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
