@@ -246,6 +246,9 @@ class _Log:
 
         write(f"The {effect_instance.target.name} has been hit by a {effect_instance.name} effect, {action_str} {effect_instance.effect} {effect_suffix_str} for {effect_instance.duration} rounds")
     
+    def entity_received_already_present_effect(_, effect_name):
+        write(f"The {effect_name} effect application was unsuccessful")
+
     def effect_tick(_, effect_instance):
         action_str = {"hp": "healed", "dmg": "damaged"}[effect_instance.type]
         effect_suffix_str = effect_instance.type.upper()

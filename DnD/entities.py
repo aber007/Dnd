@@ -58,6 +58,9 @@ class Entity:
                 Log.entity_received_effect(effect_instance)
             
             return effect_instance
+        
+        else:
+            Log.entity_received_already_present_effect(name)
     
     def clear_effects(self):
         for effect in self.active_effects:
