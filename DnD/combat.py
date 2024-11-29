@@ -287,8 +287,9 @@ class Combat:
             elif CONSTANTS["flee_exact_roll_to_escape_coins"] <= roll:
                 Log.combat_perfect_flee()
                 Log.newline()
-                self.player.inventory.gold += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
-                self.player.stats["gold earned"] += self.enemy.gold // CONSTANTS["flee_20_coins_to_receive_divider"]
+                gold_earned = round(self.enemy.gold * CONSTANTS["flee_20_coins_to_receive_factor"])
+                self.player.inventory.gold += gold_earned
+                self.player.stats["gold earned"] += gold_earned
             
             Log.combat_flee_successful()
             fled = True

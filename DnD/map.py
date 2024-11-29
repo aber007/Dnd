@@ -101,7 +101,10 @@ class Map:
                     shop_item_ids = choices(possible_items, item_probabilites, k=CONSTANTS["shop_item_count"])
                     for item_id in shop_item_ids:
                         item = Item(item_id)
-                        item.current_price = item.base_price + randint(item.base_price // -CONSTANTS["shop_item_price_range_divider"], item.base_price // CONSTANTS["shop_item_price_range_divider"])
+
+                        min_price = round(item.base_price * -CONSTANTS["shop_item_price_range_factor"])
+                        max_price = round(item.base_price * CONSTANTS["shop_item_price_range_factor"])
+                        item.current_price = item.base_price + randint(min_price, max_price)
                         self.shop_items.append(item)
 
                 case ("trap", _):

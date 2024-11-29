@@ -54,10 +54,10 @@ CONSTANTS = {
     "flee_min_roll_to_escape": 12,
     "flee_min_roll_to_escape_unharmed": 15,
     "flee_exact_roll_to_escape_coins": 20,
-    "flee_20_coins_to_receive_divider": 2,
+    "flee_20_coins_to_receive_factor": 0.5,
     
     "shop_item_count": 3,
-    "shop_item_price_range_divider": 2,
+    "shop_item_price_range_factor": 0.5,
 
     "item_config_file": "./items.json",
     "enemy_config_file": "./enemies.json",
@@ -109,6 +109,8 @@ CONSTANTS = {
     "min_desired_terminal_width": 110,
 
     "header_length": 39,
+
+    "player_input_thread_update_rate": 1/30,
 
     # change these when debugging
     "debug": {

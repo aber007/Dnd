@@ -1,3 +1,4 @@
+from . import CONSTANTS
 from typing import Callable
 import time, threading
 
@@ -50,7 +51,7 @@ class _PlayerInputs:
             if not self.waiting_for_key:
                 self.check_inputs()
             
-            time.sleep(1/20)
+            time.sleep(CONSTANTS["player_input_thread_update_rate"])
 
     def check_inputs(self) -> None:
         qsize = self.q.qsize()
