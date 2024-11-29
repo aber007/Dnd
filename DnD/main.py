@@ -52,14 +52,14 @@ def run_game():
         # ensures ItemSelect and music volume slider work properly, therefore must be first
         ensure_terminal_width(CONSTANTS["min_desired_terminal_width"])
 
-        map = Map()
+        map : Map = Map()
         player = Player(map)
 
         # since the player inputs are captured using the tkinter window, init it before main menu
         map.open_UI_window(player_pos = player.position)
 
-        # open main menu
-        MainMenu(game_started=False).start()
+        # open main menu and get difficulty
+        difficulty = MainMenu(game_started=False).start()
         
 
         # init the game
@@ -73,10 +73,28 @@ def run_game():
         # setup the version of MainMenu to display for the user during the game
         in_game_menu = MainMenu(game_started=True)
 
-        while player.is_alive and player.inventory.lvl < 20:
+        while player.is_alive:
+
+            all_rooms_discovered : list[bool] = []
+            all_rooms_discovered_status = False
+            if difficulty == "escape":
+                for x in range(map.size):
+                    for y in range(map.size):
+                        room = map.rooms[x, y]
+                        all_rooms_discovered.append(room.discovered)
+                if False not in all_rooms_discovered:
+                    all_rooms_discovered_status = True
+                    break
+
+            elif difficulty == "lvl":
+                if player.inventory.lvl >= 10:
+                    all_rooms_discovered_status = False
+                    break
+
+                
             Log.clear_console()
             Log.header("NEW ROUND", 1)
-            
+
             if game_just_started:
                 Log.first_time_enter_spawn_room()
                 game_just_started = False
@@ -117,7 +135,11 @@ def run_game():
         Music.play("ambience")
 
         Console.clear()
-        Log.header("GAME WON" if player.is_alive else "GAME OVER", 1)
+        if not all_rooms_discovered_status:
+            Log.header("GAME WON" if player.is_alive else "GAME OVER", 1)
+        else:
+            Log.header("CASTLE ESCAPED", 1)
+            Log.write("You managed to escape the castle and you are free from the contract")
         Log.game_over(player.is_alive)
         Log.newline()
 
