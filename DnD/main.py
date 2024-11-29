@@ -86,11 +86,10 @@ def run_game():
                     all_rooms_discovered_status = True
                     break
 
-            if difficulty == "lvl":
-                if player.inventory.lvl < 10:
+            elif difficulty == "lvl":
+                if player.inventory.lvl >= 10:
                     all_rooms_discovered_status = False
                     break
-
 
                 
             Log.clear_console()

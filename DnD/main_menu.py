@@ -4,10 +4,10 @@ class MainMenu:
     
     def __init__(self, game_started : bool) -> None:
         self.game_started = game_started
+        self.difficulty = "escape"
         
         
     def start(self):
-        difficulty = "escape"
         Console.clear()
         Log.header("MAIN MENU", 1)
         Console.save_cursor_position("main menu start")
@@ -24,7 +24,7 @@ class MainMenu:
 
             match action_options[action_idx]:
                 case "Start Game":
-                    return difficulty
+                    return self.difficulty
                 
                 case "Continue Game":
                     return
@@ -66,9 +66,9 @@ class MainMenu:
                 wait_for_key("Press ENTER to go back", "Return")
                 match difficulty_options[action_idx]:
                     case "Escape the castle":
-                        difficulty = "escape"
+                        self.difficulty = "escape"
                     case "Reach lvl 10":
-                        difficulty = "lvl"
+                        self.difficulty = "lvl"
                 
 
     
