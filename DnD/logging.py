@@ -219,7 +219,6 @@ class _Log:
 
     # entity related
     def entity_took_dmg(_, entity_name : str, dmg : int, hp_remaining : int, is_alive : int, source : str = ""):
-        entity_pronoun = "you" if entity_name == "player" else "it"
         write(
             f"The {entity_name} took {dmg} damage",
             (
@@ -227,7 +226,7 @@ class _Log:
             ),
             (
                 f". {hp_remaining} HP remaining" if is_alive else
-                f", killing {entity_pronoun} in the process"
+                f" and died in the process"
             )
             )
 
