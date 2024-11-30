@@ -76,6 +76,7 @@ class _Lore:
             self.pages : dict[str, list[str]] = json.loads(f.read())
 
         self.load_discovered_pages()
+        self.decrypt_alreay_discovered_pages()
     
     def load_discovered_pages(self):
         """Loads the user specific file where their lore progress is stored"""
@@ -104,6 +105,11 @@ class _Lore:
 
     def get_undiscovered_pages(self) -> list[int]:
         return [page_idx for page_idx, discovered in self.discovered_pages.items() if not discovered]
+    
+    def decrypt_alreay_discovered_pages(self):
+        for page_idx, discovered in self.discovered_pages.items():
+            if discovered:
+                self.decode_page(page_idx)
     
     def discovered_page(self) -> None:
         # the first time the player enters either a shop or a chest room the items are instantly generated
