@@ -100,7 +100,7 @@
     },
     "note":{
         "name": "Note",
-        "probability": 0.05,
+        "probability": 0.1,
         "name_in_sentence": "a torn up piece of a letter",
         "type": "lore",
         "offensive": false,

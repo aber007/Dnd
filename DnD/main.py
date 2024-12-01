@@ -77,11 +77,12 @@ def run_game():
 
             all_rooms_discovered : list[bool] = []
             all_rooms_discovered_status = False
+            for x in range(map.size):
+                for y in range(map.size):
+                    room = map.rooms[x, y]
+                    all_rooms_discovered.append(room.discovered)
+            
             if difficulty == "escape":
-                for x in range(map.size):
-                    for y in range(map.size):
-                        room = map.rooms[x, y]
-                        all_rooms_discovered.append(room.discovered)
                 if False not in all_rooms_discovered:
                     all_rooms_discovered_status = True
                     break
@@ -89,6 +90,9 @@ def run_game():
             elif difficulty == "lvl":
                 if player.inventory.lvl >= 10:
                     all_rooms_discovered_status = False
+                    break
+                elif False not in all_rooms_discovered:
+                    all_rooms_discovered_status = True
                     break
 
                 
