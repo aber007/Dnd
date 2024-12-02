@@ -63,7 +63,7 @@ class Item:
         return return_val
 
     def is_broken(self) -> bool:
-        return not 0 == self.durability
+        return 0 == self.durability
     
     def __str__(self):
         return self.name[0].upper() + self.name[1:]
