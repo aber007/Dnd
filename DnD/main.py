@@ -43,7 +43,25 @@ def get_player_action_options(player : Player, map : Map) -> list[str]:
     return player_action_options
 
 
+def is_game_won(difficulty : str, map : Map, player : Player) -> bool:
+    """Returns a bool that represents wether the game should end"""
 
+    if difficulty == "escape":
+        all_rooms_discovered : list[bool] = []
+        for _, _, room in map.rooms:
+            all_rooms_discovered.append(room.discovered)
+
+        # if the goal is to discover all rooms and all rooms have been discovered: game won
+        if all(all_rooms_discovered):
+            return True
+
+    elif difficulty == "lvl":
+        # if the goal is to get to lvl 10 and the player is/exceeded lvl 10: game won
+        if player.inventory.lvl >= 10:
+            return True
+    
+    # if the player hasnt won the game
+    return False
 
 def run_game():
     try:
@@ -73,29 +91,7 @@ def run_game():
         # setup the version of MainMenu to display for the user during the game
         in_game_menu = MainMenu(game_started=True)
 
-        while player.is_alive:
-
-            all_rooms_discovered : list[bool] = []
-            all_rooms_discovered_status = False
-            for x in range(map.size):
-                for y in range(map.size):
-                    room = map.rooms[x, y]
-                    all_rooms_discovered.append(room.discovered)
-            
-            if difficulty == "escape":
-                if False not in all_rooms_discovered:
-                    all_rooms_discovered_status = True
-                    break
-
-            elif difficulty == "lvl":
-                if player.inventory.lvl >= 10:
-                    all_rooms_discovered_status = False
-                    break
-                elif False not in all_rooms_discovered:
-                    all_rooms_discovered_status = True
-                    break
-
-                
+        while player.is_alive and is_game_won(difficulty, map, player) == False:
             Log.clear_console()
             Log.header("NEW ROUND", 1)
 
@@ -139,12 +135,7 @@ def run_game():
         Music.play("ambience")
 
         Console.clear()
-        if not all_rooms_discovered_status:
-            Log.header("GAME WON" if player.is_alive else "GAME OVER", 1)
-        else:
-            Log.header("CASTLE ESCAPED", 1)
-            Log.write("You managed to escape the castle and you are free from the contract")
-        Log.game_over(player.is_alive)
+        Log.game_over(player.is_alive, difficulty)
         Log.newline()
 
         Log.header("GAME STATS", 2)

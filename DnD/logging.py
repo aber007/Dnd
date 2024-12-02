@@ -76,11 +76,20 @@ class _Log:
 
 
     # game related
-    def game_over(_, won : bool):
-        if won:
-            write("Congratulations! You escaped the castle or something")
-        else:
-            write("Despite your best efforts, you ultimately failed to achieve your goals")
+    def game_over(_, won : bool, difficulty : str):
+        match (won, difficulty):
+            case (True, "escape"):
+                Log.header("CASTLE ESCAPED", 1)
+                write("You managed to escape the castle, finally freeing you from the contract")
+
+            case (True, "lvl"):
+                Log.header("GAME WON", 1)
+                write("Congratulations! You reached level 10")
+
+            case (False, _):
+                Log.header("GAME OVER", 1)
+                write("Despite your best efforts, you ultimately failed to achieve your goals")
+
     
     def write_controls(_):
         write(
