@@ -262,16 +262,6 @@ class Combat:
                 Log.player_skill_damaged_enemy(self.enemy.name, returned_dmg_done)
 
             action_completed = True
-        
-        # get the item that was used from item_return then log item_broke if the item broke
-        if item_return is not None:
-            if isinstance(item_return, tuple):
-                _, item = item_return
-            else:
-                item = item_return
-            
-            if item.is_broken():
-                Log.item_broke()
 
         return action_completed
 

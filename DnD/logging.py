@@ -120,10 +120,9 @@ class _Log:
     
     def list_inventory_items(_, items_in_inventory : list[any]) -> int:
         item_strings = []
-        from . import Item
         for idx,item in enumerate(items_in_inventory):
             #Get durability left if item is a weapon
-            durability_left = item.durability if isinstance(item, Item) and item.type == "weapon" else None
+            durability_left = item.durability if item is not None and item.type == "weapon" else None
             if durability_left != None and item.name != "Sharp Twig":
                 item_strings.append(f"Slot {idx+1}) {str(item) if item != None else ''} ({durability_left}{' uses left' if durability_left > 1 else ' use left'})")
             else:
