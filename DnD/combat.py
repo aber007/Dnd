@@ -246,7 +246,7 @@ class Combat:
 
             dmg *= dmg_factor * self.player.temp_dmg_factor
 
-            self.player.stats["DMG dealt"] += dmg
+            self.player.stats["DMG dealt"] += round(dmg)
 
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6

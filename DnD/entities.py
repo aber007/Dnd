@@ -97,7 +97,6 @@ class Player(Entity):
         self.permanent_dmg_bonus = 0
         self.temp_dmg_factor = 1
 
-        # Fix this later, these are just temporary
         self.stats = {
             "HP gained": 0,
             "HP lost": 0,
