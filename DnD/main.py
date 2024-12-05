@@ -77,8 +77,9 @@ def run_game():
         map.open_UI_window(player_pos = player.position)
 
         # open main menu and get difficulty
+        Music.play("ambience")
+
         difficulty = MainMenu(game_started=False).start()
-        
 
         # init the game
 

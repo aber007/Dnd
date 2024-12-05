@@ -6,6 +6,10 @@ class MainMenu:
         self.game_started = game_started
         self.difficulty = "escape"
         self.difficulty_str = "Escape the castle"
+
+        # write a key hint the first time the player sees the main menu
+        # dont show the hint if the menu was opened mid game since the player would already know the controls
+        self.first_time_opening = False if game_started else True
         
         
     def start(self):
@@ -13,12 +17,15 @@ class MainMenu:
         Log.header("MAIN MENU", 1)
         Console.save_cursor_position("main menu start")
 
+        if self.first_time_opening:
+            Log.main_menu_key_hint()
+            self.first_time_opening = False
+
         while True:
             if self.game_started:
                 action_options = ["Continue Game", "Options", "Lore", "Help", "Quit Game"]
             else:
                 action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
-                Log.write("Hint: Use the arrow keys + Enter to navigate the menu")
             action_idx = get_user_action_choice("", action_options)
             
             # remove the ItemSelect remains

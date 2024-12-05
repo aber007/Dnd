@@ -107,6 +107,9 @@ class _Log:
     def show_current_difficulty(_, difficulty : str):
         write(f"Current difficulty: {difficulty}")
     
+    def main_menu_key_hint(_):
+        write("Hint: Use the arrow keys + Enter to navigate the menu")
+    
 
     # item related
     def use_combat_item_outside_combat(_, ) -> int:

@@ -1,6 +1,8 @@
 CONSTANTS = {
-    "map_base_size": 10, #Base size over 20 is not recommended
+    "map_base_size": 11, #Base size over 20 is not recommended
     "remove_door_percent": 0.2,
+
+    "default_music_volume": 0.3,
 
     "normal_trap_dmg": 3,
     "mimic_trap_ambush_dmg": 4,
@@ -67,7 +69,7 @@ CONSTANTS = {
     "dodge_bar_times": {
         "waiting": 3000,
         "waiting_range": 1500,
-        "perfect_dodge": 260,
+        "perfect_dodge": 250,
         "partial_dodge": 550
     },
     "dodge_bar_dmg_factors": {
@@ -80,7 +82,7 @@ CONSTANTS = {
     "skill_tree_cross_color": [255,0,0],
 
     "use_fancy_item_selection": True,
-    "min_desired_terminal_width": 120,
+    "min_desired_terminal_width": 135,
 
     "header_length": 39,
 
