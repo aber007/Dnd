@@ -165,11 +165,11 @@ class Inventory:
         Log.view_inventory(self, items_in_inventory)
         Log.newline()
 
-        action_options = ["Use item", "View skill tree", "Cancel"]
+        action_options = ["Choose item", "View skill tree", "Cancel"]
         action_idx = get_user_action_choice("Choose action: ", action_options, start_y=item_select_start_y)
 
         match action_options[action_idx]:
-            case "Use item":
+            case "Choose item":
                 return_item = self.select_item_to_use()
             
             case "View skill tree":
