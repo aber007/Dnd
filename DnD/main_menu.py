@@ -18,6 +18,7 @@ class MainMenu:
                 action_options = ["Continue Game", "Options", "Lore", "Help", "Quit Game"]
             else:
                 action_options = ["Start Game", "Options", "Lore", "Help", "Quit Game"]
+                Log.write("Hint: Use the arrow keys + Enter to navigate the menu")
             action_idx = get_user_action_choice("", action_options)
             
             # remove the ItemSelect remains
