@@ -49,7 +49,7 @@ class Item:
                         return_val = eye_of_horus
                     
                     case "breath_of_life":
-                        return_val = lambda player: player.add_effect(name="Breath of Life", type="hp", effect=self.effect + round(player.hp*0.1), effect_type="", duration=1, log=True)
+                        return_val = lambda player: player.heal(self.effect)
                     
                     case "breath_of_fire":
                         return_val = self.effect

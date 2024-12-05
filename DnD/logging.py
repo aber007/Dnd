@@ -88,7 +88,7 @@ class _Log:
 
             case (False, _):
                 Log.header("GAME OVER", 1)
-                write("Despite your best efforts, you ultimately failed to achieve your goals")
+                write("Despite your best efforts, you ultimately failed to escape the castle")
 
     
     def write_controls(_):
