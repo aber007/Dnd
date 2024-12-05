@@ -94,7 +94,7 @@ class Map:
                 case ("shop", True):
                     possible_items = list(ITEM_DATA.keys())
 
-                    if Lore.all_pages_discovered():
+                    if Lore.all_words_discovered():
                         possible_items.remove("note")
 
                     item_probabilites = [ITEM_DATA[item_id]["probability"] for item_id in possible_items]
