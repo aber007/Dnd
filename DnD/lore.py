@@ -123,7 +123,7 @@ class _Lore:
             Log.found_irrelevant_lore_letter_page()
             return
         
-        page_idx = choice(self.get_undiscovered_pages())
+        page_idx = self.get_undiscovered_pages()[0]
 
         self.discovered_pages[page_idx] = True
         self.decode_page(page_idx)
