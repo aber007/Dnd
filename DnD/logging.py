@@ -108,7 +108,7 @@ class _Log:
         write(f"Current difficulty: {difficulty}")
     
     def main_menu_key_hint(_):
-        write("Hint: Use the arrow keys + Enter to navigate the menu")
+        write("Hint: Use the arrow keys + Enter while focused on the map window to navigate the menu.")
     
 
     # item related

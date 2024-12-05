@@ -1,4 +1,4 @@
-import os
+import os, time
 from random import randint, choices
 from . import (
     CONSTANTS,
@@ -229,6 +229,7 @@ class Map:
                     self.player_input_queue
                 ))
             self.UI_thread.start()
+            time.sleep(1) # block the main thread til the UI thread tk window is open (self.UI_thread.is_alive() doesnt work here)
         
         def send_command(self, type : str, position : Vector2, *args : str):
             """Type is ether "pp" (player position) to move player position rect or "tile" to change bg color of a tile\n
