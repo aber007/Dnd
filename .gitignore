@@ -2,6 +2,6 @@
 __pycache__
 *.pyc
 venv
-
+.idea
 # user specific lore progress file
 story/lore_text/discovered_pages.json
