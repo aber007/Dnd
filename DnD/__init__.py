@@ -80,7 +80,7 @@ CONSTANTS = {
     "skill_tree_cross_color": [255,0,0],
 
     "use_fancy_item_selection": True,
-    "min_desired_terminal_width": 120,
+    "min_desired_terminal_width": 135,
 
     "header_length": 39,
 
