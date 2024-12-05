@@ -5,4 +5,4 @@ venv
 .idea
 Test
 # user specific lore progress file
-story/lore_text/discovered_pages.json
+story/lore_text/discovered_lore.json
