@@ -8,7 +8,10 @@ class ANSI:
             self.ground = ground
             self.ansi = ANSI.Color.rgb_bg(*self.rgb) if ground == "bg" else ANSI.Color.rgb_fg(*self.rgb)
         
-        def __str__(self):
+        def __add__(self, part : str) -> str:
+            return self.ansi + part
+
+        def __str__(self) -> str:
             return self.ansi
 
     class Cursor:

@@ -1,4 +1,4 @@
-from . import CONSTANTS, Log
+from . import CONSTANTS, Log, ANSI
 import json, os
 from random import choice
 
@@ -29,7 +29,7 @@ class Cipher:
     alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
     def encode(s : str, shift : int) -> str:
-        words = s.split()
+        words = s.split(" ")
         shifted_words = []
 
         for word in words:
@@ -72,67 +72,101 @@ class _Lore:
         # how far each character was shifted when encoding the lore
         self.encryption_shift = 7
 
-        with open(CONSTANTS["encrypted_lore_file"], "r") as f:
-            self.pages : dict[str, list[str]] = json.loads(f.read())
+        self.text_discovered_color = ANSI.RGB(*CONSTANTS["lore_text_discovered_word_color"], "fg")
+        self.text_undiscovered_color = ANSI.RGB(*CONSTANTS["lore_text_undiscovered_word_color"], "fg")
 
-        self.load_discovered_pages()
-        self.decrypt_alreay_discovered_pages()
+        # list of every word in the lore text. everything is encrypted
+        with open(CONSTANTS["encrypted_lore_file"], "r") as f:
+            self.encrypted_lore_words : list[str] = f.read().split(" ")
+        
+        # how many words to decode per discovered page
+        self.lore_page_word_count = round(len(self.encrypted_lore_words) * CONSTANTS["lore_page_word_percent"])
+        
+        # list of every word in the lore text. if the user discovered a word then its not encrypted
+        self.lore_words : list[str] = []
+
+        self.load_discovered_lore()
+        self.decrypt_already_discovered_lore()
     
-    def load_discovered_pages(self):
+    def load_discovered_lore(self):
         """Loads the user specific file where their lore progress is stored"""
         
-        if os.path.exists(CONSTANTS["discovered_pages_file"]):
-            with open(CONSTANTS["discovered_pages_file"], "r") as f:
-                self.discovered_pages = json.loads(f.read())
+        if os.path.exists(CONSTANTS["discovered_lore_file"]):
+            with open(CONSTANTS["discovered_lore_file"], "r") as f:
+                self.discovered_lore : list[bool] = json.load(f)
         
         else:
-            self.discovered_pages = {str(page_idx) : False for page_idx in range(len(self.pages))}
-            with open(CONSTANTS["discovered_pages_file"], "w") as f:
-                json.dump(self.discovered_pages, f)
+            self.discovered_lore = [False] * len(self.encrypted_lore_words)
+            with open(CONSTANTS["discovered_lore_file"], "w") as f:
+                json.dump(self.discovered_lore, f)
     
-    def save_discovered_pages(self):
+    def decrypt_already_discovered_lore(self):
+        """Go through each bool in the discovered_lore list\n
+        If true then the user has previously discovered that word, therefore decode it\n
+        If false then the user hasnt discovered that word, therefore dont decode it\n
+        Then add the word, decoded or not, to a list"""
+
+        for idx,is_discovered in enumerate(self.discovered_lore):
+            if is_discovered:
+                word = Cipher.decode(self.encrypted_lore_words[idx], self.encryption_shift)
+            else:
+                word = self.encrypted_lore_words[idx]
+            self.lore_words.append(word)
+
+    def save_discovered_lore(self):
         """Saves the lore progress to a user specific file"""
-        with open(CONSTANTS["discovered_pages_file"], "w") as f:
-            json.dump(self.discovered_pages, f)
+        with open(CONSTANTS["discovered_lore_file"], "w") as f:
+            json.dump(self.discovered_lore, f)
 
-    def decode_page(self, page_idx : int) -> None:
-        """Decode each line on the given page one by one"""
-        lines = self.pages[page_idx]
-        self.pages[page_idx] = [Cipher.decode(line, self.encryption_shift) for line in lines]
+    def all_words_discovered(self) -> bool:
+        return all(self.discovered_lore)
 
-    def all_pages_discovered(self) -> bool:
-        return all(self.discovered_pages.values())
+    def get_undiscovered_word_idxs(self) -> list[int]:
+        """Returns the indexes of all undiscovered words"""
+        return [idx for idx,is_discovered in enumerate(self.discovered_lore) if not is_discovered]
 
-    def get_undiscovered_pages(self) -> list[int]:
-        return [page_idx for page_idx, discovered in self.discovered_pages.items() if not discovered]
-    
-    def decrypt_alreay_discovered_pages(self):
-        for page_idx, discovered in self.discovered_pages.items():
-            if discovered:
-                self.decode_page(page_idx)
-    
+    def decode_word_at_idx(self, idx : int) -> None:
+        self.lore_words[idx] = Cipher.decode(self.lore_words[idx], self.encryption_shift)
+        self.discovered_lore[idx] = True
+
     def discovered_page(self) -> None:
         # the first time the player enters either a shop or a chest room the items are instantly generated
         # if all pages have been discovered then the genereated item cant be a page
         # if the player repeatedly enters a chest room, which load a page, doesnt open the chest and moves on
         #    there will eventually be more pages in unopened chests than lore
-        #    if the player discoveres a page, depsite all pages already being discovered, tell the player they found
+        #    if the player discoveres a page, despite all pages already being discovered, tell the player they found
         #    a page from an irrelevant letter
 
-        if self.all_pages_discovered():
+        if self.all_words_discovered():
             Log.found_irrelevant_lore_letter_page()
             return
+
+        undiscovered_word_idxs : list[int] = self.get_undiscovered_word_idxs()
+
+        # pick a random item from the undiscovered word indexes list
+        # then remove the chosen index from the list of undiscovered word indexes
+        # then decode the word at the chosen index and mark the word as discovered (doesnt write to file)
+        # loop this 'self.lore_page_word_count' times or until the list of undiscovered word indexes is empty
+        for _ in range(self.lore_page_word_count):
+            chosen_word_idx = choice(undiscovered_word_idxs)
+            undiscovered_word_idxs.remove(chosen_word_idx)
+            
+            self.decode_word_at_idx(chosen_word_idx)
+
+            if len(undiscovered_word_idxs) == 0:
+                break
+
+        # since self.decode_word_at_idx is called multiple times and changes self.discovered_lore on every call
+        # save the discovered lore to file once
+        self.save_discovered_lore()
+
+    def __str__(self) -> str:
+        colored_words : list[str] = []
+        for idx,is_discovered in enumerate(self.discovered_lore):
+            appropriate_color = {True: self.text_discovered_color, False: self.text_undiscovered_color}[is_discovered]
+            colored_words.append(appropriate_color + self.lore_words[idx] + ANSI.Color.off)
         
-        page_idx = choice(self.get_undiscovered_pages())
-
-        self.discovered_pages[page_idx] = True
-        self.decode_page(page_idx)
-
-        self.save_discovered_pages()
-        Log.found_lore_letter_page(page_idx)
-    
-    def get_pages(self) -> list[list[str]]:
-        return self.pages.values()
+        return " ".join(colored_words)
 
 
 Lore = _Lore()
