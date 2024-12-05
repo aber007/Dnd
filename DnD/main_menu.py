@@ -89,7 +89,7 @@ class MainMenu:
 
     def submenu_lore(self):
         Log.header("Lore", 2)
-        Log.write_lore_pages(Lore.get_pages())
+        Log.write_lore_pages(str(Lore))
         Log.newline()
         Log.end()
 

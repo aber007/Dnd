@@ -2,8 +2,6 @@ CONSTANTS = {
     "map_base_size": 11, #Base size over 20 is not recommended
     "remove_door_percent": 0.2,
 
-    "default_music_volume": 0.3,
-
     "normal_trap_dmg": 3,
     "mimic_trap_ambush_dmg": 4,
 
@@ -38,11 +36,12 @@ CONSTANTS = {
     "enemy_config_file": "./enemies.json",
     "interaction_text_file": "./interaction_texts.json",
     "skill_tree_config_file": "./skill_tree.json",
-    "encrypted_lore_file": "./story/lore_text/encrypted_pages.json",
-    "discovered_pages_file": "./story/lore_text/discovered_pages.json",
+    "encrypted_lore_file": "./story/lore_text/encrypted_lore.txt",
+    "discovered_lore_file": "./story/lore_text/discovered_lore.json",
     "rooms_config_file": "./rooms.json",
 
     "music_enabled": True,
+    "music_default_volume": 0.3,
     "music_max_volume_percent": 0.75,
     "music_slider_step_volume_percent": 0.015,
 
@@ -80,6 +79,10 @@ CONSTANTS = {
 
     "skill_tree_check_color": [0,255,0],
     "skill_tree_cross_color": [255,0,0],
+
+    "lore_page_word_percent": 0.2,
+    "lore_text_discovered_word_color": [255,255,255],
+    "lore_text_undiscovered_word_color": [0,0,0],
 
     "use_fancy_item_selection": True,
     "min_desired_terminal_width": 135,

@@ -26,7 +26,7 @@ class _Music:
         self.current_dir = os.path.dirname(__file__) if "__file__" in globals() else os.getcwd()
         self.music_dir = os.path.abspath(os.path.join(self.current_dir, "..", "story", "music"))
 
-        pygame.mixer.music.set_volume(CONSTANTS["default_music_volume"] * CONSTANTS["music_max_volume_percent"])
+        pygame.mixer.music.set_volume(CONSTANTS["music_default_volume"] * CONSTANTS["music_max_volume_percent"])
 
   
     def change_volume(self):
