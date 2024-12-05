@@ -244,14 +244,14 @@ class Combat:
             returned_dmg = sum([return_var["val"] for return_var in return_vars if return_var["return_val_type"] == "dmg"])
             dmg = returned_dmg if len(return_vars) and returned_dmg != 0 else dmg
 
-            dmg *= dmg_factor * self.player.temp_dmg_factor
+            dmg = round(dmg * dmg_factor * self.player.temp_dmg_factor)
 
-            self.player.stats["DMG dealt"] += round(dmg)
+            self.player.stats["DMG dealt"] += dmg
 
             if CONSTANTS["debug"]["player_infinite_dmg"]:
                 dmg = 10**6
 
-            self.enemy.take_damage(round(dmg))
+            self.enemy.take_damage(dmg)
 
             # activate all the skills that are supposed to be ran after the attack fires
             return_vars = self.player.call_skill_functions(
